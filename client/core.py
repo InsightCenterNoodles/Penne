@@ -2,26 +2,27 @@ import asyncio
 import websockets
 from dataclasses import asdict
 from cbor2 import dumps
-from messages import *
-from handlers import * 
-from delegates import *
+
+import messages
+import handlers
+import delegates
 
 
 default_delegates = {
-    "entities" : EntityDelegate,
-    "tables" : TableDelegate,
-    "plots" : PlotDelegate,
-    "signals" : SignalDelegate,
-    "methods": MethodDelegate,
-    "materials" : MaterialDelegate,
-    "geometries" : GeometryDelegate,
-    "lights" : LightDelegate,
-    "images" : ImageDelegate,
-    "textures" : TextureDelegate,
-    "samplers" : SamplerDelegate,
-    "buffers" : BufferDelegate,
-    "bufferviews" : BufferViewDelegate,
-    "documents"  : DocumentDelegate
+    "entities" : delegates.EntityDelegate,
+    "tables" : delegates.TableDelegate,
+    "plots" : delegates.PlotDelegate,
+    "signals" : delegates.SignalDelegate,
+    "methods" : delegates.MethodDelegate,
+    "materials" : delegates.MaterialDelegate,
+    "geometries" : delegates.GeometryDelegate,
+    "lights" : delegates.LightDelegate,
+    "images" : delegates.ImageDelegate,
+    "textures" : delegates.TextureDelegate,
+    "samplers" : delegates.SamplerDelegate,
+    "buffers" : delegates.BufferDelegate,
+    "bufferviews" : delegates.BufferViewDelegate,
+    "documents" : delegates.DocumentDelegate
 }
 
 class Client(object):
@@ -31,8 +32,18 @@ class Client(object):
     Attributes:
         _url (string)                               : address used to connect to server
         loop (event loop )                          : event loop used for network thread
+        delegates (dict)                            : map for delegate functions        
         thread (thread object)                      : network thread used by client
         _socket (WebSocketClientProtocol object)    : socket to connect to server
+        name (str)                                  : name of the client
+        state (dict)                                : dict keeping track of created objects
+        client_message_map (dict)                   : mapping message type to corresponding id
+        server_message_map (dict)                   : mapping message id's to corresponding message type
+        current_invoke (str)                        : id for next method invoke
+        
+    Methods:
+        Invoke_method(self, id, args, context = None) : call method for server to execute
+        send_message(self, message)                   : send message to the server
     """
 
     def __init__(self, url, loop, custom_delegate_hash = {}):
@@ -67,45 +78,45 @@ class Client(object):
             "bufferviews": {}
         }
         self.client_message_map = {
-            IntroMessage : 0,
-            InvokeMethodMessage : 1
+            messages.IntroMessage : 0,
+            messages.InvokeMethodMessage : 1
         }
         self.server_message_map = {
-            0 : MethodCreateMessage,
-            1 : MethodDeleteMessage,
-            2 : SignalCreateMessage,
-            3 : SignalDeleteMessage,
-            4 : EntityCreateMessage,
-            5 : EntityUpdateMessage,
-            6 : EntityDeleteMessage,
-            7 : PlotCreateMessage,
-            8 : PlotUpdateMessage,
-            9 : PlotDeleteMessage,
-            10 : BufferCreateMessage,
-            11 : BufferDeleteMessage,
-            12 : BufferViewCreateMessage,
-            13 : BufferViewDeleteMessage,
-            14 : MaterialCreateMessage,
-            15 : MaterialUpdateMessage,
-            16 : MaterialDeleteMessage,
-            17 : ImageCreateMessage,
-            18 : ImageDeleteMessage,
-            19 : TextureCreateMessage, 
-            20 : TextureDeleteMessage,
-            21 : SamplerCreateMessage,
-            22 : SamplerDeleteMessage,
-            23 : LightCreateMessage,
-            24 : LightUpdateMessage,
-            25 : LightDeleteMessage,
-            26 : GeometryCreateMessage,
-            27 : GeometryDeleteMessage,
-            28 : TableCreateMessage,
-            29 : TableUpdateMessage,
-            30 : TableDeleteMessage,
-            31 : DocumentUpdateMessage,
-            32 : DocumentResetMessage,   
-            33 : SignalInvokeMessage,   
-            34 : MethodReplyMessage,
+            0 : messages.MethodCreateMessage,
+            1 : messages.MethodDeleteMessage,
+            2 : messages.SignalCreateMessage,
+            3 : messages.SignalDeleteMessage,
+            4 : messages.EntityCreateMessage,
+            5 : messages.EntityUpdateMessage,
+            6 : messages.EntityDeleteMessage,
+            7 : messages.PlotCreateMessage,
+            8 : messages.PlotUpdateMessage,
+            9 : messages.PlotDeleteMessage,
+            10 : messages.BufferCreateMessage,
+            11 : messages.BufferDeleteMessage,
+            12 : messages.BufferViewCreateMessage,
+            13 : messages.BufferViewDeleteMessage,
+            14 : messages.MaterialCreateMessage,
+            15 : messages.MaterialUpdateMessage,
+            16 : messages.MaterialDeleteMessage,
+            17 : messages.ImageCreateMessage,
+            18 : messages.ImageDeleteMessage,
+            19 : messages.TextureCreateMessage, 
+            20 : messages.TextureDeleteMessage,
+            21 : messages.SamplerCreateMessage,
+            22 : messages.SamplerDeleteMessage,
+            23 : messages.LightCreateMessage,
+            24 : messages.LightUpdateMessage,
+            25 : messages.LightDeleteMessage,
+            26 : messages.GeometryCreateMessage,
+            27 : messages.GeometryDeleteMessage,
+            28 : messages.TableCreateMessage,
+            29 : messages.TableUpdateMessage,
+            30 : messages.TableDeleteMessage,
+            31 : messages.DocumentUpdateMessage,
+            32 : messages.DocumentResetMessage,   
+            33 : messages.SignalInvokeMessage,   
+            34 : messages.MethodReplyMessage,
         }
         self.current_invoke = 0
 
@@ -117,7 +128,7 @@ class Client(object):
                 self.delegates[key] = custom_delegate_hash[key]()
 
 
-    def InvokeMethod(self, id, args, context = None):
+    def invoke_method(self, id, args, context = None):
         """
         Method for invokingage to server
 
@@ -128,14 +139,14 @@ class Client(object):
             args        : arguments for method
         """
         # Get method ID
-        method_id = IDGroup(id, 0).id
+        method_id = messages.IDGroup(id, 0).id
 
         # Get invoke ID
         invoke_id = str(self.current_invoke)
         self.current_invoke += 1
 
         # Construct message and send
-        message = InvokeMethodMessage(method_id, args, context, invoke_id)
+        message = messages.InvokeMethodMessage(method_id, args, context, invoke_id)
         print(message)
         self.send_message(message)
 
@@ -168,10 +179,10 @@ class Client(object):
             print(self.name)
 
             # send intro message
-            intro = IntroMessage(self.name)
+            intro = messages.IntroMessage(self.name)
             self.send_message(intro)
 
             # handle all incoming messages
             async for message in self._socket:
-                handle(self, message)
+                handlers.handle(self, message)
         

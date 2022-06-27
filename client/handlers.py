@@ -1,4 +1,4 @@
-from messages import *
+import messages
 from cbor2 import loads
 from re import findall
 from dataclasses import asdict
@@ -73,21 +73,21 @@ def handle(client, message):
     
     # Update state based on message type and specifier
     if "Create" in message_type:
-        message.id = IDGroup(*message.id)
+        message.id = messages.IDGroup(*message.id)
         client.state[specifier][message.id] = message
 
         # Inform delegate with specifier
         client.delegates[specifier].on_new(message)
     
     elif "Delete" in message_type:
-        id = IDGroup(*message.id)
+        id = messages.IDGroup(*message.id)
         del client.state[specifier][id]
 
         # Inform delegate with specifier
         client.delegates[specifier].on_remove(message)
 
     elif "Update" in message_type and not "Document" in message_type:
-        message.id = IDGroup(*message.id)
+        message.id = messages.IDGroup(*message.id)
         handle_update(client, message, specifier)
 
         # Inform delegate with specifier
