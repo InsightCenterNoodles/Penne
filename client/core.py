@@ -3,9 +3,9 @@ import websockets
 from dataclasses import asdict
 from cbor2 import dumps
 
-import messages
-import handlers
-import delegates
+from . import messages
+from . import handlers
+from . import delegates
 
 
 default_delegates = {
@@ -185,4 +185,9 @@ class Client(object):
             # handle all incoming messages
             async for message in self._socket:
                 handlers.handle(self, message)
-        
+    
+    async def shutdown(self):
+        print("killing")
+        self.thread.join()
+        #await self._socket.close()
+        print("killed")

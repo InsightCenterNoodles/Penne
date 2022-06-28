@@ -1,7 +1,8 @@
-import messages
 from cbor2 import loads
 from re import findall
 from dataclasses import asdict
+
+from . import messages
 
 
 def handle_update(client, message, specifier):

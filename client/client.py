@@ -1,4 +1,4 @@
-from core import Client
+from .core import Client
 import asyncio
 import threading
 from urllib.parse import urlparse
@@ -46,4 +46,5 @@ def create_client(address):
     client.thread.start()
  
     return client
+
  
