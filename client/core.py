@@ -1,5 +1,6 @@
 import asyncio
 import websockets
+import threading
 from dataclasses import asdict
 from cbor2 import dumps
 
@@ -46,7 +47,7 @@ class Client(object):
         send_message(self, message)                   : send message to the server
     """
 
-    def __init__(self, url, loop, custom_delegate_hash = {}):
+    def __init__(self, url, loop, custom_delegate_hash, event, verbose):
         """
         Constructor for the Client Class
 
@@ -59,6 +60,8 @@ class Client(object):
         self._url = url
         self.loop = loop
         self.delegates = {}
+        self.event = event
+        self.verbose = verbose
         self.thread = None
         self._socket = None
         self.name = "Python Client"
@@ -128,6 +131,29 @@ class Client(object):
                 self.delegates[key] = custom_delegate_hash[key]()
 
 
+    def inject_methods(self, delegate_name, method_dict):
+        """
+        Method to inject methods into a delegate class
+
+        Parameters:
+            delegate_name (str) : identifier for delegate to be modified
+            method_dict (dict)  : dict mapping method name to function
+        """
+
+        delegate = self.delegates[delegate_name]
+
+        # Clear old injected methods
+        # for i in dir(delegate):
+        #     att = getattr(delegate, i)
+        #     if hasattr(att, "injected"):
+        #         delattr(delegate, i)
+
+        # Set attributes for each method in dict
+        for key, value in method_dict.items():
+            #setattr(value, "injected", True)
+            setattr(delegate, key, value)
+        
+
     def invoke_method(self, id, args, context = None):
         """
         Method for invokingage to server
@@ -147,7 +173,7 @@ class Client(object):
 
         # Construct message and send
         message = messages.InvokeMethodMessage(method_id, args, context, invoke_id)
-        print(message)
+        if self.verbose: print(message)
         self.send_message(message)
 
 
@@ -182,12 +208,14 @@ class Client(object):
             intro = messages.IntroMessage(self.name)
             self.send_message(intro)
 
+            # set event indicating connection is established
+            self.event.set()
+
             # handle all incoming messages
             async for message in self._socket:
                 handlers.handle(self, message)
     
-    async def shutdown(self):
-        print("killing")
-        self.thread.join()
-        #await self._socket.close()
-        print("killed")
+
+    def shutdown(self):
+        asyncio.run_coroutine_threadsafe(self._socket.close(), self.loop)
+        if self.verbose: print("killed")

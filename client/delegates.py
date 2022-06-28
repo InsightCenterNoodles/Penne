@@ -9,10 +9,10 @@ class MethodDelegate(object):
         self._id = id
 
     def on_new(self, data):
-        print("-- Delegate Received: New Method")
+        pass 
 
     def on_remove(self, data): 
-        print("-- Delegate Received: Removed Method")
+        pass
 
 
 class SignalDelegate(object):
@@ -22,10 +22,10 @@ class SignalDelegate(object):
         self._id = id
 
     def on_new(self, data):
-        print("-- Delegate Received: New Signal")
+        pass 
 
     def on_remove(self, data): 
-        print("-- Delegate Received: Removed Signal")
+        pass
 
 
 class TableDelegate(object):
@@ -35,13 +35,12 @@ class TableDelegate(object):
         self._id = id
 
     def on_new(self, data):
-        print("-- Delegate Received: New Table")
-
+        pass 
     def on_update(self, data):
-        print("-- Delegate Received: Updated Table")
+        pass
 
     def on_remove(self, data): 
-        print("-- Delegate Received: Removed Table")
+        pass
 
 
 class DocumentDelegate(object):
@@ -51,10 +50,10 @@ class DocumentDelegate(object):
         self._id = id
 
     def on_update(self, data):
-        print("-- Delegate Received: Updated Document")
+        pass
 
     def on_reset(self, data): 
-        print("-- Delegate Received: Reset the Document")
+        pass
 
 class EntityDelegate(object):
 

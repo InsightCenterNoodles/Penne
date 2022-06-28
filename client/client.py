@@ -20,7 +20,7 @@ def thread_function(loop, client):
         print("Connection terminated")
  
 
-def create_client(address):
+def create_client(address, custom_delegate_hash = {}, verbose = False):
     """
     Method for creating a client object and starting background thread
 
@@ -36,10 +36,10 @@ def create_client(address):
     #loop = asyncio.get_event_loop(), https://stackoverflow.com/questions/46727787/runtimeerror-there-is-no-current-event-loop-in-thread-in-async-apscheduler
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    event = threading.Event()
 
-    client = Client(address, loop)
- 
-    t = threading.Thread(target=thread_function, args=(loop, client,))
+    client = Client(address, loop, custom_delegate_hash, event, verbose)
+    t = threading.Thread(target=thread_function, args=(loop, client))
  
     client.thread = t
  

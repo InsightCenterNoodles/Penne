@@ -66,7 +66,7 @@ def handle(client, message):
     # Process message using ID from dict
     message_type = client.server_message_map[message[0]]
     message = message_from_dict(message_type, message[1])
-    print(type(message))
+    if client.verbose: print(type(message))
 
     # Convert to string and process based on type name
     message_type = str(message_type)
