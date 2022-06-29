@@ -6,9 +6,8 @@ Default Delegates for Python Client
 
 class MethodDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass 
@@ -19,9 +18,8 @@ class MethodDelegate(object):
 
 class SignalDelegate(object):
     
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass 
@@ -32,12 +30,9 @@ class SignalDelegate(object):
 
 class TableDelegate(object):
 
-    def __init__(self):
-        self.dataframe = None
-    
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
+        self.dataframe = None
 
     def on_table_init(self, table_data):
         print("Initializing table...")
@@ -69,14 +64,13 @@ class TableDelegate(object):
         pass
 
     def subscribe(self):
-        self._client.invoke_method(4, [], context = None, callback=self.on_table_init)
+        self._client.invoke_method(4, [0, 0], context = None, callback=self.on_table_init)
 
 
 class DocumentDelegate(object):
     
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_update(self, data):
         pass
@@ -86,9 +80,8 @@ class DocumentDelegate(object):
 
 class EntityDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -101,9 +94,8 @@ class EntityDelegate(object):
 
 class PlotDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -116,9 +108,8 @@ class PlotDelegate(object):
 
 class MaterialDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -131,9 +122,8 @@ class MaterialDelegate(object):
 
 class GeometryDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -146,9 +136,8 @@ class GeometryDelegate(object):
 
 class LightDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -161,9 +150,8 @@ class LightDelegate(object):
 
 class ImageDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -176,9 +164,8 @@ class ImageDelegate(object):
 
 class TextureDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -191,9 +178,8 @@ class TextureDelegate(object):
 
 class SamplerDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -206,9 +192,8 @@ class SamplerDelegate(object):
 
 class BufferDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass
@@ -221,9 +206,8 @@ class BufferDelegate(object):
 
 class BufferViewDelegate(object):
 
-    def _link(self, client, id):
+    def __init__(self, client):
         self._client = client
-        self._id = id
 
     def on_new(self, data):
         pass

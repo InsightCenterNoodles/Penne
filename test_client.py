@@ -17,6 +17,10 @@ def called_back():
 
 
 class TestDelegate(object):
+
+    def __init__(self, client):
+        self.client = self
+
     def on_new(self, data):
         print("custom delegate on_new")
     def on_update(self, data):

@@ -1,8 +1,8 @@
 import asyncio
 import websockets
-import threading
 from dataclasses import asdict
 from cbor2 import dumps
+import weakref
 
 from . import messages
 from . import handlers
@@ -132,11 +132,14 @@ class Client(object):
         self.callback_map = {}
 
         # Instantiate Delegates - Default or Custom based on input hash
+        # !!! is this sketchy?
+        reference = weakref.ref(self)
+        reference_obj = reference()
         for key in default_delegates:
             if key not in custom_delegate_hash:
-                self.delegates[key] = default_delegates[key]()
+                self.delegates[key] = default_delegates[key](reference_obj)
             else:
-                self.delegates[key] = custom_delegate_hash[key]()
+                self.delegates[key] = custom_delegate_hash[key](reference_obj)
 
 
     def inject_methods(self, delegate_name, method_dict):
