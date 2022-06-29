@@ -34,10 +34,11 @@ class TableDelegate(object):
         self._client = client
         self.dataframe = None
 
-    def on_table_init(self, table_data):
+    def on_table_init(self, init_info):
         print("Initializing table...")
-        print(table_data)
-        table_data = {col : data for col, data in zip()}
+        print(init_info)
+        table_data = pd.DataFrame({col: data for col, data in zip(
+            init_info['columns'], init_info['data'])}, index=init_info['keys'])
         self.dataframe = pd.DataFrame(table_data)
 
     def reset_table(self):

@@ -100,7 +100,7 @@ def handle(client, message):
         # Handle callback
         if type(message) == messages.MethodReplyMessage:
             callback = client.callback_map.pop(message.invoke_id)
-            callback()
+            callback(message.result)
     
     return message
 

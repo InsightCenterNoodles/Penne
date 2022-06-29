@@ -12,8 +12,8 @@ ARGS = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]
 def on_new(data):
     print("Injected on_new method call for delegate")
 
-def called_back():
-    print("I was called upon response from server")
+def called_back(result):
+    print("I was called back")
 
 
 class TestDelegate(object):
@@ -46,6 +46,9 @@ class Tests(unittest.TestCase):
         # Test Invoke Method
         print("invoking method...")
         test_client.invoke_method(METHOD, ARGS, callback=called_back)
+
+        # Test subscribe
+        test_client.delegates["tables"].subscribe()
 
         # Close connection
         print("shutting down connection...")
