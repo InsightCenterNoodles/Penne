@@ -1,9 +1,7 @@
-import asyncio
 from concurrent.futures import thread
 from time import sleep
 from client import client
 import unittest
-import threading
 
 
 # Globals used for testing
@@ -12,7 +10,10 @@ METHOD = 0 # Create Point Plot
 ARGS = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]
 
 def on_new(data):
-    print("Injected on_new method call for tables delegate")
+    print("Injected on_new method call for delegate")
+
+def called_back():
+    print("I was called upon response from server")
 
 
 class TestDelegate(object):
@@ -31,7 +32,7 @@ class Tests(unittest.TestCase):
         # Create client and connect to url
         print("creating client...")
         del_hash = {"geometries" : TestDelegate}
-        test_client = client.create_client(WS_URL, del_hash, True)
+        test_client = client.create_client(WS_URL, del_hash, verbose=True)
         test_client.is_connected.wait()
 
         # Test injecting methods
@@ -40,7 +41,7 @@ class Tests(unittest.TestCase):
 
         # Test Invoke Method
         print("invoking method...")
-        test_client.invoke_method(METHOD, ARGS)
+        test_client.invoke_method(METHOD, ARGS, callback=called_back)
 
         # Close connection
         print("shutting down connection...")

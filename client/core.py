@@ -43,6 +43,7 @@ class Client(object):
         client_message_map (dict)                   : mapping message type to corresponding id
         server_message_map (dict)                   : mapping message id's to corresponding message type
         current_invoke (str)                        : id for next method invoke
+        callback_map (dict)                         : mappingn invoke_id to function to be called upon response
         
     Methods:
         inject_method(self, delegate_name, method_dict) : add custom methods to any delegate
@@ -128,6 +129,7 @@ class Client(object):
             34 : messages.MethodReplyMessage,
         }
         self.current_invoke = 0
+        self.callback_map = {}
 
         # Instantiate Delegates - Default or Custom based on input hash
         for key in default_delegates:
@@ -148,27 +150,20 @@ class Client(object):
 
         delegate = self.delegates[delegate_name]
 
-        # Clear old injected methods
-        # for i in dir(delegate):
-        #     att = getattr(delegate, i)
-        #     if hasattr(att, "injected"):
-        #         delattr(delegate, i)
-
         # Set attributes for each method in dict
         for key, value in method_dict.items():
-            #setattr(value, "injected", True)
             setattr(delegate, key, value)
         
 
-    def invoke_method(self, id, args, context = None):
+    def invoke_method(self, id, args, context = None, callback = lambda: None):
         """
         Method for invokingage to server
 
         Parameters:
-            method_id   : id for method
-            context     : optional context for call
-            invoke_id   : string to identi 
+            id          : id for method
             args        : arguments for method
+            context     : optional context for call
+            callback    : function to be called upon response
         """
         # Get method ID
         method_id = messages.IDGroup(id, 0).id
@@ -176,6 +171,9 @@ class Client(object):
         # Get invoke ID
         invoke_id = str(self.current_invoke)
         self.current_invoke += 1
+
+        # Keep track of callback
+        self.callback_map[invoke_id] = callback
 
         # Construct message and send
         message = messages.InvokeMethodMessage(method_id, args, context, invoke_id)

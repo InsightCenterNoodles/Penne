@@ -93,6 +93,14 @@ def handle(client, message):
 
         # Inform delegate with specifier
         client.delegates[specifier].on_update(message)
+    else:
+        # Communication messages or document messages
+        print(message)
+
+        # Handle callback
+        if type(message) == messages.MethodReplyMessage:
+            callback = client.callback_map.pop(message.invoke_id)
+            callback()
     
     return message
 
