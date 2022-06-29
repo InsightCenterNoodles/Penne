@@ -16,12 +16,13 @@ def on_new(data):
 
 
 class TestDelegate(object):
-    def on_new(data):
-        pass
-    def on_update(data):
-        pass
-    def on_remove(data):
-        pass
+    def on_new(self, data):
+        print("custom delegate on_new")
+    def on_update(self, data):
+        print("custom delegate on_update")
+    def on_remove(self, data):
+        print("custom delegate on_remove")
+
 
 class Tests(unittest.TestCase):
 
@@ -29,11 +30,9 @@ class Tests(unittest.TestCase):
 
         # Create client and connect to url
         print("creating client...")
-        test_client = client.create_client(WS_URL)
-        test_client.event.wait()
-
-        # Testing custom delegates
-        # TODO
+        del_hash = {"geometries" : TestDelegate}
+        test_client = client.create_client(WS_URL, del_hash, True)
+        test_client.is_connected.wait()
 
         # Test injecting methods
         methods_dict = {"on_new" : on_new}
@@ -44,6 +43,7 @@ class Tests(unittest.TestCase):
         test_client.invoke_method(METHOD, ARGS)
 
         # Close connection
+        print("shutting down connection...")
         test_client.shutdown()
 
 

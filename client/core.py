@@ -33,7 +33,9 @@ class Client(object):
     Attributes:
         _url (string)                               : address used to connect to server
         loop (event loop )                          : event loop used for network thread
-        delegates (dict)                            : map for delegate functions        
+        delegates (dict)                            : map for delegate functions     
+        is_connected(threading event object)        : event to signal when connection is ready
+        verbose (bool)                              : flag for enabling console output
         thread (thread object)                      : network thread used by client
         _socket (WebSocketClientProtocol object)    : socket to connect to server
         name (str)                                  : name of the client
@@ -43,11 +45,15 @@ class Client(object):
         current_invoke (str)                        : id for next method invoke
         
     Methods:
-        Invoke_method(self, id, args, context = None) : call method for server to execute
-        send_message(self, message)                   : send message to the server
+        inject_method(self, delegate_name, method_dict) : add custom methods to any delegate
+        invoke_method(self, id, args, context = None)   : call method for server to execute
+        send_message(self, message)                     : send message to the server
+        run(self)                                       : main context for managing websocket connection
+        shutdown(self)                                  : close websocket connection and background thread
+
     """
 
-    def __init__(self, url, loop, custom_delegate_hash, event, verbose):
+    def __init__(self, url, loop, custom_delegate_hash, is_connected, verbose):
         """
         Constructor for the Client Class
 
@@ -60,7 +66,7 @@ class Client(object):
         self._url = url
         self.loop = loop
         self.delegates = {}
-        self.event = event
+        self.is_connected = is_connected
         self.verbose = verbose
         self.thread = None
         self._socket = None
@@ -202,14 +208,13 @@ class Client(object):
             # update class
             self._socket = websocket
             self.name = (f"Python Client @ {self._url}") # couldn't get self._socket.gethostname() to work from source
-            print(self.name)
 
             # send intro message
             intro = messages.IntroMessage(self.name)
             self.send_message(intro)
 
             # set event indicating connection is established
-            self.event.set()
+            self.is_connected.set()
 
             # handle all incoming messages
             async for message in self._socket:
@@ -217,5 +222,8 @@ class Client(object):
     
 
     def shutdown(self):
+        """
+        Method for shutting down Websocket connection
+        """
+        
         asyncio.run_coroutine_threadsafe(self._socket.close(), self.loop)
-        if self.verbose: print("killed")

@@ -36,9 +36,9 @@ def create_client(address, custom_delegate_hash = {}, verbose = False):
     #loop = asyncio.get_event_loop(), https://stackoverflow.com/questions/46727787/runtimeerror-there-is-no-current-event-loop-in-thread-in-async-apscheduler
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    event = threading.Event()
+    is_connected = threading.Event()
 
-    client = Client(address, loop, custom_delegate_hash, event, verbose)
+    client = Client(address, loop, custom_delegate_hash, is_connected, verbose)
     t = threading.Thread(target=thread_function, args=(loop, client))
  
     client.thread = t
@@ -46,5 +46,3 @@ def create_client(address, custom_delegate_hash = {}, verbose = False):
     client.thread.start()
  
     return client
-
- 
