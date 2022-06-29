@@ -1,11 +1,11 @@
 # PENNE
-Python Client for NOODLES protocol
+Python Client for NOODLES protocol  
 (Python Encoded Native NOODLES Endpoint)
 
 ## Description
 Client which implements the NOODLES messaging protocol for interfacing with serverside data visualisation applications.
 The client uses a websocket connection to send CBOR encoded messages. To customize its implementation, the
-client provides hooks in the form of delegate methods. The defaults can be overwritten and injected with 
+library provides hooks in the form of delegate methods which can be overwritten and injected with 
 new methods.
 
 ## Getting Started
