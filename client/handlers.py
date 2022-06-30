@@ -108,7 +108,6 @@ def handle(client, message):
             callback = client.callback_map.pop(message.invoke_id)
             callback(message.result)
     
-    print()
     return message
 
     
