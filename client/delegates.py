@@ -1,4 +1,5 @@
 import pandas as pd
+from . import messages
 
 """
 Default Delegates for Python Client
@@ -64,8 +65,10 @@ class TableDelegate(object):
     def on_remove(self, data): 
         pass
 
-    def subscribe(self):
-        self._client.invoke_method(4, [0, 0], context = None, callback=self.on_table_init)
+    def subscribe(self, table_id):
+        # what type is table_id, and where to convert?
+        messages.IDGroup(*table_id)
+        self._client.invoke_method(4, [], context=messages.InvokeIDType(table=table_id), callback=self.on_table_init)
 
 
 class DocumentDelegate(object):

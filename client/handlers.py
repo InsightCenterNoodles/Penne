@@ -8,12 +8,17 @@ from . import messages
 def handle_update(client, message, specifier):
     """
     Method for updating a message in the current state
+
+    Parameters:
+        client (client object)  : client to be updated
+        message (message object): message containing updates
+        specifier (str)         : which part of state to update
     """
 
     current_state = client.state[specifier][message.id]
     for attribute, value in asdict(message).items():
         if value:
-            current_state.attribute = value
+            current_state[attribute] = value
 
 
 def get_specifier(message_name):

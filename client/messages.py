@@ -1,5 +1,6 @@
 from dataclasses import  dataclass, field
 from math import pi
+from typing import Optional
 
 
 """
@@ -418,7 +419,7 @@ class DocumentResetMessage(object):
 # Communication Messages ================================================================================ 
 @dataclass
 class InvokeIDType(object):
-    entity : IDGroup = None
+    entity : Optional[IDGroup] = None
     table : IDGroup = None
     plot : IDGroup = None
 

@@ -48,7 +48,7 @@ class Tests(unittest.TestCase):
         test_client.invoke_method(METHOD, ARGS, callback=called_back)
 
         # Test subscribe
-        test_client.delegates["tables"].subscribe()
+        test_client.delegates["tables"].subscribe([0, 0])
 
         # Close connection
         print("shutting down connection...")

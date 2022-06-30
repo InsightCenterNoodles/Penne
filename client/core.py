@@ -132,7 +132,6 @@ class Client(object):
         self.callback_map = {}
 
         # Instantiate Delegates - Default or Custom based on input hash
-        # !!! is this sketchy?
         reference = weakref.ref(self)
         reference_obj = reference()
         for key in default_delegates:
@@ -158,7 +157,7 @@ class Client(object):
             setattr(delegate, key, value)
         
 
-    def invoke_method(self, id, args, context = None, callback = lambda: None):
+    def invoke_method(self, id, args, context = None, callback = lambda result: None):
         """
         Method for invokingage to server
 
@@ -183,6 +182,18 @@ class Client(object):
         if self.verbose: print(message)
         self.send_message(message)
 
+    
+    def clean(self, message_dict):
+        print(message_dict)
+        cleaned = {}
+        for key, value in message_dict.items():
+            if type(value) == dict:
+                value = self.clean(value)
+            if value != None and value != 'None':
+                cleaned[key] = value
+        print(cleaned)
+        return cleaned
+
 
     def send_message(self, message):
         """
@@ -193,7 +204,9 @@ class Client(object):
         """
 
         # Construct message with ID from map and converted message object
-        message = [self.client_message_map[type(message)], asdict(message)]
+        message_dict = asdict(message)
+        clean_message_dict = self.clean(message_dict)
+        message = [self.client_message_map[type(message)], clean_message_dict]
         
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self.loop)
 
