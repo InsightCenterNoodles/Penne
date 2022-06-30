@@ -184,7 +184,6 @@ class Client(object):
 
     
     def clean(self, message_dict):
-        print(message_dict)
         cleaned = {}
         for key, value in message_dict.items():
             if type(value) == dict:
@@ -193,6 +192,9 @@ class Client(object):
                 cleaned[key] = value
         print(cleaned)
         return cleaned
+
+        print(message_dict)
+        return message_dict
 
 
     def send_message(self, message):

@@ -17,8 +17,8 @@ def handle_update(client, message, specifier):
 
     current_state = client.state[specifier][message.id]
     for attribute, value in asdict(message).items():
-        if value:
-            current_state[attribute] = value
+        if value != None:
+            setattr(current_state, attribute, value)
 
 
 def get_specifier(message_name):
@@ -79,21 +79,22 @@ def handle(client, message):
     
     # Update state based on message type and specifier
     if "Create" in message_type:
-        message.id = messages.IDGroup(*message.id)
+
         client.state[specifier][message.id] = message
 
         # Inform delegate with specifier
         client.delegates[specifier].on_new(message)
     
     elif "Delete" in message_type:
-        id = messages.IDGroup(*message.id)
+
         del client.state[specifier][id]
 
         # Inform delegate with specifier
         client.delegates[specifier].on_remove(message)
 
     elif "Update" in message_type and not "Document" in message_type:
-        message.id = messages.IDGroup(*message.id)
+
+        print("handling update...")
         handle_update(client, message, specifier)
 
         # Inform delegate with specifier
@@ -107,6 +108,7 @@ def handle(client, message):
             callback = client.callback_map.pop(message.invoke_id)
             callback(message.result)
     
+    print()
     return message
 
     

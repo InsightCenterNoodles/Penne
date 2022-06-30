@@ -1,7 +1,15 @@
-from dataclasses import  dataclass, field
+from dataclasses import  asdict, dataclass, field, is_dataclass
 from math import pi
 from typing import Optional
 
+"""
+Generic Message Class
+"""
+@dataclass
+class Message(object):
+    
+    def asdict(self):
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
 """
 Common Definitions
@@ -38,8 +46,8 @@ class SelectionRange(object):
 @dataclass
 class MethodArg(object):
     name : str
-    rows : list[int] = None
-    row_ranges : list[SelectionRange] = None
+    doc : str = None
+    editor_hint : str = None
 
 @dataclass
 class BoundingBox(object):
@@ -53,17 +61,28 @@ Server Messages
 
 # Method Messages ================================================================================
 @dataclass
-class MethodCreateMessage(object):
+class MethodCreateMessage(Message):
     id : IDGroup
     name : str
     doc : str = None
     return_doc : str = None
     arg_doc : list[MethodArg] = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
+        arg_objects = []
+        for arg in self.arg_doc:
+            arg_objects.append(MethodArg(**arg))
+        self.arg_doc = arg_objects
+
+
 @dataclass
 class MethodDeleteMessage(object):
     id : IDGroup
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 # Signal Messages ================================================================================
 @dataclass
@@ -73,9 +92,20 @@ class SignalCreateMessage(object):
     doc : str = None
     arg_doc : list[MethodArg] = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
+        arg_objects = []
+        for arg in self.arg_doc:
+            arg_objects.append(MethodArg(**arg))
+        self.arg_doc = arg_objects
+
 @dataclass
 class SignalDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Entity Messages ================================================================================
@@ -125,6 +155,10 @@ class EntityCreateMessage(object):
 
     influence : BoundingBox = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+        # self.transform?
+
 
 @dataclass
 class EntityUpdateMessage(object):
@@ -146,9 +180,15 @@ class EntityUpdateMessage(object):
 
     influence : BoundingBox = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class EntityDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Plot Messages ================================================================================ 
@@ -165,6 +205,9 @@ class PlotCreateMessage(object):
     methods_list : list[IDGroup] = None
     signals_list : list[IDGroup] = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class PlotUpdateMessage(object):
     id : IDGroup
@@ -176,9 +219,15 @@ class PlotUpdateMessage(object):
     methods_list : list[IDGroup] = None
     signals_list : list[IDGroup] = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class PlotDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Buffer Messages ================================================================================
@@ -191,9 +240,15 @@ class BufferCreateMessage(object):
     inline_bytes : bytes = None
     uri_bytes : str = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class BufferDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 @dataclass
 class BufferViewCreateMessage(object):
@@ -206,9 +261,15 @@ class BufferViewCreateMessage(object):
 
     name : str = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class BufferViewDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Material Messages ================================================================================
@@ -249,14 +310,23 @@ class MaterialCreateMessage(object):
 
     double_sided : bool = False
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class MaterialUpdateMessage(object):
     id : IDGroup
     # TBD
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class MaterialDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Image Messages ================================================================================ 
@@ -268,9 +338,15 @@ class ImageCreateMessage(object):
     buffer_source : IDGroup = None
     uri_source : str = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class ImageDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Texture Messages ================================================================================ 
@@ -281,9 +357,15 @@ class TextureCreateMessage(object):
     name : str = None
     sampler : IDGroup = None # Revist default sampler
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class TextureDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Sampler Messages ================================================================================ 
@@ -298,9 +380,15 @@ class SamplerCreateMessage(object):
     wrap_s : str = "REPEAT" # CLAMP_TO_EDGE or MIRRORED_REPEAT or REPEAT
     wrap_t : str = "REPEAT" # CLAMP_TO_EDGE or MIRRORED_REPEAT or REPEAT
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class SamplerDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Light Messages ================================================================================ 
@@ -330,6 +418,9 @@ class LightCreateMessage(object):
     spot : SpotLight = None
     directional : DirectionalLight = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class LightUpdateMessage(object):
     id : IDGroup
@@ -337,9 +428,15 @@ class LightUpdateMessage(object):
     color : RGB
     intensity : float = 1
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class LightDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Geometry Messages ================================================================================ 
@@ -377,9 +474,15 @@ class GeometryCreateMessage(object):
     patches : list[dict]
     name : str = None
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class GeometryDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Table Messages ================================================================================ 
@@ -392,6 +495,9 @@ class TableCreateMessage(object):
     methods_list : list[IDGroup] = None
     signals_list : list[IDGroup] = None 
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class TableUpdateMessage(object):
     id : IDGroup
@@ -400,9 +506,15 @@ class TableUpdateMessage(object):
     methods_list : list[IDGroup] = None
     signals_list : list[IDGroup] = None 
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class TableDeleteMessage(object):
     id : IDGroup
+
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
 
 
 # Document Messages ================================================================================ 
@@ -418,10 +530,11 @@ class DocumentResetMessage(object):
 
 # Communication Messages ================================================================================ 
 @dataclass
-class InvokeIDType(object):
+class InvokeIDType(Message):
     entity : Optional[IDGroup] = None
     table : IDGroup = None
     plot : IDGroup = None
+
 
 @dataclass
 class MethodException(object):
@@ -436,11 +549,17 @@ class SignalInvokeMessage(object):
     signal_data : list[any]
     context : InvokeIDType = None # if empty it is on document
 
+    def __post_init__(self):
+        self.id = IDGroup(*self.id)
+
 @dataclass
 class MethodReplyMessage(object):
     invoke_id : str
     result : any = None
     method_exception : MethodException = None
+
+    def __post_init__(self):
+        if self.method_exception: self.method_exception = MethodException(**self.method_exception)
 
 
 """
