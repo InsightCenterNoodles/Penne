@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from . import messages
 
 """
@@ -39,7 +40,7 @@ class TableDelegate(object):
             "tbl_reset" : self.reset_table,
             "tbl_rows_removed" : self.remove_rows,
             "tbl_updated" : self.update_rows,
-            "tbl_selection_updated" : self.selection_changed
+            "tbl_selection_updated" : self.make_selection
         }
 
     def on_table_init(self, init_info):

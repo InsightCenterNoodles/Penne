@@ -1,6 +1,7 @@
 from cbor2 import loads
 from re import findall
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass
+from dacite import from_dict
 
 from . import messages
 
@@ -45,16 +46,47 @@ def get_specifier(message_name):
     return specifier
 
 
-def message_from_dict(message_name, arg_dict):
+def messages_from_list(message_name, list):
+    message_list = []
+    return message_list
+
+
+def message_from_data(message_name, data):
     """
     Function for converting a dictionary to a message object of specified type
         also converts the id to an IDGroup object
 
     Parameters:
         message_name (Type Object)  : Type of desired message object
-        arg_dict (dict)             : dictionary to be converted
+        arg_dict (dict / list)      : Raw data to be converted
     """
-    return message_name(**arg_dict)
+    # Cover list base case
+    if isinstance(data, list):
+        message_obj = message_name(*data)
+        return message_obj
+
+    to_remove = []
+    message_obj = message_name(**data)
+    annotations = message_obj.__annotations__
+    print(message_name)
+    print(annotations)
+    for attr, val in vars(message_obj).items():
+        print(f"--{attr}--{type(val) is list}")
+        if val == None:
+            to_remove.append(attr)
+        elif is_dataclass(annotations[attr]):
+            setattr(message_obj, attr, message_from_data(annotations[attr], val))
+        elif type(val) is list and isinstance(val[0], dict):
+            print("Found list of messages...")
+            print(annotations[attr])
+            #setattr(message_obj, attr, messages_from_list(val))            
+    
+    # print(to_remove)
+    # for key in to_remove:
+    #     print(f"deleting: {key}")
+    #     delattr(message_obj, key)
+    print(message_obj)
+    return message_obj
 
 
 def handle(client, message):
@@ -70,7 +102,8 @@ def handle(client, message):
 
     # Process message using ID from dict
     message_type = client.server_message_map[message[0]]
-    message = message_from_dict(message_type, message[1])
+    message = message_from_data(message_type, message[1])
+    print(message_type)
     if client.verbose: print(type(message))
 
     # Convert to string and process based on type name
@@ -105,8 +138,11 @@ def handle(client, message):
 
         # Handle callback
         if type(message) == messages.MethodReplyMessage:
-            callback = client.callback_map.pop(message.invoke_id)
-            callback(message.result)
+            if message.method_exception:
+                print(f"Method call ({message.invoke_id}) resulted in exception from server ")
+            else:
+                callback = client.callback_map.pop(message.invoke_id)
+                callback(message.result)
     
     return message
 

@@ -7,7 +7,8 @@ import unittest
 # Globals used for testing
 WS_URL = "ws://localhost:50000"
 METHOD = 0 # Create Point Plot
-ARGS = [[1, 2, 3], [1, 2, 3], [1, 2, 3]]
+#ARGS = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11], [12, 13, 14, 15]]
+ARGS = [[1,2,3],[1,2,3],[1,2,3]]
 
 def on_new(data):
     print("Injected on_new method call for delegate")
@@ -48,7 +49,12 @@ class Tests(unittest.TestCase):
         test_client.invoke_method(METHOD, ARGS, callback=called_back)
 
         # Test subscribe
+        print("Subscribing to table...")
         test_client.delegates["tables"].subscribe([0, 0])
+
+        # Test table delegate methods
+        print("Testing table delegates...")
+        #test_client.delegates["tables"].remove_rows([2])
 
         # Close connection
         print("shutting down connection...")

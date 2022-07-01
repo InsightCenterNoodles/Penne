@@ -193,9 +193,6 @@ class Client(object):
         print(cleaned)
         return cleaned
 
-        print(message_dict)
-        return message_dict
-
 
     def send_message(self, message):
         """
