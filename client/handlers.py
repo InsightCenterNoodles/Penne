@@ -69,23 +69,23 @@ def message_from_data(message_name, data):
     message_obj = message_name(**data)
     annotations = message_obj.__annotations__
     print(message_name)
-    print(annotations)
     for attr, val in vars(message_obj).items():
-        print(f"--{attr}--{type(val) is list}")
         if val == None:
             to_remove.append(attr)
         elif is_dataclass(annotations[attr]):
             setattr(message_obj, attr, message_from_data(annotations[attr], val))
-        elif type(val) is list and isinstance(val[0], dict):
+        elif val and type(val) is list and isinstance(val[0], dict):
             print("Found list of messages...")
+            print(f"--{attr}--{type(val) is list}--{val}")
+            #print(message_obj)
             print(annotations[attr])
-            #setattr(message_obj, attr, messages_from_list(val))            
+            #setattr(message_obj, attr, annotations[attr](val))            
     
     # print(to_remove)
     # for key in to_remove:
     #     print(f"deleting: {key}")
     #     delattr(message_obj, key)
-    print(message_obj)
+    #print(message_obj)
     return message_obj
 
 
@@ -102,8 +102,9 @@ def handle(client, message):
 
     # Process message using ID from dict
     message_type = client.server_message_map[message[0]]
-    message = message_from_data(message_type, message[1])
     print(message_type)
+    message = message_from_data(message_type, message[1])
+    #message = from_dict(data_class=message_type, data=message[1])
     if client.verbose: print(type(message))
 
     # Convert to string and process based on type name

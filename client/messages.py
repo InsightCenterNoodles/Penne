@@ -88,9 +88,9 @@ Server Messages
 class MethodCreateMessage(object):
     id : IDGroup
     name : str
-    doc : str = None
-    return_doc : str = None
-    arg_doc : list[MethodArg] = None
+    doc : Optional[str]
+    return_doc : Optional[str] 
+    arg_doc : Optional[list[MethodArg]] 
 
 
 @dataclass
