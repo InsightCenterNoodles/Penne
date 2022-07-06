@@ -46,8 +46,8 @@ class TableDelegate(object):
     def on_table_init(self, init_info):
         print("Initializing table...")
         # had to set column as just the name - lost type info - ok?
-        data_dict = {col["name"]: data for col, data in zip(init_info['columns'], init_info['data'])}
-        table_data = pd.DataFrame(data_dict, index=init_info['keys'])
+        data_dict = {getattr(col, "name"): data for col, data in zip(getattr(init_info, "columns"), getattr(init_info, "data"))}
+        table_data = pd.DataFrame(data_dict, index=getattr(init_info, "keys"))
         self.dataframe = pd.DataFrame(table_data)
         print(self.dataframe)
 
@@ -109,8 +109,9 @@ class TableDelegate(object):
 
     def subscribe(self, table_id):
         # what type is table_id, and where to convert?
-        messages.IDGroup(*table_id)
-        self._client.invoke_method(4, [], context=messages.InvokeIDType(table=table_id), callback=self.on_table_init)
+        invoke_id = messages.InvokeIDType(table=table_id)
+        #invoke_id = messages.InvokeIDType.generate({"table": table_id})
+        self._client.invoke_method(4, [], context=invoke_id, callback=self.on_table_init)
 
 
 class DocumentDelegate(object):

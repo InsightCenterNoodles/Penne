@@ -1,9 +1,6 @@
 from cbor2 import loads
-from re import findall
-from dataclasses import asdict, is_dataclass
-from dacite import from_dict
 
-from . import messages
+from .messages import Message
 
 
 def handle_update(client, message, specifier):
@@ -16,135 +13,74 @@ def handle_update(client, message, specifier):
         specifier (str)         : which part of state to update
     """
 
-    current_state = client.state[specifier][message.id]
-    for attribute, value in asdict(message).items():
+    current_state = client.state[specifier][message.id[0]]
+    for attribute, value in message.as_dict().items():
         if value != None:
             setattr(current_state, attribute, value)
 
 
-def get_specifier(message_name):
-    """
-    Function to get first word or specifier for a message type
-
-    Parameters:
-        message_name (str) : name to parsed
-    """
-
-    # Split at capital letters and get first word
-    words = findall('[A-Z][^A-Z]*', message_name)
-    if words[0] == "Buffer" and words[1] == "View": # Two word edge case
-        specifier = (words[0] + words[1]).lower()
-    else:
-        specifier = words[0].lower()
-    
-
-    # Modify to match state keys\
-    if specifier[-1] == 'y':
-        specifier = specifier[:-1] + 'ies'
-    else:
-        specifier = specifier + 's'
-    return specifier
-
-
-def messages_from_list(message_name, list):
-    message_list = []
-    return message_list
-
-
-def message_from_data(message_name, data):
-    """
-    Function for converting a dictionary to a message object of specified type
-        also converts the id to an IDGroup object
-
-    Parameters:
-        message_name (Type Object)  : Type of desired message object
-        arg_dict (dict / list)      : Raw data to be converted
-    """
-    # Cover list base case
-    if isinstance(data, list):
-        message_obj = message_name(*data)
-        return message_obj
-
-    to_remove = []
-    message_obj = message_name(**data)
-    annotations = message_obj.__annotations__
-    print(message_name)
-    for attr, val in vars(message_obj).items():
-        if val == None:
-            to_remove.append(attr)
-        elif is_dataclass(annotations[attr]):
-            setattr(message_obj, attr, message_from_data(annotations[attr], val))
-        elif val and type(val) is list and isinstance(val[0], dict):
-            print("Found list of messages...")
-            print(f"--{attr}--{type(val) is list}--{val}")
-            #print(message_obj)
-            print(annotations[attr])
-            #setattr(message_obj, attr, annotations[attr](val))            
-    
-    # print(to_remove)
-    # for key in to_remove:
-    #     print(f"deleting: {key}")
-    #     delattr(message_obj, key)
-    #print(message_obj)
-    return message_obj
-
-
-def handle(client, message):
+def handle(client, encoded_message) -> Message:
     """
     Method for handling messages from server
 
     Parameters:
-        message (array) : array with id and message as dictionary
+        encoded_message (array) : array with id and message as dictionary
     """
 
     # Decode message
-    message = loads(message)
-
+    raw_message = loads(encoded_message)
+    
     # Process message using ID from dict
-    message_type = client.server_message_map[message[0]]
-    print(message_type)
-    message = message_from_data(message_type, message[1])
-    #message = from_dict(data_class=message_type, data=message[1])
-    if client.verbose: print(type(message))
+    handle_info = client.server_message_map[raw_message[0]]
+    message_obj = Message.from_dict(raw_message[1])
 
-    # Convert to string and process based on type name
-    message_type = str(message_type)
-    specifier = get_specifier(message_type)
+    if client.verbose: print(f"\n  {handle_info.action} - {handle_info.specifier}\n{message_obj}")
     
-    # Update state based on message type and specifier
-    if "Create" in message_type:
+    # Update state based on map info
+    if handle_info.action == "create":
 
-        client.state[specifier][message.id] = message
-
-        # Inform delegate with specifier
-        client.delegates[specifier].on_new(message)
+        # Update state and inform delegate
+        client.state[handle_info.specifier][message_obj.id[0]] = message_obj
+        client.delegates[handle_info.specifier].on_new(message_obj)
     
-    elif "Delete" in message_type:
+    elif handle_info.action == "delete":
 
-        del client.state[specifier][id]
+        state_message = client.state[handle_info.specifier][message_obj.id[0]]
+        delegate = client.delegates[handle_info.specifier]
 
-        # Inform delegate with specifier
-        client.delegates[specifier].on_remove(message)
+        # Ensure generations match and update state / delegate
+        if message_obj.id[1] == state_message.id[1]:
+            del state_message
+            delegate.on_remove(message_obj)
+        else:
+            raise Exception("Generation Mismatch")
 
-    elif "Update" in message_type and not "Document" in message_type:
+    elif handle_info.action == "update":
 
-        print("handling update...")
-        handle_update(client, message, specifier)
+        if handle_info.specifier != "document":
+            # Ensure generations match and update state
+            if message_obj.id[1] == client.state[handle_info.specifier][message_obj.id[0]].id[1]:
+                handle_update(client, message_obj, handle_info.specifier)
+            else:
+                raise Exception("Generation Mismatch")
+            
+        # Inform delegate
+        client.delegates[handle_info.specifier].on_update(message_obj)
 
-        # Inform delegate with specifier
-        client.delegates[specifier].on_update(message)
+    elif handle_info.action == "reply":
+
+        # Handle callback functions
+        if message_obj.method_exception:
+            raise Exception(f"Method call ({message_obj.invoke_id}) resulted in exception from server")
+        else:
+            callback = client.callback_map.pop(message_obj.invoke_id)
+            callback(message_obj.result)
+
     else:
         # Communication messages or document messages
-        print(message)
+        # For right now just print these, could add handlers for "invoke", "reset" actions
+        print(message_obj)
 
-        # Handle callback
-        if type(message) == messages.MethodReplyMessage:
-            if message.method_exception:
-                print(f"Method call ({message.invoke_id}) resulted in exception from server ")
-            else:
-                callback = client.callback_map.pop(message.invoke_id)
-                callback(message.result)
-    
-    return message
+    return message_obj
 
     

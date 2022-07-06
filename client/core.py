@@ -23,7 +23,7 @@ default_delegates = {
     "samplers" : delegates.SamplerDelegate,
     "buffers" : delegates.BufferDelegate,
     "bufferviews" : delegates.BufferViewDelegate,
-    "documents" : delegates.DocumentDelegate
+    "document" : delegates.DocumentDelegate
 }
 
 class Client(object):
@@ -41,13 +41,14 @@ class Client(object):
         name (str)                                  : name of the client
         state (dict)                                : dict keeping track of created objects
         client_message_map (dict)                   : mapping message type to corresponding id
-        server_message_map (dict)                   : mapping message id's to corresponding message type
+        server_message_map (dict)                   : mapping message id's to corresponding handling info
         current_invoke (str)                        : id for next method invoke
         callback_map (dict)                         : mappingn invoke_id to function to be called upon response
         
     Methods:
         inject_method(self, delegate_name, method_dict) : add custom methods to any delegate
         invoke_method(self, id, args, context = None)   : call method for server to execute
+        clean(self, message_dict)                       : remobe none values from message dict
         send_message(self, message)                     : send message to the server
         run(self)                                       : main context for managing websocket connection
         shutdown(self)                                  : close websocket connection and background thread
@@ -92,41 +93,41 @@ class Client(object):
             messages.InvokeMethodMessage : 1
         }
         self.server_message_map = {
-            0 : messages.MethodCreateMessage,
-            1 : messages.MethodDeleteMessage,
-            2 : messages.SignalCreateMessage,
-            3 : messages.SignalDeleteMessage,
-            4 : messages.EntityCreateMessage,
-            5 : messages.EntityUpdateMessage,
-            6 : messages.EntityDeleteMessage,
-            7 : messages.PlotCreateMessage,
-            8 : messages.PlotUpdateMessage,
-            9 : messages.PlotDeleteMessage,
-            10 : messages.BufferCreateMessage,
-            11 : messages.BufferDeleteMessage,
-            12 : messages.BufferViewCreateMessage,
-            13 : messages.BufferViewDeleteMessage,
-            14 : messages.MaterialCreateMessage,
-            15 : messages.MaterialUpdateMessage,
-            16 : messages.MaterialDeleteMessage,
-            17 : messages.ImageCreateMessage,
-            18 : messages.ImageDeleteMessage,
-            19 : messages.TextureCreateMessage, 
-            20 : messages.TextureDeleteMessage,
-            21 : messages.SamplerCreateMessage,
-            22 : messages.SamplerDeleteMessage,
-            23 : messages.LightCreateMessage,
-            24 : messages.LightUpdateMessage,
-            25 : messages.LightDeleteMessage,
-            26 : messages.GeometryCreateMessage,
-            27 : messages.GeometryDeleteMessage,
-            28 : messages.TableCreateMessage,
-            29 : messages.TableUpdateMessage,
-            30 : messages.TableDeleteMessage,
-            31 : messages.DocumentUpdateMessage,
-            32 : messages.DocumentResetMessage,   
-            33 : messages.SignalInvokeMessage,   
-            34 : messages.MethodReplyMessage,
+            0 : messages.HandleInfo("methods", "create"),
+            1 : messages.HandleInfo("methods", "delete"),
+            2 : messages.HandleInfo("signals", "create"),
+            3 : messages.HandleInfo("signals", "delete"),
+            4 : messages.HandleInfo("entities", "create"),
+            5 : messages.HandleInfo("entities", "update"),
+            6 : messages.HandleInfo("entities", "delete"),
+            7 : messages.HandleInfo("plots", "create"),
+            8 : messages.HandleInfo("plots", "update"),
+            9 : messages.HandleInfo("plots", "delete"),
+            10 : messages.HandleInfo("buffers", "create"),
+            11 : messages.HandleInfo("buffers", "delete"),
+            12 : messages.HandleInfo("bufferviews", "create"),
+            13 : messages.HandleInfo("bufferviews", "delete"),
+            14 : messages.HandleInfo("materials", "create"),
+            15 : messages.HandleInfo("materials", "update"),
+            16 : messages.HandleInfo("materials", "delete"),
+            17 : messages.HandleInfo("images", "create"),
+            18 : messages.HandleInfo("images", "delete"),
+            19 : messages.HandleInfo("textures", "create"), 
+            20 : messages.HandleInfo("textures", "delete"),
+            21 : messages.HandleInfo("samplers", "create"),
+            22 : messages.HandleInfo("samplers", "delete"),
+            23 : messages.HandleInfo("lights", "create"),
+            24 : messages.HandleInfo("lights", "update"),
+            25 : messages.HandleInfo("lights", "delete"),
+            26 : messages.HandleInfo("geometries", "create"),
+            27 : messages.HandleInfo("geometries", "delete"),
+            28 : messages.HandleInfo("tables", "create"),
+            29 : messages.HandleInfo("tables", "update"),
+            30 : messages.HandleInfo("tables", "delete"),
+            31 : messages.HandleInfo("document", "update"),
+            32 : messages.HandleInfo("document", "reset"),  
+            33 : messages.HandleInfo("signals", "invoke"),  
+            34 : messages.HandleInfo("methods", "reply")
         }
         self.current_invoke = 0
         self.callback_map = {}
@@ -167,8 +168,6 @@ class Client(object):
             context     : optional context for call
             callback    : function to be called upon response
         """
-        # Get method ID
-        method_id = messages.IDGroup(id, 0).id
 
         # Get invoke ID
         invoke_id = str(self.current_invoke)
@@ -178,19 +177,24 @@ class Client(object):
         self.callback_map[invoke_id] = callback
 
         # Construct message and send
-        message = messages.InvokeMethodMessage(method_id, args, context, invoke_id)
+        message = messages.InvokeMethodMessage([id, 0], args, context, invoke_id)
         if self.verbose: print(message)
         self.send_message(message)
 
     
     def clean(self, message_dict):
+        """
+        Method to remove none values from messages
+
+        Parameters:
+            message_dict (dict) : dict representation of message
+        """
         cleaned = {}
         for key, value in message_dict.items():
             if type(value) == dict:
                 value = self.clean(value)
             if value != None and value != 'None':
                 cleaned[key] = value
-        print(cleaned)
         return cleaned
 
 
@@ -231,7 +235,10 @@ class Client(object):
 
             # handle all incoming messages
             async for message in self._socket:
-                handlers.handle(self, message)
+                try:
+                    handlers.handle(self, message)
+                except Exception as e:
+                    print(e)
     
 
     def shutdown(self):

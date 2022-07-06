@@ -1,5 +1,3 @@
-from concurrent.futures import thread
-from time import sleep
 from client import client
 import unittest
 
@@ -37,7 +35,7 @@ class Tests(unittest.TestCase):
         # Create client and connect to url
         print("creating client...")
         del_hash = {"geometries" : TestDelegate}
-        test_client = client.create_client(WS_URL, del_hash, verbose=False)
+        test_client = client.create_client(WS_URL, del_hash, verbose=True)
         test_client.is_connected.wait()
 
         # Test injecting methods
