@@ -1,5 +1,4 @@
 from dataclasses import  dataclass
-from math import pi
 from typing import Optional
 
 """
@@ -59,7 +58,7 @@ class Message(object):
         return None
 
     def __getitem__(self, __name: str):
-        return self.__name
+        return getattr(self, __name)
 
 
     def __repr__(self):

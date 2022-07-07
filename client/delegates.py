@@ -1,6 +1,5 @@
-from email import header
+from select import select
 import pandas as pd
-import numpy as np
 from . import messages
 
 """
@@ -31,12 +30,40 @@ class SignalDelegate(object):
         pass
 
 
+class SelectionRange(tuple):
+
+    def __new__(cls, key_from, key_to):
+        return super().__new__(SelectionRange, (key_from, key_to))
+
+
+class Selection(object):
+
+    def __init__(self, name: str, rows: list[int] = None, row_ranges: list[SelectionRange] = None) -> None:
+        self.name = name
+        self.rows = rows
+        self.row_ranges = row_ranges
+
+    def __repr__(self) -> str:
+        return f"Selection Object({self.__dict__})"
+
+    def __getitem__(self, attribute):
+        return getattr(self, attribute)
+
+
 class TableDelegate(object):
+
+    # SelectionRange = ( key_from_inclusive : int, key_to_exclusive : int )
+
+    # Selection = {
+    #     name : text,
+    #     ? rows : [* int],
+    #     ? row_ranges : [* SelectionRange]
+    # }
 
     def __init__(self, client):
         self._client = client
         self.dataframe = None
-        self.selections = None
+        self.selections = {}
         self.signals = {
             "tbl_reset" : self.reset_table,
             "tbl_rows_removed" : self.remove_rows,
@@ -85,14 +112,14 @@ class TableDelegate(object):
         self.dataframe.update(new_df)
         print(f"Updated Cols {new_cols.keys()}...\n", self.dataframe)
 
-    def make_selection(self, name, selection_obj):
+    def make_selection(self, selection_obj: Selection):
         # Change selection in state
-        self.selections[name] = selection_obj
-        print("Selection made / changed...", name, selection_obj)
+        self.selections[selection_obj.name] = selection_obj
+        print(f"Made selection {selection_obj.name} = {selection_obj}")
         
     def get_selection(self, name):
         
-        # Create selection object
+        # Try to retrieve selection object from instance
         try:
             sel_obj = self.selections[name]
         except:
@@ -101,21 +128,22 @@ class TableDelegate(object):
         frames = []
 
         # Get rows already in that selection
-        if "rows" in sel_obj:
-            frames.append([self.dataframe.loc[sel_obj["rows"]]])
+        if sel_obj.rows:
+            frames.append(self.dataframe.loc[sel_obj["rows"]])
 
         # Uses ranges in object to get other rows
-        if "row_ranges" in sel_obj:
-            ranges = np.array(sel_obj["row_ranges"]).reshape(-1, 2)
+        if sel_obj.row_ranges:
+            ranges = sel_obj["row_ranges"]
             for r in ranges:
-                frames += [
-                    self.dataframe.loc[r[0]:r[1]-1]
-                ]
-        return pd.concat(frames)
+                frames.append(self.dataframe.loc[r[0]:r[1]-1])
+
+        # Return frames concatenated
+        df = pd.concat(frames)
+        print(f"Got selection for {sel_obj}\n{df}")
+        return df
 
     def relink_signals(self):
         pass
-
 
     def on_new(self, data):
         print("New table message:")

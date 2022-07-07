@@ -2,12 +2,14 @@ from client import client
 import unittest
 import time
 
+from client.delegates import Selection, SelectionRange
+
 
 # Globals used for testing
 WS_URL = "ws://localhost:50000"
 METHOD = 0 # Create Point Plot
 #ARGS = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11], [12, 13, 14, 15]]
-ARGS = [[1,2,3],[1,2,3],[1,2,3]]
+ARGS = [[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]
 
 class style:
    CYAN = '\033[96m'
@@ -75,6 +77,9 @@ class Tests(unittest.TestCase):
         test_client.delegates["tables"].update_rows([1],[1,2,3,4,5,6,7])
         #test_client.delegates["tables"].update_rows2({1: [7, 8, 8, 7, 5, 7, 7, 7, 7]})
         # can we assume update will have values for every column?
+        selection = Selection("Tester", [0], [SelectionRange(1,4)])
+        test_client.delegates["tables"].make_selection(selection)
+        test_selection = test_client.delegates["tables"].get_selection("Tester")
 
         # Close connection
         print(f"{style.ACCENT}{style.BOLD}Shutting down connection...{style.END}")
