@@ -158,7 +158,7 @@ class Client(object):
             setattr(delegate, key, value)
         
 
-    def invoke_method(self, id, args, context = None, callback = lambda result: None):
+    def invoke_method(self, id, args, context = None, callback = None):
         """
         Method for invokingage to server
 
@@ -174,7 +174,7 @@ class Client(object):
         self.current_invoke += 1
 
         # Keep track of callback
-        self.callback_map[invoke_id] = callback
+        if callback: self.callback_map[invoke_id] = callback
 
         # Construct message and send
         message = messages.InvokeMethodMessage([id, 0], args, context, invoke_id)

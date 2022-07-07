@@ -1,3 +1,4 @@
+from email import header
 import pandas as pd
 import numpy as np
 from . import messages
@@ -58,16 +59,34 @@ class TableDelegate(object):
 
     def remove_rows(self, key_list):
         self.dataframe.drop(index=key_list, inplace=True)
-        print("Rows Removed...", self.dataframe)
+        print(f"Removed Rows: {key_list}...\n", self.dataframe)
 
-    def update_rows(self, key_list, column_list):
+    def update_rows(self, keys: list, cols: list):
         headers = self.dataframe.columns.values
         new_df = pd.DataFrame({col: data for col, data in zip(
-            headers, column_list)}, index=key_list)
-        new_df_filled = self.dataframe.combine_first(new_df)
-        self.dataframe = new_df_filled.update(new_df)
+            headers, cols)}, index=keys)
+        new_df_filled = new_df.combine_first(self.dataframe) # changes order of columns - problem?
+        self.dataframe = new_df_filled
+    
+        print(f"Updated Rows...{keys}\n", self.dataframe)
+        
+    def update_rows2(self, new_rows: dict):
+        headers = self.dataframe.columns.values
+        new_df = pd.DataFrame(new_rows, index=headers).transpose()
+        new_df.combine_first(self.dataframe) 
+        print("transposed row input:")
+        print(new_df)
+        self.dataframe.update(new_df)
+        print(f"Updated Rows...{new_rows.keys()}\n", self.dataframe)
+
+    def update_cols(self, new_cols: dict):
+        # Expects a dict mapping col name to new values
+        new_df = pd.DataFrame(new_cols)
+        self.dataframe.update(new_df)
+        print(f"Updated Cols {new_cols.keys()}...\n", self.dataframe)
 
     def make_selection(self, name, selection_obj):
+        # Change selection in state
         self.selections[name] = selection_obj
         print("Selection made / changed...", name, selection_obj)
         
@@ -83,7 +102,7 @@ class TableDelegate(object):
 
         # Get rows already in that selection
         if "rows" in sel_obj:
-            frames += [self.dataframe.loc[sel_obj["rows"]]]
+            frames.append([self.dataframe.loc[sel_obj["rows"]]])
 
         # Uses ranges in object to get other rows
         if "row_ranges" in sel_obj:
