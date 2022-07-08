@@ -73,9 +73,11 @@ class Tests(unittest.TestCase):
         # Test table delegate methods
         print(f"{style.ACCENT}{style.BOLD}Testing table delegates...{style.END}")
         test_client.delegates["tables"].remove_rows([2])
+        test_client.delegates["tables"].update_rows([5, 6], [[1,1],[2,2],[3,3],[4,4],[4,4],[4,4],[4,4],[4,4],[4,4]])
         test_client.delegates["tables"].update_cols({"y": [7, 7, 7]})
-        test_client.delegates["tables"].update_rows([1],[1,2,3,4,5,6,7])
-        #test_client.delegates["tables"].update_rows2({1: [7, 8, 8, 7, 5, 7, 7, 7, 7]})
+        test_client.delegates["tables"].update_rows([1],[[1],[2],[3],[4],[5],[6],[7]])
+        test_client.delegates["tables"].update_rows2({1: [7, 8, 8, 7, 5, 7, 7, 7, 7]})
+        test_client.delegates["tables"].insert_rows([[7, 8, 8, 7, 5, 7, 7, 7, 7],[1,1,1,1,1,1,1,1,1]])
         # can we assume update will have values for every column?
         selection = Selection("Tester", [0], [SelectionRange(1,4)])
         test_client.delegates["tables"].make_selection(selection)
