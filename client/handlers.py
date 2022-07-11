@@ -1,8 +1,7 @@
-from multiprocessing.connection import Client
+import weakref
 from cbor2 import loads
 
 from .messages import Message
-
 
 def handle_update(client, message, specifier):
     """
@@ -33,42 +32,50 @@ def handle(client, encoded_message) -> Message:
     
     # Process message using ID from dict
     handle_info = client.server_message_map[raw_message[0]]
+    action = handle_info.action
+    specifier = handle_info.specifier
     message_obj = Message.from_dict(raw_message[1])
 
-    if client.verbose: print(f"\n  {handle_info.action} - {handle_info.specifier}\n{message_obj}")
+    if client.verbose: print(f"\n  {action} - {specifier}\n{message_obj}")
+    
     
     # Update state based on map info
-    if handle_info.action == "create":
+    if action == "create":
 
-        # Update state and inform delegate
-        client.state[handle_info.specifier][message_obj.id[0]] = message_obj
-        client.delegates[handle_info.specifier].on_new(message_obj)
+        # Create instance of delegate
+        specifier = specifier
+        reference = weakref.ref(client)
+        reference_obj = reference()
+        delegate = client.delegates[specifier](reference_obj)
+
+        # Update state and pass message info to the delegate's handler
+        client.state[specifier][message_obj.id[0]] = delegate
+        delegate.on_new(message_obj)
     
-    elif handle_info.action == "delete":
+    elif action == "delete":
 
-        state_message = client.state[handle_info.specifier][message_obj.id[0]]
-        delegate = client.delegates[handle_info.specifier]
+        state_delegate = client.state[specifier][message_obj.id[0]]
 
         # Ensure generations match and update state / delegate
-        if message_obj.id[1] == state_message.id[1]:
-            del state_message
-            delegate.on_remove(message_obj)
+        if message_obj.id[1] == state_delegate.info.id[1]:
+            state_delegate.on_remove(message_obj)
+            del state_delegate
         else:
             raise Exception("Generation Mismatch")
 
-    elif handle_info.action == "update":
+    elif action == "update":
 
-        if handle_info.specifier != "document":
+        if specifier != "document":
             # Ensure generations match and update state
-            if message_obj.id[1] == client.state[handle_info.specifier][message_obj.id[0]].id[1]:
-                handle_update(client, message_obj, handle_info.specifier)
+            if message_obj.id[1] == client.state[specifier][message_obj.id[0]].info.id[1]:
+                handle_update(client, message_obj, specifier)
             else:
                 raise Exception("Generation Mismatch")
             
         # Inform delegate
-        client.delegates[handle_info.specifier].on_update(message_obj)
+        client.state[specifier][message_obj.id[0]].on_update(message_obj)
 
-    elif handle_info.action == "reply":
+    elif action == "reply":
 
         # Handle callback functions
         if message_obj.method_exception:
@@ -77,7 +84,7 @@ def handle(client, encoded_message) -> Message:
             callback = client.callback_map.pop(message_obj.invoke_id)
             callback(message_obj.result)
 
-    elif handle_info.action == "invoke":
+    elif action == "invoke":
 
         # Handle invoke message from server
         signal_data = message_obj["signal_data"]

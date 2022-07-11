@@ -51,7 +51,7 @@ class Tests(unittest.TestCase):
         # Create client and connect to url
         print(f"{style.ACCENT}{style.BOLD}Creating client...{style.END}")
         del_hash = {"geometries" : TestDelegate}
-        test_client = client.create_client(WS_URL, del_hash, verbose=True)
+        test_client = client.create_client(WS_URL, del_hash, verbose=False)
         test_client.is_connected.wait()
 
         # Test injecting methods
@@ -68,8 +68,9 @@ class Tests(unittest.TestCase):
 
         # Test subscribe
         print(f"{style.ACCENT}{style.BOLD}Subscribing to table...{style.END}")
-        table_delegate = test_client.delegates["tables"]
-        table_delegate.subscribe([0, 0])
+        table_delegate = test_client.state["tables"][0]
+        print(table_delegate)
+        table_delegate.subscribe()
         wait_for_callback(test_client.callback_map, test_client)
 
         # Test table delegate methods
@@ -87,6 +88,7 @@ class Tests(unittest.TestCase):
 
         # Close connection
         print(f"{style.ACCENT}{style.BOLD}Shutting down connection...{style.END}")
+        #print(test_client.state)
         test_client.shutdown()
 
 

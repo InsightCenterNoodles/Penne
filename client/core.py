@@ -132,14 +132,12 @@ class Client(object):
         self.current_invoke = 0
         self.callback_map = {}
 
-        # Instantiate Delegates - Default or Custom based on input hash
-        reference = weakref.ref(self)
-        reference_obj = reference()
+        # Hook up delegate map to default or custom based on input hash
         for key in default_delegates:
             if key not in custom_delegate_hash:
-                self.delegates[key] = default_delegates[key](reference_obj)
+                self.delegates[key] = default_delegates[key]
             else:
-                self.delegates[key] = custom_delegate_hash[key](reference_obj)
+                self.delegates[key] = custom_delegate_hash[key]
         
 
     def invoke_method(self, id, args, context = None, callback = None):
@@ -231,3 +229,5 @@ class Client(object):
         """
         
         asyncio.run_coroutine_threadsafe(self._socket.close(), self.loop)
+
+    

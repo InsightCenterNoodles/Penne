@@ -5,23 +5,32 @@ from . import messages
 """
 Injection Methods
 """
-def inject_methods(self, delegate_name, method_dict):
-        """
-        Method to inject methods into a delegate class
+class InjectedMethod(object):
+    def __init__(self, method_obj) -> None:
+        self.method = method_obj
 
-        Parameters:
-            delegate_name (str) : identifier for delegate to be modified
-            method_dict (dict)  : dict mapping method name to function
-        """
+    def __call__(self, *args, **kwds):
+        self.method(*args, **kwds)
 
-        delegate = self.delegates[delegate_name]
+def inject_methods(delegate, methods: list):
+    """
+    Method to inject methods into a delegate class
 
-        # Set attributes for each method in dict
-        for key, value in method_dict.items():
-            setattr(delegate, key, value)
+    Parameters:
+        delegate_name (str) : identifier for delegate to be modified
+        methods (list)  : list of method id's to inject
+    """
+    state_methods = delegate._client.state["methods"] 
+    for id in methods:
+        method = state_methods[id[0]]
+        # Set attr to the method's info for now - make callable?
+        setattr(delegate, method.info.name, method.info)
 
-def inject_signals(self, delegate, signal_dict):
-    delegate = delegate
+def inject_signals(delegate, signals: messages.Message):
+    state_signals = delegate._client.state["signals"]
+    for id in signals:
+        signal = state_signals[id[0]]
+        setattr(delegate, signal.info.name, signal.info)
 
 
 """
@@ -32,11 +41,12 @@ class MethodDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
-        pass 
+    def on_new(self, message):
+        self.info = message
 
-    def on_remove(self, data): 
+    def on_remove(self, message):
         pass
 
 
@@ -44,11 +54,12 @@ class SignalDelegate(object):
     
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
-        pass 
+    def on_new(self, message):
+        self.info = message 
 
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
 
@@ -82,7 +93,7 @@ class TableDelegate(object):
         selections (dict)       : mapping of name to selection object
         signals (signals)       : signals
         name (str)              : name of the table
-        id (list)               : table id group
+        id (list)               : id group for delegate in state and table on server
 
     Methods:
         on_table_init(self, init_info)                      : upon subscribing, create dataframe and update selections
@@ -105,6 +116,7 @@ class TableDelegate(object):
         self._client = client
         self.dataframe = None
         self.name = "Table Delegate"
+        self.id = None
         self.selections = {}
         self.signals = {
             "tbl_reset" : self.reset_table,
@@ -262,21 +274,16 @@ class TableDelegate(object):
 
 
     def relink_signals(self):
-        self.signals.tbl_reset = self.reset_table
-        self.signals.tbl_rows_removed = self.remove_rows
-        self.signals.tbl_updated = self.update_rows
-        self.signals.tbl_selection_updated = self.update_selection
+        self.signals["tbl_reset"] = self.reset_table
+        self.signals["tbl_rows_removed"] = self.remove_rows
+        self.signals["tbl_updated"] = self.update_rows
+        self.signals["tbl_selection_updated"] = self.update_selection
 
     def on_new(self, message: messages.Message):
-        # d = self.get_data(message)
-        # self.name = d.name
-        # self.delegate.name = d.name
-        # inject_methods(self.delegate, d.methods)
-        # self.attached_signals = d.signals
-        # inject_signals(self.delegate, d.signals)
-        # self.delegate.on_new(d)
+        
         print("creating a table...")
         # Set name
+        self.id = message.id
         name = message["name"]
         methods = message["methods_list"]
         signals = message["signals_list"]
@@ -290,17 +297,17 @@ class TableDelegate(object):
         self.reset_table()
         self.relink_signals()
 
-    def on_update(self, data):
+    def on_update(self, message):
         # delegate updated so need to relink signals incase those methods were overwritten
         self.relink_signals()
         pass
 
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
-    def subscribe(self, table_id):
+    def subscribe(self):
         # what type is table_id, and where to convert?
-        invoke_id = messages.InvokeIDType(table=table_id)
+        invoke_id = messages.InvokeIDType(table=self.id)
         #invoke_id = messages.InvokeIDType.generate({"table": table_id})
         self._client.invoke_method(4, [], context=invoke_id, callback=self.on_table_init)
 
@@ -312,24 +319,25 @@ class DocumentDelegate(object):
     def __init__(self, client):
         self._client = client
 
-    def on_update(self, data):
+    def on_update(self, message):
         pass
 
-    def on_reset(self, data): 
+    def on_reset(self, message): 
         pass
 
 class EntityDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
     def handle_signal(self, signal_data):
@@ -339,14 +347,15 @@ class PlotDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
     def handle_signal(self, signal_data):
@@ -356,110 +365,118 @@ class MaterialDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
 class GeometryDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
 class LightDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
 class ImageDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
 class TextureDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
 class SamplerDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
 class BufferDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
 
 class BufferViewDelegate(object):
 
     def __init__(self, client):
         self._client = client
+        self.info = None
 
-    def on_new(self, data):
+    def on_new(self, message):
+        self.info = message
+
+    def on_update(self, message):
         pass
 
-    def on_update(self, data):
-        pass
-
-    def on_remove(self, data): 
+    def on_remove(self, message): 
         pass
