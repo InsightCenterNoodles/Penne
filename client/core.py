@@ -140,22 +140,6 @@ class Client(object):
                 self.delegates[key] = default_delegates[key](reference_obj)
             else:
                 self.delegates[key] = custom_delegate_hash[key](reference_obj)
-
-
-    def inject_methods(self, delegate_name, method_dict):
-        """
-        Method to inject methods into a delegate class
-
-        Parameters:
-            delegate_name (str) : identifier for delegate to be modified
-            method_dict (dict)  : dict mapping method name to function
-        """
-
-        delegate = self.delegates[delegate_name]
-
-        # Set attributes for each method in dict
-        for key, value in method_dict.items():
-            setattr(delegate, key, value)
         
 
     def invoke_method(self, id, args, context = None, callback = None):

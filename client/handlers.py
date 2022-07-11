@@ -1,3 +1,4 @@
+from multiprocessing.connection import Client
 from cbor2 import loads
 
 from .messages import Message
@@ -18,7 +19,7 @@ def handle_update(client, message, specifier):
         if value != None:
             setattr(current_state, attribute, value)
 
-
+# Put this inside core class?
 def handle(client, encoded_message) -> Message:
     """
     Method for handling messages from server
@@ -75,6 +76,25 @@ def handle(client, encoded_message) -> Message:
         else:
             callback = client.callback_map.pop(message_obj.invoke_id)
             callback(message_obj.result)
+
+    elif handle_info.action == "invoke":
+
+        # Handle invoke message from server
+        signal_data = message_obj["signal_data"]
+        context = getattr(message_obj, "context", False)
+        if not context:
+            client.delegates["document"].handle_signal(signal_data)
+        elif hasattr(context, "table"):
+            # what to do with table id?
+            client.delegates["tables"].handle_signal(signal_data)
+        elif hasattr(context, "entity"):
+            # what to do with table id?
+            client.delegates["entities"].handle_signal(signal_data)
+        elif hasattr(context, "plot"):
+            # what to do with table id?
+            client.delegates["plots"].handle_signal(signal_data)
+        else:
+            raise Exception("Couldn't handle signal from server")
 
     else:
         # Communication messages or document messages

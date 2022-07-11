@@ -51,13 +51,14 @@ class Tests(unittest.TestCase):
         # Create client and connect to url
         print(f"{style.ACCENT}{style.BOLD}Creating client...{style.END}")
         del_hash = {"geometries" : TestDelegate}
-        test_client = client.create_client(WS_URL, del_hash, verbose=False)
+        test_client = client.create_client(WS_URL, del_hash, verbose=True)
         test_client.is_connected.wait()
 
         # Test injecting methods
-        print(f"{style.ACCENT}{style.BOLD}Injecting methods...{style.END}")
-        methods_dict = {"on_new" : on_new}
-        test_client.inject_methods("tables", methods_dict)
+            # Injection coming from server or user at terminal?
+        # print(f"{style.ACCENT}{style.BOLD}Injecting methods...{style.END}")
+        # methods_dict = {"on_new" : on_new}
+        # test_client.inject_methods("tables", methods_dict)
 
         # Test Invoke Method
         print(f"{style.ACCENT}{style.BOLD}Creating table...{style.END}")
@@ -67,21 +68,22 @@ class Tests(unittest.TestCase):
 
         # Test subscribe
         print(f"{style.ACCENT}{style.BOLD}Subscribing to table...{style.END}")
-        test_client.delegates["tables"].subscribe([0, 0])
+        table_delegate = test_client.delegates["tables"]
+        table_delegate.subscribe([0, 0])
         wait_for_callback(test_client.callback_map, test_client)
 
         # Test table delegate methods
         print(f"{style.ACCENT}{style.BOLD}Testing table delegates...{style.END}")
-        test_client.delegates["tables"].remove_rows([2])
-        test_client.delegates["tables"].update_rows([5, 6], [[1,1],[2,2],[3,3],[4,4],[4,4],[4,4],[4,4],[4,4],[4,4]])
-        test_client.delegates["tables"].update_cols({"y": [7, 7, 7]})
-        test_client.delegates["tables"].update_rows([1],[[1],[2],[3],[4],[5],[6],[7]])
-        test_client.delegates["tables"].update_rows2({1: [7, 8, 8, 7, 5, 7, 7, 7, 7]})
-        test_client.delegates["tables"].insert_rows([[7, 8, 8, 7, 5, 7, 7, 7, 7],[1,1,1,1,1,1,1,1,1]])
+        table_delegate.remove_rows([2])
+        table_delegate.update_rows([5, 6], [[1,1],[2,2],[3,3],[4,4],[4,4],[4,4],[4,4],[4,4],[4,4]])
+        table_delegate.update_cols({"y": [7, 7, 7]})
+        table_delegate.update_rows([1],[[1],[2],[3],[4],[5],[6],[7]])
+        table_delegate.update_rows2({1: [7, 8, 8, 7, 5, 7, 7, 7, 7]})
+        table_delegate.insert_rows([[7, 8, 8, 7, 5, 7, 7, 7, 7],[1,1,1,1,1,1,1,1,1]])
         # can we assume update will have values for every column?
         selection = Selection("Tester", [0], [SelectionRange(1,4)])
-        test_client.delegates["tables"].make_selection(selection)
-        test_selection = test_client.delegates["tables"].get_selection("Tester")
+        table_delegate.update_selection(selection)
+        test_selection = table_delegate.get_selection("Tester")
 
         # Close connection
         print(f"{style.ACCENT}{style.BOLD}Shutting down connection...{style.END}")

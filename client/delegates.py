@@ -1,6 +1,28 @@
-from select import select
 import pandas as pd
+
 from . import messages
+
+"""
+Injection Methods
+"""
+def inject_methods(self, delegate_name, method_dict):
+        """
+        Method to inject methods into a delegate class
+
+        Parameters:
+            delegate_name (str) : identifier for delegate to be modified
+            method_dict (dict)  : dict mapping method name to function
+        """
+
+        delegate = self.delegates[delegate_name]
+
+        # Set attributes for each method in dict
+        for key, value in method_dict.items():
+            setattr(delegate, key, value)
+
+def inject_signals(self, delegate, signal_dict):
+    delegate = delegate
+
 
 """
 Default Delegates for Python Client
@@ -58,21 +80,39 @@ class TableDelegate(object):
         _client (Client)        : weak ref to client to invoke methods and such
         dataframe (Dataframe)   : dataframe representing current state of the table
         selections (dict)       : mapping of name to selection object
-        signals (signals)       : signals 
+        signals (signals)       : signals
+        name (str)              : name of the table
+        id (list)               : table id group
 
     Methods:
+        on_table_init(self, init_info)                      : upon subscribing, create dataframe and update selections
+        reset_table(self)                                   : reset table to blank dataframe and clear injected stuff
+        insert_rows(self, rows: list)                       : adds rows to end of table
+        remove_rows(self, key_list)                         : removes row at each key given
+        update_rows(self, keys: list, cols: list)           : updates row at each key, rows passed as series of columns
+        update_rows2(self, new_rows: dict)                  : rows passed as dict mapping key to list of row values
+        update_cols(self, new_cols: dict)                   : update columns with map of headers to values
+        update_selection(self, selection_obj: Selection)    : change or add selection object in state
+        get_selection(self, name)                           : get a selection from state 
+        relink_signals(self)                                : refresh signal references
+        on_new(self, message)                               : handler for create message
+        on_update(self, message)                            : handler for update message
+        on_remove(self, message)                            : handler for remove message
+        subscribe(self, table_id)                           : use id to subscribe to table on server
     """
 
     def __init__(self, client):
         self._client = client
         self.dataframe = None
+        self.name = "Table Delegate"
         self.selections = {}
         self.signals = {
             "tbl_reset" : self.reset_table,
             "tbl_rows_removed" : self.remove_rows,
             "tbl_updated" : self.update_rows,
-            "tbl_selection_updated" : self.make_selection
+            "tbl_selection_updated" : self.update_selection
         }
+
 
     def on_table_init(self, init_info):
         """
@@ -93,6 +133,7 @@ class TableDelegate(object):
             self.selections[selection.name] = selection
         print(f"Initialized data table...\n{self.dataframe}")
 
+
     def reset_table(self):
         """
         Reset dataframe and selections to blank objects
@@ -100,6 +141,7 @@ class TableDelegate(object):
         self.dataframe = pd.DataFrame()
         self.selections = {}
         print("Table Reset...", self.dataframe)
+
 
     def insert_rows(self, rows: list):
         """
@@ -177,7 +219,7 @@ class TableDelegate(object):
         print(f"Updated Cols {new_cols.keys()}...\n", self.dataframe)
 
 
-    def make_selection(self, selection_obj: Selection):
+    def update_selection(self, selection_obj: Selection):
         """
         Change selection in delegate's state to new selection object
 
@@ -187,7 +229,7 @@ class TableDelegate(object):
         self.selections[selection_obj.name] = selection_obj
         print(f"Made selection {selection_obj.name} = {selection_obj}")
         
-        
+
     def get_selection(self, name):
         """
         Get a selection object from delegate state and construct Dataframe representation
@@ -220,14 +262,39 @@ class TableDelegate(object):
 
 
     def relink_signals(self):
-        pass
+        self.signals.tbl_reset = self.reset_table
+        self.signals.tbl_rows_removed = self.remove_rows
+        self.signals.tbl_updated = self.update_rows
+        self.signals.tbl_selection_updated = self.update_selection
 
-    def on_new(self, data):
-        print("New table message:")
-        print(data)
+    def on_new(self, message: messages.Message):
+        # d = self.get_data(message)
+        # self.name = d.name
+        # self.delegate.name = d.name
+        # inject_methods(self.delegate, d.methods)
+        # self.attached_signals = d.signals
+        # inject_signals(self.delegate, d.signals)
+        # self.delegate.on_new(d)
+        print("creating a table...")
+        # Set name
+        name = message["name"]
+        methods = message["methods_list"]
+        signals = message["signals_list"]
+        if name: self.name = name
+    
+        # Inject methods and signals
+        if methods: inject_methods(self, methods)
+        if signals: inject_signals(self, signals)
+
+        # Reset
+        self.reset_table()
+        self.relink_signals()
 
     def on_update(self, data):
+        # delegate updated so need to relink signals incase those methods were overwritten
+        self.relink_signals()
         pass
+
     def on_remove(self, data): 
         pass
 
@@ -237,6 +304,8 @@ class TableDelegate(object):
         #invoke_id = messages.InvokeIDType.generate({"table": table_id})
         self._client.invoke_method(4, [], context=invoke_id, callback=self.on_table_init)
 
+    def handle_signal(self, signal_data):
+        print(signal_data)
 
 class DocumentDelegate(object):
     
@@ -263,6 +332,9 @@ class EntityDelegate(object):
     def on_remove(self, data): 
         pass
 
+    def handle_signal(self, signal_data):
+        print(signal_data)
+
 class PlotDelegate(object):
 
     def __init__(self, client):
@@ -276,6 +348,9 @@ class PlotDelegate(object):
 
     def on_remove(self, data): 
         pass
+
+    def handle_signal(self, signal_data):
+        print(signal_data)
 
 class MaterialDelegate(object):
 
