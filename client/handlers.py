@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 import weakref
 from cbor2 import loads
 
@@ -17,6 +18,10 @@ def handle_update(client, message, specifier):
     for attribute, value in message.as_dict().items():
         if value != None:
             setattr(current_state, attribute, value)
+
+def ensure_gen_match(id, state_id):
+    if id != state_id:
+        raise Exception(f"Generation mismatch {id} - {state_id}")
 
 # Put this inside core class?
 def handle(client, encoded_message) -> Message:
@@ -46,7 +51,7 @@ def handle(client, encoded_message) -> Message:
         specifier = specifier
         reference = weakref.ref(client)
         reference_obj = reference()
-        delegate = client.delegates[specifier](reference_obj)
+        delegate = client.delegates[specifier](reference_obj, message_obj, specifier)
 
         # Update state and pass message info to the delegate's handler
         client.state[specifier][message_obj.id[0]] = delegate
@@ -57,20 +62,16 @@ def handle(client, encoded_message) -> Message:
         state_delegate = client.state[specifier][message_obj.id[0]]
 
         # Ensure generations match and update state / delegate
-        if message_obj.id[1] == state_delegate.info.id[1]:
-            state_delegate.on_remove(message_obj)
-            del state_delegate
-        else:
-            raise Exception("Generation Mismatch")
+        ensure_gen_match(message_obj.id, state_delegate.info.id)
+        state_delegate.on_remove(message_obj)
+        del state_delegate
 
     elif action == "update":
 
         if specifier != "document":
             # Ensure generations match and update state
-            if message_obj.id[1] == client.state[specifier][message_obj.id[0]].info.id[1]:
-                handle_update(client, message_obj, specifier)
-            else:
-                raise Exception("Generation Mismatch")
+            ensure_gen_match(message_obj.id, client.state[specifier][message_obj.id[0]].info.id)
+            handle_update(client, message_obj, specifier)
             
         # Inform delegate
         client.state[specifier][message_obj.id[0]].on_update(message_obj)
@@ -78,8 +79,8 @@ def handle(client, encoded_message) -> Message:
     elif action == "reply":
 
         # Handle callback functions
-        if message_obj.method_exception:
-            raise Exception(f"Method call ({message_obj.invoke_id}) resulted in exception from server")
+        if hasattr(message_obj, "method_exception"):
+            raise Exception(f"Method call ({message_obj}) resulted in exception from server")
         else:
             callback = client.callback_map.pop(message_obj.invoke_id)
             callback(message_obj.result)
@@ -87,21 +88,31 @@ def handle(client, encoded_message) -> Message:
     elif action == "invoke":
 
         # Handle invoke message from server
-        signal_data = message_obj["signal_data"]
+        print("Handling Signal from the server...")
+        id = message_obj.id
+        signal_data = message_obj.signal_data
+        signal = client.state["signals"][id[0]]
+        ensure_gen_match(id, signal.info.id)
+        print(id, signal_data, signal)
+
+        # Determine the delegate the signal is being invoked on
         context = getattr(message_obj, "context", False)
         if not context:
-            client.delegates["document"].handle_signal(signal_data)
+            target_delegate = client.state["document"]
         elif hasattr(context, "table"):
-            # what to do with table id?
-            client.delegates["tables"].handle_signal(signal_data)
+            target_delegate = client.state["tables"][context.table[0]]
+            ensure_gen_match(target_delegate.info.id, context.table)
         elif hasattr(context, "entity"):
-            # what to do with table id?
-            client.delegates["entities"].handle_signal(signal_data)
+            target_delegate = client.state["entities"][context.entity[0]]
+            ensure_gen_match(target_delegate.info.id, context.entity)
         elif hasattr(context, "plot"):
-            # what to do with table id?
-            client.delegates["plots"].handle_signal(signal_data)
+            target_delegate = client.state["plots"][context.plot[0]]
+            ensure_gen_match(target_delegate.info.id, context.plot)
         else:
             raise Exception("Couldn't handle signal from server")
+
+        # Invoke signal attached to target delegate
+        target_delegate.signals[signal.info.name](*signal_data) # are arguments in signal_data?
 
     else:
         # Communication messages or document messages

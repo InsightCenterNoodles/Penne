@@ -142,13 +142,13 @@ class Client(object):
 
     def invoke_method(self, id, args, context = None, callback = None):
         """
-        Method for invokingage to server
+        Method for invoking method on
 
         Parameters:
-            id          : id for method
-            args        : arguments for method
-            context     : optional context for call
-            callback    : function to be called upon response
+            id (list)                : id for method
+            args (list)             : arguments for method
+            context (InvokeIDType)  : optional, target context for method call
+            callback (function)     : function to be called upon response
         """
 
         # Get invoke ID
@@ -159,8 +159,8 @@ class Client(object):
         if callback: self.callback_map[invoke_id] = callback
 
         # Construct message and send
-        message = messages.InvokeMethodMessage([id, 0], args, context, invoke_id)
-        if self.verbose: print(message)
+        message = messages.InvokeMethodMessage(id, args, context, invoke_id)
+        if self.verbose: print(f"Sending Message: {message}")
         self.send_message(message)
 
     

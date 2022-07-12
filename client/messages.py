@@ -54,9 +54,6 @@ class Message(object):
         return self.__dict__
 
 
-    def __getattr__(self, __name: str):
-        return None
-
     def __getitem__(self, __name: str):
         return getattr(self, __name)
 

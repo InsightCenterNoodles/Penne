@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from . import messages
 
@@ -6,11 +7,25 @@ from . import messages
 Injection Methods
 """
 class InjectedMethod(object):
+    # Injected method storing final call function
     def __init__(self, method_obj) -> None:
         self.method = method_obj
+        self.injected = True
 
     def __call__(self, *args, **kwds):
         self.method(*args, **kwds)
+
+
+class LinkedMethod(object):
+    # Method establishing connection between target delegate and the method
+    # to make callable function
+    def __init__(self, object_delegate, method_delegate):
+        self._obj_delegate = object_delegate
+        self._method_delegate = method_delegate
+
+    def __call__(self, on_done=None, *arguments):
+        self._method_delegate.invoke(self._obj_delegate, arguments, callback=on_done)
+
 
 def inject_methods(delegate, methods: list):
     """
@@ -20,17 +35,38 @@ def inject_methods(delegate, methods: list):
         delegate_name (str) : identifier for delegate to be modified
         methods (list)  : list of method id's to inject
     """
+
+    # Clear out old injected methods
+    for name in dir(delegate):
+        att = getattr(delegate, name)
+        if hasattr(att, "a;lkdaj;lsdkfja;lsdkfj"):
+            print(f"Deleting: {name} in inject methods")
+            delattr(delegate, name)
+
+    # Iterate through id's and inject each method
     state_methods = delegate._client.state["methods"] 
     for id in methods:
-        method = state_methods[id[0]]
-        # Set attr to the method's info for now - make callable?
-        setattr(delegate, method.info.name, method.info)
 
-def inject_signals(delegate, signals: messages.Message):
+        # Get method delegate and manipulate name
+        method = state_methods[id[0]]
+        name = method.info.name[5:]
+        name = 'noo_' + name
+
+        # Create injected method using delegates invoke
+        linked = LinkedMethod(delegate, method)
+        injected = InjectedMethod(linked.__call__)
+
+        setattr(delegate, name, injected)
+
+
+def inject_signals(delegate, signals: list):
+    print(f"Injecting signals: {signals}")
     state_signals = delegate._client.state["signals"]
+    injected_signals = {}
     for id in signals:
         signal = state_signals[id[0]]
-        setattr(delegate, signal.info.name, signal.info)
+        injected_signals[signal.info.name] = signal.info
+    delegate.signals = injected_signals
 
 
 """
@@ -39,28 +75,46 @@ Default Delegates for Python Client
 
 class MethodDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_remove(self, message):
         pass
 
+    def invoke(self, on_delegate, args = None, callback = None):
+        specifier = on_delegate.specifier
+        if specifier == "tables": 
+            context = messages.InvokeIDType(table=on_delegate.info.id)
+        elif specifier == "plots": 
+            context = messages.InvokeIDType(plot=on_delegate.info.id)
+        elif specifier == "entities": 
+            context = messages.InvokeIDType(entity=on_delegate.info.id)
+        else:
+            raise Exception(f"Invalid context for method invoke: {on_delegate}")
+
+        self._client.invoke_method(self.info.id, args, context = context, callback = callback)
+
 
 class SignalDelegate(object):
     
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message 
+        pass
 
     def on_remove(self, message): 
         pass
+
+    def __repr__(self):
+        return f"Signal: {self.info}"
 
 
 class SelectionRange(tuple):
@@ -112,11 +166,12 @@ class TableDelegate(object):
         subscribe(self, table_id)                           : use id to subscribe to table on server
     """
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
+        self.info = message
+        self.specifier = specifier
         self.dataframe = None
         self.name = "Table Delegate"
-        self.id = None
         self.selections = {}
         self.signals = {
             "tbl_reset" : self.reset_table,
@@ -124,6 +179,7 @@ class TableDelegate(object):
             "tbl_updated" : self.update_rows,
             "tbl_selection_updated" : self.update_selection
         }
+        print(f"info on init: {self.info}")
 
 
     def on_table_init(self, init_info):
@@ -152,7 +208,6 @@ class TableDelegate(object):
         """
         self.dataframe = pd.DataFrame()
         self.selections = {}
-        print("Table Reset...", self.dataframe)
 
 
     def insert_rows(self, rows: list):
@@ -283,7 +338,6 @@ class TableDelegate(object):
         
         print("creating a table...")
         # Set name
-        self.id = message.id
         name = message["name"]
         methods = message["methods_list"]
         signals = message["signals_list"]
@@ -306,13 +360,34 @@ class TableDelegate(object):
         pass
 
     def subscribe(self):
-        # what type is table_id, and where to convert?
-        invoke_id = messages.InvokeIDType(table=self.id)
-        #invoke_id = messages.InvokeIDType.generate({"table": table_id})
-        self._client.invoke_method(4, [], context=invoke_id, callback=self.on_table_init)
+        try:
+            self.noo_tbl_subscribe(on_done=self.on_table_init)
+        except:
+            raise Exception("Could not subscribe to table")
 
-    def handle_signal(self, signal_data):
-        print(signal_data)
+    
+    def request_insert(self, col_list: list=None, row_list: list=None, on_done=None):
+        if col_list is not None:
+            self.noo_tbl_insert(on_done, col_list)
+        elif row_list is not None:
+            self.noo_tbl_insert(on_done, np.transpose(row_list).tolist())
+
+    def request_update(self, data_frame, on_done=None):
+        if len(data_frame.columns) != len(self.dataframe.columns):
+            raise Exception(
+                "Dataframes should have the same number of columns")
+        col_list = [self.dataframe.iloc[:, i].to_numpy() for i in range(self.dataframe.columns)]
+        self.noo_tbl_update(on_done, data_frame.index, col_list)
+
+    def request_remove(self, keys: list, on_done=None):
+        self.noo_tbl_remove(on_done, keys)
+
+    def request_clear(self, on_done=None):
+        self.noo_tbl_clear(on_done)
+
+    def request_update_selection(self, name, keys: list, on_done=None):
+        self.noo_tbl_update_selection(on_done, name, {"rows": keys})
+
 
 class DocumentDelegate(object):
     
@@ -327,12 +402,13 @@ class DocumentDelegate(object):
 
 class EntityDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -345,12 +421,13 @@ class EntityDelegate(object):
 
 class PlotDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -363,12 +440,13 @@ class PlotDelegate(object):
 
 class MaterialDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -378,12 +456,13 @@ class MaterialDelegate(object):
 
 class GeometryDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -393,12 +472,13 @@ class GeometryDelegate(object):
 
 class LightDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -408,12 +488,13 @@ class LightDelegate(object):
 
 class ImageDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -423,12 +504,13 @@ class ImageDelegate(object):
 
 class TextureDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -438,12 +520,13 @@ class TextureDelegate(object):
 
 class SamplerDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -453,12 +536,13 @@ class SamplerDelegate(object):
 
 class BufferDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass
@@ -468,12 +552,13 @@ class BufferDelegate(object):
 
 class BufferViewDelegate(object):
 
-    def __init__(self, client):
+    def __init__(self, client, message, specifier):
         self._client = client
-        self.info = None
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, message):
-        self.info = message
+        pass
 
     def on_update(self, message):
         pass

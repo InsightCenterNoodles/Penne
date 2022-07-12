@@ -2,12 +2,12 @@ from client import client
 import unittest
 import time
 
-from client.delegates import Selection, SelectionRange
+from client.delegates import Selection, SelectionRange, TableDelegate
 
 
 # Globals used for testing
 WS_URL = "ws://localhost:50000"
-METHOD = 0 # Create Point Plot
+METHOD = [0, 0]# Create Point Plot
 #ARGS = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11], [12, 13, 14, 15]]
 ARGS = [[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]
 
@@ -33,8 +33,10 @@ def wait_for_callback(callback_map, client, timeout=5, period=0.25):
 
 class TestDelegate(object):
 
-    def __init__(self, client):
-        self.client = self
+    def __init__(self, client, message, specifier):
+        self.client = client
+        self.info = message
+        self.specifier = specifier
 
     def on_new(self, data):
         print("custom delegate on_new")
@@ -64,27 +66,32 @@ class Tests(unittest.TestCase):
         print(f"{style.ACCENT}{style.BOLD}Creating table...{style.END}")
         test_client.invoke_method(METHOD, ARGS, callback=called_back)
         wait_for_callback(test_client.callback_map, test_client)
-        print("Should be done creating table...")
 
         # Test subscribe
         print(f"{style.ACCENT}{style.BOLD}Subscribing to table...{style.END}")
-        table_delegate = test_client.state["tables"][0]
+        table_delegate: TableDelegate = test_client.state["tables"][0]
         print(table_delegate)
         table_delegate.subscribe()
         wait_for_callback(test_client.callback_map, test_client)
 
         # Test table delegate methods
-        print(f"{style.ACCENT}{style.BOLD}Testing table delegates...{style.END}")
-        table_delegate.remove_rows([2])
-        table_delegate.update_rows([5, 6], [[1,1],[2,2],[3,3],[4,4],[4,4],[4,4],[4,4],[4,4],[4,4]])
-        table_delegate.update_cols({"y": [7, 7, 7]})
-        table_delegate.update_rows([1],[[1],[2],[3],[4],[5],[6],[7]])
-        table_delegate.update_rows2({1: [7, 8, 8, 7, 5, 7, 7, 7, 7]})
-        table_delegate.insert_rows([[7, 8, 8, 7, 5, 7, 7, 7, 7],[1,1,1,1,1,1,1,1,1]])
-        # can we assume update will have values for every column?
-        selection = Selection("Tester", [0], [SelectionRange(1,4)])
-        table_delegate.update_selection(selection)
-        test_selection = table_delegate.get_selection("Tester")
+        print(f"{style.ACCENT}{style.BOLD}Testing table delegate...{style.END}")
+        # table_delegate.remove_rows([2])
+        # table_delegate.update_rows([5, 6], [[1,1],[2,2],[3,3],[4,4],[4,4],[4,4],[4,4],[4,4],[4,4]])
+        # table_delegate.update_cols({"y": [7, 7, 7]})
+        # table_delegate.update_rows([1],[[1],[2],[3],[4],[5],[6],[7]])
+        # table_delegate.update_rows2({1: [7, 8, 8, 7, 5, 7, 7, 7, 7]})
+        # table_delegate.insert_rows([[7, 8, 8, 7, 5, 7, 7, 7, 7],[1,1,1,1,1,1,1,1,1]])
+        # # can we assume update will have values for every column?
+        # selection = Selection("Tester", [0], [SelectionRange(1,4)])
+        # table_delegate.update_selection(selection)
+        # test_selection = table_delegate.get_selection("Tester")
+
+        table_delegate.request_remove([2, 3], on_done=called_back)
+        wait_for_callback(test_client.callback_map, test_client)
+        table_delegate.request_insert(row_list=[[7, 8, 8, 7, 5, 7, 7, 7, 7],[1,1,1,1,1,1,1,1,1]], on_done=called_back)
+        wait_for_callback(test_client.callback_map, test_client)
+
 
         # Close connection
         print(f"{style.ACCENT}{style.BOLD}Shutting down connection...{style.END}")
