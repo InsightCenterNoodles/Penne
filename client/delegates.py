@@ -39,7 +39,7 @@ def inject_methods(delegate, methods: list):
     # Clear out old injected methods
     for name in dir(delegate):
         att = getattr(delegate, name)
-        if hasattr(att, "a;lkdaj;lsdkfja;lsdkfj"):
+        if hasattr(att, "injected"):
             print(f"Deleting: {name} in inject methods")
             delattr(delegate, name)
 
@@ -50,7 +50,6 @@ def inject_methods(delegate, methods: list):
         # Get method delegate and manipulate name
         method = state_methods[id[0]]
         name = method.info.name[5:]
-        name = 'noo_' + name
 
         # Create injected method using delegates invoke
         linked = LinkedMethod(delegate, method)
@@ -334,6 +333,7 @@ class TableDelegate(object):
         self.signals["tbl_updated"] = self.update_rows
         self.signals["tbl_selection_updated"] = self.update_selection
 
+
     def on_new(self, message: messages.Message):
         
         print("creating a table...")
@@ -354,39 +354,43 @@ class TableDelegate(object):
     def on_update(self, message):
         # delegate updated so need to relink signals incase those methods were overwritten
         self.relink_signals()
-        pass
+    
 
     def on_remove(self, message): 
         pass
 
+
     def subscribe(self):
         try:
-            self.noo_tbl_subscribe(on_done=self.on_table_init)
+            self.tbl_subscribe(on_done=self.on_table_init)
         except:
             raise Exception("Could not subscribe to table")
 
     
     def request_insert(self, col_list: list=None, row_list: list=None, on_done=None):
         if col_list is not None:
-            self.noo_tbl_insert(on_done, col_list)
+            self.tbl_insert(on_done, col_list)
         elif row_list is not None:
-            self.noo_tbl_insert(on_done, np.transpose(row_list).tolist())
+            self.tbl_insert(on_done, np.transpose(row_list).tolist())
 
-    def request_update(self, data_frame, on_done=None):
+    def request_update(self, data_frame: pd.DataFrame, on_done=None):
         if len(data_frame.columns) != len(self.dataframe.columns):
             raise Exception(
                 "Dataframes should have the same number of columns")
-        col_list = [self.dataframe.iloc[:, i].to_numpy() for i in range(self.dataframe.columns)]
-        self.noo_tbl_update(on_done, data_frame.index, col_list)
+        
+        col_list = []
+        for col in list(data_frame):
+            col_list.append(data_frame[col].tolist())
+        self.tbl_update(on_done, data_frame.index.to_list(), col_list)
 
     def request_remove(self, keys: list, on_done=None):
-        self.noo_tbl_remove(on_done, keys)
+        self.tbl_remove(on_done, keys)
 
     def request_clear(self, on_done=None):
-        self.noo_tbl_clear(on_done)
+        self.tbl_clear(on_done)
 
-    def request_update_selection(self, name, keys: list, on_done=None):
-        self.noo_tbl_update_selection(on_done, name, {"rows": keys})
+    def request_update_selection(self, name: str, keys: list, on_done=None):
+        self.tbl_update_selection(on_done, name, {"rows": keys})
 
 
 class DocumentDelegate(object):

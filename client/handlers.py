@@ -6,7 +6,7 @@ from .messages import Message
 
 def handle_update(client, message, specifier):
     """
-    Method for updating a message in the current state
+    Method for updating a delegate in the current state
 
     Parameters:
         client (client object)  : client to be updated
@@ -15,13 +15,22 @@ def handle_update(client, message, specifier):
     """
 
     current_state = client.state[specifier][message.id[0]]
+    ensure_gen_match(current_state.info.id, message.id)
     for attribute, value in message.as_dict().items():
         if value != None:
             setattr(current_state, attribute, value)
 
-def ensure_gen_match(id, state_id):
-    if id != state_id:
-        raise Exception(f"Generation mismatch {id} - {state_id}")
+
+def ensure_gen_match(id1: list, id2: list):
+    """
+    helper method for ensuring id's match
+
+    Parameters:
+        2 id groups (list) : id's to be checked
+    """
+    if id1 != id2:
+        raise Exception(f"Generation mismatch {id1} - {id2}")
+
 
 # Put this inside core class?
 def handle(client, encoded_message) -> Message:
@@ -42,7 +51,6 @@ def handle(client, encoded_message) -> Message:
     message_obj = Message.from_dict(raw_message[1])
 
     if client.verbose: print(f"\n  {action} - {specifier}\n{message_obj}")
-    
     
     # Update state based on map info
     if action == "create":
@@ -93,7 +101,6 @@ def handle(client, encoded_message) -> Message:
         signal_data = message_obj.signal_data
         signal = client.state["signals"][id[0]]
         ensure_gen_match(id, signal.info.id)
-        print(id, signal_data, signal)
 
         # Determine the delegate the signal is being invoked on
         context = getattr(message_obj, "context", False)
@@ -112,13 +119,12 @@ def handle(client, encoded_message) -> Message:
             raise Exception("Couldn't handle signal from server")
 
         # Invoke signal attached to target delegate
-        target_delegate.signals[signal.info.name](*signal_data) # are arguments in signal_data?
+        target_delegate.signals[signal.info.name](*signal_data)
 
     else:
         # Communication messages or document messages
         # For right now just print these, could add handlers for "invoke", "reset" actions
         print(message_obj)
 
-    return message_obj
 
     

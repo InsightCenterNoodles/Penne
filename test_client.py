@@ -1,7 +1,8 @@
-from client import client
 import unittest
 import time
+import pandas as pd
 
+from client import client
 from client.delegates import Selection, SelectionRange, TableDelegate
 
 
@@ -89,9 +90,16 @@ class Tests(unittest.TestCase):
 
         table_delegate.request_remove([2, 3], on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
+
         table_delegate.request_insert(row_list=[[7, 8, 8, 7, 5, 7, 7, 7, 7],[1,1,1,1,1,1,1,1,1]], on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
 
+        data = pd.DataFrame([[4, 4, 4, 4, 5, 4, 4, 4, 4],[1,1,1,1,1,1,1,1,1]], [4, 5])
+        table_delegate.request_update(data, on_done=called_back)
+        wait_for_callback(test_client.callback_map, test_client)
+
+        table_delegate.request_update_selection("test selection", keys=[4,5,6], on_done=called_back)
+        wait_for_callback(test_client.callback_map, test_client)
 
         # Close connection
         print(f"{style.ACCENT}{style.BOLD}Shutting down connection...{style.END}")
