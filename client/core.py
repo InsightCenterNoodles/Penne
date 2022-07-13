@@ -92,8 +92,8 @@ class Client(object):
             "bufferviews": {}
         }
         self.client_message_map = {
-            messages.IntroMessage : 0,
-            messages.InvokeMethodMessage : 1
+            "intro": 0,
+            "invoke": 1
         }
         self.server_message_map = {
             0 : messages.HandleInfo("methods", "create"),
@@ -165,33 +165,21 @@ class Client(object):
         self._current_invoke += 1
 
         # Keep track of callback
-        if callback: self.callback_map[invoke_id] = callback
+        if callback: 
+            self.callback_map[invoke_id] = callback
 
-        # Construct message and send
-        message = messages.InvokeMethodMessage(id, args, context, invoke_id)
-        self.send_message(message)
-
-    
-    def clean(self, message_dict):
-        """Remove None values from message before sending
-
-        Args:
-            message_dict (dict): dict representation of message
-
-        Returns:
-            a new dict without None values
-        """
-
-        cleaned = {}
-        for key, value in message_dict.items():
-            if type(value) == dict:
-                value = self.clean(value)
-            if value != None:
-                cleaned[key] = value
-        return cleaned
+        # Construct message dict
+        arg_dict = {
+            "method": id,
+            "args": args,
+            "invoke_id": invoke_id
+        }
+        if context: arg_dict["context"] = context
+        
+        self.send_message(arg_dict, "invoke")
 
 
-    def send_message(self, message):
+    def send_message(self, message_dict, type):
         """Send message to server
 
         Args:
@@ -199,9 +187,9 @@ class Client(object):
         """
 
         # Construct message with ID from map and converted message object
-        message_dict = asdict(message)
-        clean_message_dict = self.clean(message_dict)
-        message = [self.client_message_map[type(message)], clean_message_dict]
+        #message_dict = message.as_dict()
+        message = [self.client_message_map[type], message_dict]
+        print(message)
         
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
 
@@ -217,8 +205,8 @@ class Client(object):
             self.name = (f"Python Client @ {self._url}") # couldn't get self._socket.gethostname() to work from source
 
             # send intro message
-            intro = messages.IntroMessage(self.name)
-            self.send_message(intro)
+            intro = {"client_name": self.name}
+            self.send_message(intro, "intro")
             self.is_connected.set()
 
             # handle all incoming messages

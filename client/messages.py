@@ -45,7 +45,16 @@ class Message(object):
     
 
     def as_dict(self):
-        return self.__dict__
+        """Get dictionary representation of class"""
+
+        rep = self.__dict__
+        for key, value in rep.items():
+
+            # Recursive case
+            if isinstance(value, Message):
+                rep[key] = value.as_dict()
+
+        return rep
 
 
     def __getitem__(self, __name: str):
@@ -67,25 +76,3 @@ class HandleInfo(object):
     def __init__(self, specifier, action):
         self.specifier = specifier
         self.action = action
-
-
-"""
-Client Messages
-"""
-
-@dataclass
-class InvokeIDType(object):
-    entity : Optional[list[int]] = None
-    table : Optional[list[int]] = None
-    plot : Optional[list[int]] = None
-
-@dataclass
-class IntroMessage(object):
-    client_name: str
-
-@dataclass
-class InvokeMethodMessage(object):
-    method : list[int]
-    args : list[any]
-    context : InvokeIDType = None
-    invoke_id : str = None

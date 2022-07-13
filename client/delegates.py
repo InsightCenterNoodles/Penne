@@ -106,12 +106,19 @@ class MethodDelegate(object):
             message containing information on the method
         specifier (str): 
             keyword for specifying the type of delegate
+        context_map (dict):
+            mapping specifier to context for method invocation
     """
 
     def __init__(self, client, message, specifier):
         self._client = client
         self.info = message
         self.specifier = specifier
+        self.context_map = {
+            "tables": "table",
+            "plots": "plot",
+            "entities": "entity"
+        }
 
     def on_new(self, message):
         pass
@@ -120,19 +127,18 @@ class MethodDelegate(object):
         pass
 
     def invoke(self, on_delegate, args = None, callback = None):
-        
-        # Set context based on delegate's specifier
-        specifier = on_delegate.specifier
-        if specifier == "tables": 
-            context = messages.InvokeIDType(table=on_delegate.info.id)
-        elif specifier == "plots": 
-            context = messages.InvokeIDType(plot=on_delegate.info.id)
-        elif specifier == "entities": 
-            context = messages.InvokeIDType(entity=on_delegate.info.id)
-        else:
-            raise Exception(f"Invalid context for method invoke: {on_delegate}")
+        """Invoke this delegate's method
 
-        # Invoke on server
+        Args:
+            on_delegate (delegate):
+                delegate method is being invoked on 
+                used to get context
+            args (list, optional):
+                args for the method
+            callback (function):
+                function to be called when complete
+        """
+        context = {self.context_map[on_delegate.specifier]: on_delegate.info.id}
         self._client.invoke_method(self.info.id, args, context = context, callback = callback)
 
 
