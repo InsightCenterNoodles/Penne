@@ -24,6 +24,7 @@ Despite being a bit complicated, the relationship between client, server, and de
 ```mermaid
 flowchart LR;
     User-- Request to Invoke Method -->Delegate;
+    User-- Create Custom Delegates --> Client;
     Delegate-- Call Injected Method -->Client;
     Client-- Send Invoke Method Message -->Server;
     Server-- Message -->Client;
