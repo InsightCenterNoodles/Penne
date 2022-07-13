@@ -54,7 +54,7 @@ class Tests(unittest.TestCase):
         # Create client and connect to url
         print(f"{style.ACCENT}{style.BOLD}Creating client...{style.END}")
         del_hash = {"geometries" : TestDelegate}
-        test_client = client.create_client(WS_URL, del_hash, verbose=False)
+        test_client = client.create_client(WS_URL, del_hash)
         test_client.is_connected.wait()
 
         # Test Invoke Method

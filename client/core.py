@@ -31,14 +31,12 @@ class Client(object):
     Attributes:
         _url (string): 
             address used to connect to server
-        loop (event loop ): 
+        _loop (event loop ): 
             event loop used for network thread
         delegates (dict): 
             map for delegate functions     
         is_connected(threading event object): 
             signal when connection is ready
-        verbose (bool): 
-            flag for manipulating console output
         thread (thread object): 
             network thread used by client
         _socket (WebSocketClientProtocol object): 
@@ -57,7 +55,7 @@ class Client(object):
             mapping invoke_id to callback function
     """
 
-    def __init__(self, url, loop, custom_delegate_hash, is_connected, verbose):
+    def __init__(self, url, loop, custom_delegate_hash, is_connected):
         """Constructor for the Client Class
 
         Args:
@@ -65,14 +63,15 @@ class Client(object):
                 address used to connect to server
             loop (event loop): 
                 event loop used for network thread
-            custom_delegage_hash (dict): 
+            custom_delegate_hash (dict): 
                 map for new delegate methods
+            is_connected (threading Event):
+                event object signaling when connection is ready
         """
 
         self._url = url
-        self.loop = loop
+        self._loop = loop
         self.is_connected = is_connected
-        self.verbose = verbose
         self.delegates = {}
         self.thread = None
         self._socket = None
@@ -133,7 +132,7 @@ class Client(object):
             33 : messages.HandleInfo("signals", "invoke"),  
             34 : messages.HandleInfo("methods", "reply")
         }
-        self.current_invoke = 0
+        self._current_invoke = 0
         self.callback_map = {}
 
         # Hook up delegate map to default or custom based on input hash
@@ -162,15 +161,14 @@ class Client(object):
         """
 
         # Get invoke ID
-        invoke_id = str(self.current_invoke)
-        self.current_invoke += 1
+        invoke_id = str(self._current_invoke)
+        self._current_invoke += 1
 
         # Keep track of callback
         if callback: self.callback_map[invoke_id] = callback
 
         # Construct message and send
         message = messages.InvokeMethodMessage(id, args, context, invoke_id)
-        if self.verbose: print(f"Sending Message: {message}")
         self.send_message(message)
 
     
@@ -205,7 +203,7 @@ class Client(object):
         clean_message_dict = self.clean(message_dict)
         message = [self.client_message_map[type(message)], clean_message_dict]
         
-        asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self.loop)
+        asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
 
 
     async def run(self):
@@ -236,6 +234,6 @@ class Client(object):
     def shutdown(self):
         """Method for shutting down Websocket connection"""
         
-        asyncio.run_coroutine_threadsafe(self._socket.close(), self.loop)
+        asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
 
     

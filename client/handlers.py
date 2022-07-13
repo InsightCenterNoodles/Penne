@@ -64,7 +64,7 @@ def handle(client, encoded_message):
     specifier = handle_info.specifier
     message_obj = messages.Message.from_dict(raw_message[1])
 
-    if client.verbose: print(f"\n  {action} - {specifier}\n{message_obj}")
+    #print(f"\n  {action} - {specifier}\n{message_obj}")
     
     # Update state based on map info
     if action == "create":

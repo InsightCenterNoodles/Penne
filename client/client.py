@@ -1,16 +1,15 @@
-from .core import Client
 import asyncio
 import threading
 from urllib.parse import urlparse
- 
+
+from .core import Client 
 
 def thread_function(loop, client):
-    """
-    Method for starting background thread
+    """Method for starting background thread
 
-    Parameters:
-        loop (event loop)       : event loop used for new thread
-        client (client object)  : client used for websocket connection
+    Args:
+        loop (event loop): event loop used for new thread
+        client (client object): client used for websocket connection
     """
 
     try:
@@ -20,12 +19,17 @@ def thread_function(loop, client):
         print("Connection terminated")
  
 
-def create_client(address, custom_delegate_hash = {}, verbose = False):
-    """
-    Method for creating a client object and starting background thread
+def create_client(address, custom_delegate_hash = {}):
+    """Create a client object and start background thread
 
-    Parameters:
-        address (str) : url for connecting to server
+    Args:
+        address (str): 
+            url for connecting to server
+        custom_delegate_hash (dict):
+            mapping specifiers to new delegate methods to override default
+
+    Raises:
+        ValueError: Address given must be a websocket
     """
 
     address_parts = urlparse(address)
@@ -38,7 +42,7 @@ def create_client(address, custom_delegate_hash = {}, verbose = False):
     asyncio.set_event_loop(loop)
     is_connected = threading.Event()
 
-    client = Client(address, loop, custom_delegate_hash, is_connected, verbose)
+    client = Client(address, loop, custom_delegate_hash, is_connected)
     t = threading.Thread(target=thread_function, args=(loop, client))
  
     client.thread = t
