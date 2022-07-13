@@ -19,7 +19,7 @@ to the target delgate so it can call a corresponding function.
 To send a message, the user calls a method on a delegate. This method wraps an injected method from the server, and the client can send 
 a message invoking the method.
 
-A simplified diagram representing the relationships between the client, server, and delegates is depicted below. 
+A diagram representing the simplified relationships between the client, server, and delegates is depicted below. 
 
 ```mermaid
 flowchart LR;
