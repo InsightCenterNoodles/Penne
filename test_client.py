@@ -3,7 +3,7 @@ import time
 import pandas as pd
 
 from client import client
-from client.delegates import Selection, SelectionRange, TableDelegate
+from client.delegates import TableDelegate
 
 
 # Globals used for testing

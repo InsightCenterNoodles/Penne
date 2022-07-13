@@ -31,15 +31,15 @@ class Client(object):
     Attributes:
         _url (string): 
             address used to connect to server
-        _loop (event loop ): 
+        _loop (event loop): 
             event loop used for network thread
         delegates (dict): 
             map for delegate functions     
-        is_connected(threading event object): 
+        is_connected(threading.Event): 
             signal when connection is ready
         thread (thread object): 
             network thread used by client
-        _socket (WebSocketClientProtocol object): 
+        _socket (WebSocketClientProtocol): 
             socket to connect to server
         name (str): 
             name of the client
@@ -186,7 +186,7 @@ class Client(object):
         for key, value in message_dict.items():
             if type(value) == dict:
                 value = self.clean(value)
-            if value != None and value != 'None':
+            if value != None:
                 cleaned[key] = value
         return cleaned
 
@@ -219,8 +219,6 @@ class Client(object):
             # send intro message
             intro = messages.IntroMessage(self.name)
             self.send_message(intro)
-
-            # set event indicating connection is established
             self.is_connected.set()
 
             # handle all incoming messages

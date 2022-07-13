@@ -97,7 +97,7 @@ Default Delegates for Python Client
 """
 
 class MethodDelegate(object):
-    """Delegate class representing a method which can be invoked on the server
+    """Delegate representing a method which can be invoked on the server
 
     Attributes:
         _client (client object): 
@@ -137,7 +137,7 @@ class MethodDelegate(object):
 
 
 class SignalDelegate(object):
-    """Delegate class representing a signal coming from the server
+    """Delegate representing a signal coming from the server
 
     Attributes:
         _client (client object): 
@@ -161,13 +161,14 @@ class SignalDelegate(object):
 
 
 class SelectionRange(tuple):
+    """Selection of range of rows"""
 
     def __new__(cls, key_from, key_to):
         return super().__new__(SelectionRange, (key_from, key_to))
 
 
 class Selection(object):
-    """Class representing a selection of certain rows in a table
+    """Selection of certain rows in a table
 
     Attributes:
         name (str): 
@@ -191,7 +192,10 @@ class Selection(object):
 
 
 class TableDelegate(object):
-    """Delegate class for managing a table
+    """Delegate representing a table
+
+    Each table delegate corresponds with a table on the server
+    To use the table, you must first subscribe 
 
     Attributes:
         _client (Client): 

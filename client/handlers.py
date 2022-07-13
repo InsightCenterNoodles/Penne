@@ -1,4 +1,3 @@
-from logging import raiseExceptions
 import weakref
 from cbor2 import loads
 

@@ -32,21 +32,20 @@ def create_client(address, custom_delegate_hash = {}):
         ValueError: Address given must be a websocket
     """
 
+    # Process address
     address_parts = urlparse(address)
- 
     if address_parts.scheme not in ["ws", "wss"]:
         raise ValueError("Address given must be a websocket!")
- 
-    #loop = asyncio.get_event_loop(), https://stackoverflow.com/questions/46727787/runtimeerror-there-is-no-current-event-loop-in-thread-in-async-apscheduler
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     is_connected = threading.Event()
 
+    # Create client instance and thread
     client = Client(address, loop, custom_delegate_hash, is_connected)
     t = threading.Thread(target=thread_function, args=(loop, client))
  
     client.thread = t
- 
     client.thread.start()
  
     return client

@@ -57,7 +57,7 @@ class Message(object):
 
 
 class HandleInfo(object):
-    """Class to organize info useful for processing each type of message
+    """Class to organize useful info for processing each type of message
 
     Attributes:
         specifier (str) : keyword for delegate and state maps
