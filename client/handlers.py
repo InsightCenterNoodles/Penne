@@ -2,43 +2,57 @@ from logging import raiseExceptions
 import weakref
 from cbor2 import loads
 
-from .messages import Message
+from . import messages
 
 def handle_update(client, message, specifier):
-    """
-    Method for updating a delegate in the current state
+    """Update a delegate in the current state
 
-    Parameters:
-        client (client object)  : client to be updated
-        message (message object): message containing updates
-        specifier (str)         : which part of state to update
+    Args:
+        client (Client): 
+            client to be updated
+        message (Message): 
+            message containing updates
+        specifier (str): 
+            which part of state to update
     """
 
     current_state = client.state[specifier][message.id[0]]
     ensure_gen_match(current_state.info.id, message.id)
     for attribute, value in message.as_dict().items():
-        if value != None:
-            setattr(current_state, attribute, value)
+        setattr(current_state, attribute, value)
 
 
 def ensure_gen_match(id1: list, id2: list):
-    """
-    helper method for ensuring id's match
+    """Ensure id's match
 
-    Parameters:
-        2 id groups (list) : id's to be checked
+    Args:
+       id1 (list) : id to be checked
+       id2 (list) : id to be checked
+
+    Raises:
+        Exception: Generation Mismatch
     """
     if id1 != id2:
-        raise Exception(f"Generation mismatch {id1} - {id2}")
+        raise Exception(f"Generation Mismatch {id1} - {id2}")
 
 
 # Put this inside core class?
-def handle(client, encoded_message) -> Message:
-    """
-    Method for handling messages from server
+# Split each section into helper function?
+def handle(client, encoded_message):
+    """handle message from server
 
-    Parameters:
-        encoded_message (array) : array with id and message as dictionary
+    'Handle' uses the ID attached to message to get handling info, and uses this info 
+    to take proper course of action with message. The function has 5 main sections 
+    handling create, delete, and update messages along with signalinvocation and reply
+    messages. For now all other communication messages are simply printed.
+
+    'Handle' is also responsible for managing the client's state and working with the
+    delegates in a couple of key ways. This function creates, deletes, and updates
+    delegates as well as invoking methods on the delegates using signals.
+
+    Args:
+        client (Client): client receiving the message
+        encoded_message (CBOR array): array with id and message as dictionary
     """
 
     # Decode message
@@ -48,7 +62,7 @@ def handle(client, encoded_message) -> Message:
     handle_info = client.server_message_map[raw_message[0]]
     action = handle_info.action
     specifier = handle_info.specifier
-    message_obj = Message.from_dict(raw_message[1])
+    message_obj = messages.Message.from_dict(raw_message[1])
 
     if client.verbose: print(f"\n  {action} - {specifier}\n{message_obj}")
     

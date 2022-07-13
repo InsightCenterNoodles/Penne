@@ -2,7 +2,6 @@ import asyncio
 import websockets
 from dataclasses import asdict
 from cbor2 import dumps
-import weakref
 
 from . import messages
 from . import handlers
@@ -27,49 +26,54 @@ default_delegates = {
 }
 
 class Client(object):
-    """
-    Class for representing the client
+    """Client for communicating with server
 
     Attributes:
-        _url (string)                               : address used to connect to server
-        loop (event loop )                          : event loop used for network thread
-        delegates (dict)                            : map for delegate functions     
-        is_connected(threading event object)        : event to signal when connection is ready
-        verbose (bool)                              : flag for enabling console output
-        thread (thread object)                      : network thread used by client
-        _socket (WebSocketClientProtocol object)    : socket to connect to server
-        name (str)                                  : name of the client
-        state (dict)                                : dict keeping track of created objects
-        client_message_map (dict)                   : mapping message type to corresponding id
-        server_message_map (dict)                   : mapping message id's to corresponding handling info
-        current_invoke (str)                        : id for next method invoke
-        callback_map (dict)                         : mappingn invoke_id to function to be called upon response
-        
-    Methods:
-        inject_method(self, delegate_name, method_dict) : add custom methods to any delegate
-        invoke_method(self, id, args, context = None)   : call method for server to execute
-        clean(self, message_dict)                       : remobe none values from message dict
-        send_message(self, message)                     : send message to the server
-        run(self)                                       : main context for managing websocket connection
-        shutdown(self)                                  : close websocket connection and background thread
-
+        _url (string): 
+            address used to connect to server
+        loop (event loop ): 
+            event loop used for network thread
+        delegates (dict): 
+            map for delegate functions     
+        is_connected(threading event object): 
+            signal when connection is ready
+        verbose (bool): 
+            flag for manipulating console output
+        thread (thread object): 
+            network thread used by client
+        _socket (WebSocketClientProtocol object): 
+            socket to connect to server
+        name (str): 
+            name of the client
+        state (dict): 
+            dict keeping track of created objects
+        client_message_map (dict): 
+            mapping message type to corresponding id
+        server_message_map (dict):
+            mapping message id's to handling info
+        current_invoke (str):  
+            id for next method invoke
+        callback_map (dict): 
+            mapping invoke_id to callback function
     """
 
     def __init__(self, url, loop, custom_delegate_hash, is_connected, verbose):
-        """
-        Constructor for the Client Class
+        """Constructor for the Client Class
 
-        Parameters:
-            _url (string)               : address used to connect to server
-            loop (event loop)           : event loop used for network thread
-            custom_delegage_hash (dict) : map for new delegate methods
+        Args:
+            _url (string): 
+                address used to connect to server
+            loop (event loop): 
+                event loop used for network thread
+            custom_delegage_hash (dict): 
+                map for new delegate methods
         """
 
         self._url = url
         self.loop = loop
-        self.delegates = {}
         self.is_connected = is_connected
         self.verbose = verbose
+        self.delegates = {}
         self.thread = None
         self._socket = None
         self.name = "Python Client"
@@ -141,14 +145,20 @@ class Client(object):
         
 
     def invoke_method(self, id, args, context = None, callback = None):
-        """
-        Method for invoking method on
+        """Invoke method on server
 
-        Parameters:
-            id (list)                : id for method
-            args (list)             : arguments for method
-            context (InvokeIDType)  : optional, target context for method call
-            callback (function)     : function to be called upon response
+        Constructs InvokeMethodMessage from args and uses the 'send_message'
+        function to finish the sending process
+
+        Args:
+            id (list): 
+                id for method
+            args (list): 
+                arguments for method
+            context (InvokeIDType): 
+                optional, target context for method call
+            callback (function): 
+                function to be called upon response
         """
 
         # Get invoke ID
@@ -165,12 +175,15 @@ class Client(object):
 
     
     def clean(self, message_dict):
-        """
-        Method to remove none values from messages
+        """Remove None values from message before sending
 
-        Parameters:
-            message_dict (dict) : dict representation of message
+        Args:
+            message_dict (dict): dict representation of message
+
+        Returns:
+            a new dict without None values
         """
+
         cleaned = {}
         for key, value in message_dict.items():
             if type(value) == dict:
@@ -181,11 +194,10 @@ class Client(object):
 
 
     def send_message(self, message):
-        """
-        Method to send messages to server
+        """Send message to server
 
-        Parameters:
-            message (Message Object) : message to be sent
+        Args:
+            message (InvokeMethodMessage) : message object to be sent
         """
 
         # Construct message with ID from map and converted message object
@@ -197,9 +209,7 @@ class Client(object):
 
 
     async def run(self):
-        """
-        Network thread for managing websocket connection
-        """  
+        """Network thread for managing websocket connection"""  
 
         print(f"Connecting to server @ {self._url}")
         async with websockets.connect(self._url) as websocket:
@@ -224,9 +234,7 @@ class Client(object):
     
 
     def shutdown(self):
-        """
-        Method for shutting down Websocket connection
-        """
+        """Method for shutting down Websocket connection"""
         
         asyncio.run_coroutine_threadsafe(self._socket.close(), self.loop)
 

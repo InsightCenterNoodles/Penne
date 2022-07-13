@@ -6,26 +6,17 @@ Generic Classes
 """
 
 class Message(object):
-    """
-    Generic Message Class for casting messages sent from server
+    """Generic Message Class for casting messages sent from server
 
     Attributes:
         dynamically added to each instance using the from dict method
-
-    Methods:
-        from_dict(cls, raw_dict)        : use dict to create message object
-        as_dict(self)                   : generate dictionary representation of instance attributes
-        __getattr__(self, __name: str)  : override default and default to none instead of raising exception
-        __getitem__(self, __name: str)  : syntactic sugar for accessing attributes of message
-        __repr__(self)                  : custom string representation
     """
-
 
     @classmethod
     def from_dict(cls, raw_dict):
-        """
-        Function to generate generic message objects
-            - recursively catches nested structures
+        """Function to generate generic message objects
+        
+        Recursively catches nested structures
 
         Parameters:
             raw_dict (dict) : dict to be cast as message object
@@ -33,9 +24,12 @@ class Message(object):
 
         processed_dict = {}
         for key, value in raw_dict.items():
+
+            # Recursive case
             if isinstance(value, dict):
                 processed_dict[key] = cls.from_dict(value)
 
+            # Recursive case for list of objects
             elif value and isinstance(value, list) and isinstance(value[0], dict):
                 obj_list = []
                 for nested_dict in value:
@@ -59,16 +53,11 @@ class Message(object):
 
 
     def __repr__(self):
-        """
-        Custom string representation for message class
-        """
-
         return f"<<Message Obj: {self.__dict__}>>"
 
 
 class HandleInfo(object):
-    """
-    Class to organize info useful for processing each type of message
+    """Class to organize info useful for processing each type of message
 
     Attributes:
         specifier (str) : keyword for delegate and state maps
