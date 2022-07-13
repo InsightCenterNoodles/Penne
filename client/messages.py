@@ -1,9 +1,3 @@
-from dataclasses import  dataclass
-from typing import Optional
-
-"""
-Generic Classes
-"""
 
 class Message(object):
     """Generic Message Class for casting messages sent from server

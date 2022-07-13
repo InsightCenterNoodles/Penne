@@ -1,6 +1,5 @@
 import asyncio
 import websockets
-from dataclasses import asdict
 from cbor2 import dumps
 
 from . import messages
