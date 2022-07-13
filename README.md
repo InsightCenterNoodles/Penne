@@ -11,15 +11,15 @@ library offers hooks in the form of delegates which can be overwritten with new 
 When a message is received from the server, the client passes the CBOR encoded message to a handler function which uses
 the message's ID to process it accordingly. Based on this ID, the message can be classified as either a create, delete, 
 update, reply, or invoke message. Upon receiving a create message, the handler creates a new delegate for that object
-which is then stored in the client's state. Delete and update messages manipulate delegates and the client's state as expected.
-Reply messages indicate whether a method was invoked on the server successfully, and then a callback function can be called if applicable.
+which is then stored in the client's state. Delete and update messages manipulate delegates in the client's state as expected.
+Reply messages indicate whether a method was invoked on the server successfully, and then a callback function can be executed if applicable.
 Lastly, invoke messages represent signals from the server which are being called on a delegate. The handler essentially sends this signal
 to the target delgate so it can call a corresponding function. 
 
 To send a message, the user calls a method on a delegate. This method wraps an injected method from the server, and the client can send 
 a message invoking the method.
 
-Despite being a bit complicated, the relationship between client, server, and delegates is depicted below. 
+A simplified diagram representing the relationships between the client, server, and delegates is depicted below. 
 
 ```mermaid
 flowchart LR;
