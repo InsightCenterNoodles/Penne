@@ -194,7 +194,7 @@ class Client(object):
 
         # Construct message with ID from map and converted message object
         message = [self.client_message_map[type], message_dict]
-        print(f"Sending Message: {message}")
+        #print(f"Sending Message: {message}")
         
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
 

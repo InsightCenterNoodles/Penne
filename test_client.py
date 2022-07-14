@@ -23,7 +23,7 @@ def on_new(data):
     print("Injected on_new method call for delegate")
 
 def called_back(result):
-    print("I was called back")
+    pass
 
 def wait_for_callback(callback_map, client, timeout=5, period=0.25):
   mustend = time.time() + timeout
@@ -54,7 +54,7 @@ class Tests(unittest.TestCase):
         # Create client and connect to url
         print(f"{style.ACCENT}{style.BOLD}Creating client...{style.END}")
         del_hash = {"geometries" : TestDelegate}
-        test_client = client.create_client(WS_URL, del_hash)
+        test_client = client.create_client(WS_URL)
         test_client.is_connected.wait()
 
         # Test Invoke Method
@@ -65,7 +65,6 @@ class Tests(unittest.TestCase):
         # Test subscribe
         print(f"{style.ACCENT}{style.BOLD}Subscribing to table...{style.END}")
         table_delegate: TableDelegate = test_client.state["tables"][(0, 0)]
-        print(table_delegate)
         table_delegate.subscribe()
         wait_for_callback(test_client.callback_map, test_client)
 

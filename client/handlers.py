@@ -116,7 +116,6 @@ def handle(client, encoded_message):
     elif action == "invoke":
 
         # Handle invoke message from server
-        print("Handling Signal from the server...")
         signal_data = message_obj.signal_data
         signal = client.state["signals"][message_obj.id]
 

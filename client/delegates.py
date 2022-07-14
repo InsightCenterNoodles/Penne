@@ -361,7 +361,6 @@ class TableDelegate(object):
             message (Message): create message with the table's info
         """
         
-        print("creating a table...")
         # Set name
         name = message["name"]
         methods = message["methods_list"]
@@ -527,6 +526,7 @@ class PlotDelegate(object):
         self.specifier = specifier
 
     def on_new(self, message):
+        print(message)
         pass
 
     def on_update(self, message):
