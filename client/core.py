@@ -140,13 +140,21 @@ class Client(object):
                 self.delegates[key] = default_delegates[key]
             else:
                 self.delegates[key] = custom_delegate_hash[key]
+        self.state["document"] = self.delegates["document"](self)
         
 
     def invoke_method(self, id, args, context = None, callback = None):
         """Invoke method on server
 
-        Constructs InvokeMethodMessage from args and uses the 'send_message'
-        function to finish the sending process
+        Constructs a dictionary of arguments to use in send_message. The
+        Dictionary follows the structure of an InvokeMethodMessage, but
+        using a dictionary prevents from converting back and forth just
+        before sending.
+
+        Also implements callback functions attached to each invocation. By
+        default, each invocation will store a None object in the callback
+        map, and the handler responsible for reply messages will delete pop
+        it from the map and call the method if there is one
 
         Args:
             id (list): 
@@ -164,8 +172,7 @@ class Client(object):
         self._current_invoke += 1
 
         # Keep track of callback
-        if callback: 
-            self.callback_map[invoke_id] = callback
+        self.callback_map[invoke_id] = callback
 
         # Construct message dict
         arg_dict = {

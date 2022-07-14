@@ -82,7 +82,7 @@ class Tests(unittest.TestCase):
         table_delegate.request_update(data, on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
 
-        table_delegate.request_update_selection("test selection", keys=[4,5,6], on_done=called_back)
+        table_delegate.request_update_selection("test selection", keys=[4,5,6],)
         wait_for_callback(test_client.callback_map, test_client)
 
         # Close connection

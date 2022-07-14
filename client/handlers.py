@@ -72,8 +72,7 @@ def handle(client, encoded_message):
     specifier = handle_info.specifier
     message_obj = messages.Message.from_dict(raw_message[1])
 
-    if specifier == "document":
-        print(f"\n  {action} - {specifier}\n{message_obj}")
+    #print(f"\n  {action} - {specifier}\n{message_obj}")
     
     # Update state based on map info
     if action == "create":
@@ -100,9 +99,9 @@ def handle(client, encoded_message):
 
         if specifier != "document":
             handle_update(client, message_obj, specifier)
-            
-        # Inform delegate
-        client.state[specifier][message_obj.id].on_update(message_obj)
+            client.state[specifier][message_obj.id].on_update(message_obj)
+        else:
+            client.state[specifier].on_update(message_obj)
 
     elif action == "reply":
 
@@ -111,8 +110,8 @@ def handle(client, encoded_message):
             raise Exception(f"Method call ({message_obj}) resulted in exception from server")
         else:
             callback = client.callback_map.pop(message_obj.invoke_id)
-            print(f"Callback is {callback}")
-            callback(message_obj.result)
+            if callback:
+                callback(message_obj.result)
 
     elif action == "invoke":
 
