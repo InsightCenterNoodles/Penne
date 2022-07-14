@@ -3,6 +3,7 @@ from cbor2 import loads
 
 from . import messages
 
+# Helper Methods
 def handle_update(client, message, specifier):
     """Update a delegate in the current state
 
@@ -35,8 +36,35 @@ def ensure_gen_match(id1: list, id2: list):
         raise Exception(f"Generation Mismatch {id1} - {id2}")
 
 
-# Put this inside core class?
-# Split each section into helper function?
+def delegate_from_context(client, context):
+    """Get delegate object from a context message object
+    
+    Args:
+        client (Client): client to get delegate from
+        context (Message): object containing context
+    
+    Raises:
+        Exception: Couldn't get delegate from context
+    """
+
+    if not context:
+        target_delegate = client.state["document"]
+    elif hasattr(context, "table"):
+        target_delegate = client.state["tables"][context.table[0]]
+        ensure_gen_match(target_delegate.info.id, context.table)
+    elif hasattr(context, "entity"):
+        target_delegate = client.state["entities"][context.entity[0]]
+        ensure_gen_match(target_delegate.info.id, context.entity)
+    elif hasattr(context, "plot"):
+        target_delegate = client.state["plots"][context.plot[0]]
+        ensure_gen_match(target_delegate.info.id, context.plot)
+    else:
+        raise Exception("Couldn't get delegate from context")
+    
+    return target_delegate
+
+
+
 def handle(client, encoded_message):
     """handle message from server
 
@@ -117,19 +145,7 @@ def handle(client, encoded_message):
 
         # Determine the delegate the signal is being invoked on
         context = getattr(message_obj, "context", False)
-        if not context:
-            target_delegate = client.state["document"]
-        elif hasattr(context, "table"):
-            target_delegate = client.state["tables"][context.table[0]]
-            ensure_gen_match(target_delegate.info.id, context.table)
-        elif hasattr(context, "entity"):
-            target_delegate = client.state["entities"][context.entity[0]]
-            ensure_gen_match(target_delegate.info.id, context.entity)
-        elif hasattr(context, "plot"):
-            target_delegate = client.state["plots"][context.plot[0]]
-            ensure_gen_match(target_delegate.info.id, context.plot)
-        else:
-            raise Exception("Couldn't handle signal from server")
+        target_delegate = delegate_from_context(client, context)
 
         # Invoke signal attached to target delegate
         target_delegate.signals[signal.info.name](*signal_data)
@@ -138,6 +154,3 @@ def handle(client, encoded_message):
         # Communication messages or document messages
         # For right now just print these, could add handlers for "invoke", "reset" actions
         print(message_obj)
-
-
-    
