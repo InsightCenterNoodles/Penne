@@ -63,7 +63,7 @@ def inject_methods(delegate, methods: list):
     for id in methods:
 
         # Get method delegate and manipulate name to exclude noo::
-        method = state_methods[id[0]]
+        method = state_methods[tuple(id)]
         name = method.info.name[5:]
 
         # Create injected by linking delegates, and creating call method
@@ -86,7 +86,7 @@ def inject_signals(delegate, signals: list):
     state_signals = delegate._client.state["signals"]
     injected_signals = {}
     for id in signals:
-        signal = state_signals[id[0]]
+        signal = state_signals[tuple(id)]
         injected_signals[signal.info.name] = signal.info
     delegate.signals = injected_signals
 

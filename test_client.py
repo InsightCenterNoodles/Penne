@@ -64,7 +64,7 @@ class Tests(unittest.TestCase):
 
         # Test subscribe
         print(f"{style.ACCENT}{style.BOLD}Subscribing to table...{style.END}")
-        table_delegate: TableDelegate = test_client.state["tables"][0]
+        table_delegate: TableDelegate = test_client.state["tables"][(0, 0)]
         print(table_delegate)
         table_delegate.subscribe()
         wait_for_callback(test_client.callback_map, test_client)

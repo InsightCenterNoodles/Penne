@@ -29,6 +29,10 @@ class Message(object):
                 for nested_dict in value:
                     obj_list.append(cls.from_dict(nested_dict))
                 processed_dict[key] = obj_list
+            
+            # Cast ID's to tuples - careful could be off - list of two values
+            elif isinstance(value, list) and len(value) == 2:
+                processed_dict[key] = tuple(value)
 
             else:
                 processed_dict[key] = value
