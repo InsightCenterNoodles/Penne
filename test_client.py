@@ -74,10 +74,10 @@ class Tests(unittest.TestCase):
         table_delegate.request_remove([2, 3], on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
 
-        table_delegate.request_insert(row_list=[[7, 8, 8, 7, 5, 7, 7, 7, 7],[6,6,6,1,1,1,1,1,1]], on_done=called_back)
+        table_delegate.request_insert(row_list=[[7, 8, 8, 1, 1, 1, .02, .02, .02],[6,6,6,.1,.2,.5,.02,.02,.02]], on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
 
-        data = pd.DataFrame([[4, 4, 4, 4, 5, 4, 4, 4, 4],[5,5,5,1,1,1,1,1,1]], [4, 5])
+        data = pd.DataFrame([[4, 4, 4, .5, .5, .5, .02, .02, .02],[5,5,5,.3,.9,1,.02,.02,.02]], [4, 5])
         table_delegate.request_update(data, on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
 
@@ -86,12 +86,12 @@ class Tests(unittest.TestCase):
 
          # Test Plotting
         print(f"{style.ACCENT}{style.BOLD}Attempting to plot table...{style.END}")
-        table_delegate.plot()
+        table_delegate.plot2()
 
         # Close connection
         print(f"{style.ACCENT}{style.BOLD}Shutting down connection...{style.END}")
         #print(test_client.state)
-        #test_client.shutdown()
+        test_client.shutdown()
 
 
 if __name__ == "__main__":

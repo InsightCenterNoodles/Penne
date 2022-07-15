@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import tkinter
+import multiprocessing
 
 from . import messages
 
@@ -384,6 +386,7 @@ class TableDelegate(object):
         """
 
         self.relink_signals()
+        # update dataframe
     
 
     def on_remove(self):
@@ -490,17 +493,59 @@ class TableDelegate(object):
 
 
     def plot(self):
+
         df = self.dataframe
 
         figure = plt.figure()
         ax = figure.add_subplot(projection='3d')
-        ax.scatter(df["x"], df["y"], df["z"])
+        colors = []
+        for r, g, b in zip(df["r"], df["g"], df["b"]):
+            colors.append((r, g, b))
+        ax.scatter(df["x"], df["y"], df["z"], c=colors)
 
         ax.set_xlabel('X Label')
         ax.set_ylabel('Y Label')
         ax.set_zlabel('Z Label')
 
         plt.show()
+
+
+    def update_plot(self):
+        df = self.dataframe
+        new_cols = {
+            "x": df["x"],
+            "y": df["y"],
+            "z": df["z"]
+        }
+        self.table_connection.send(new_cols)
+
+
+    def plot2(self):
+
+        window = tkinter.Tk()
+        q = multiprocessing.Queue()
+        self.table_connection, plot_connection = multiprocessing.Pipe()
+
+        plotting=multiprocessing.Process(target=plot_process, args=(self.dataframe, plot_connection))
+        plotting.start()
+
+def plot_process(dataframe, plot_connection):
+    df = dataframe
+
+    figure = plt.figure()
+    ax = figure.add_subplot(projection='3d')
+    colors = []
+    for r, g, b in zip(df["r"], df["g"], df["b"]):
+        colors.append((r, g, b))
+    ax.scatter(df["x"], df["y"], df["z"], c=colors)
+
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+
+    plt.show()
+
+    
 
 
 class DocumentDelegate(object):

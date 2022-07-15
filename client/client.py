@@ -38,7 +38,6 @@ def create_client(address, custom_delegate_hash = {}):
         raise ValueError("Address given must be a websocket!")
 
     loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     is_connected = threading.Event()
 
     # Create client instance and thread
