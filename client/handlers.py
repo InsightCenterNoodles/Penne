@@ -72,7 +72,8 @@ def handle(client, encoded_message):
     specifier = handle_info.specifier
     message_obj = messages.Message.from_dict(raw_message[1])
 
-    #print(f"\n  {action} - {specifier}\n{message_obj}")
+    if specifier == "plots":
+        print(f"\n  {action} - {specifier}\n{message_obj}")
     
     # Update state based on map info
     if action == "create":

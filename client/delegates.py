@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 from . import messages
 
@@ -486,6 +487,20 @@ class TableDelegate(object):
         """
 
         self.tbl_update_selection(on_done, name, {"rows": keys})
+
+
+    def plot(self):
+        df = self.dataframe
+
+        figure = plt.figure()
+        ax = figure.add_subplot(projection='3d')
+        ax.scatter(df["x"], df["y"], df["z"])
+
+        ax.set_xlabel('X Label')
+        ax.set_ylabel('Y Label')
+        ax.set_zlabel('Z Label')
+
+        plt.show()
 
 
 class DocumentDelegate(object):
