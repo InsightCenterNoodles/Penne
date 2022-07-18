@@ -267,6 +267,9 @@ class TableDelegate(object):
         self.dataframe = pd.DataFrame()
         self.selections = {}
 
+        if self.plotting:
+            self.update_plot()
+
 
     def remove_rows(self, key_list):
         """Removes rows from table
@@ -279,6 +282,9 @@ class TableDelegate(object):
 
         self.dataframe.drop(index=key_list, inplace=True)
         print(f"Removed Rows: {key_list}...\n", self.dataframe)
+
+        if self.plotting:
+            self.update_plot()
 
 
     def update_rows(self, keys: list, cols: list):
@@ -505,8 +511,6 @@ class TableDelegate(object):
 
     def plot(self):
 
-        #window = tkinter.Tk()
-        q = multiprocessing.Queue()
         self.sender, receiver = multiprocessing.Pipe()
 
         self.plotting=multiprocessing.Process(target=plot_process, args=(self.dataframe, receiver))
@@ -524,6 +528,10 @@ def get_plot_data(df: pd.DataFrame):
     return data
 
 
+def on_close(event):
+    plt.close('all')
+
+
 def plot_process(df: pd.DataFrame, receiver):
 
     # Enable interactive mode
@@ -531,6 +539,7 @@ def plot_process(df: pd.DataFrame, receiver):
 
     # Make initial plot
     fig = plt.figure()
+    fig.canvas.mpl_connect('close_event', on_close)
     ax = fig.add_subplot(projection='3d')
     data = get_plot_data(df)
     ax.scatter(**data)
@@ -544,14 +553,20 @@ def plot_process(df: pd.DataFrame, receiver):
 
     # Update loop
     while True:
-        
+
+        # If update received, redraw the scatter plot
         if receiver.poll(.1):
             update = receiver.recv()
-            print(f"Plot receiver got: {update}")
-            ax.scatter(**update) # use scatter or update a different way?
+            plt.cla() # efficient? better way to set directly?
+            ax.scatter(**update) 
             plt.pause(.001)
+
+        # Keep GUI event loop going as long as window is still open
         else:
-            plt.pause(1)
+            if plt.fignum_exists(fig.number):
+                plt.pause(1)
+            else:
+                break
 
 
 class DocumentDelegate(object):
