@@ -234,6 +234,7 @@ class TableDelegate(object):
             "tbl_updated" : self.update_rows,
             "tbl_selection_updated" : self.update_selection
         }
+        self.plotting = None
 
 
     def on_table_init(self, init_info):
@@ -262,6 +263,7 @@ class TableDelegate(object):
 
         Method is linked to 'tbl_reset' signal
         """
+
         self.dataframe = pd.DataFrame()
         self.selections = {}
 
@@ -274,6 +276,7 @@ class TableDelegate(object):
         Args:
             key_list (list): list of keys corresponding to rows to be removed
         """
+
         self.dataframe.drop(index=key_list, inplace=True)
         print(f"Removed Rows: {key_list}...\n", self.dataframe)
 
@@ -296,6 +299,9 @@ class TableDelegate(object):
             headers, cols)}, index=keys)
         new_df_filled = new_df.combine_first(self.dataframe) # changes order of columns - problem?
         self.dataframe = new_df_filled
+
+        if self.plotting:
+            self.update_plot()
     
         print(f"Updated Rows...{keys}\n", self.dataframe)
         
@@ -512,28 +518,33 @@ class TableDelegate(object):
 
     def update_plot(self):
         df = self.dataframe
+
         new_cols = {
             "x": df["x"],
             "y": df["y"],
-            "z": df["z"]
+            "z": df["z"],
+            "colors": []
         }
-        self.table_connection.send(new_cols)
+        for r, g, b in zip(df["r"], df["g"], df["b"]):
+            new_cols["colors"].append((r, g, b))
+        self.sender.send(new_cols)
 
 
     def plot2(self):
 
-        window = tkinter.Tk()
+        #window = tkinter.Tk()
         q = multiprocessing.Queue()
-        self.table_connection, plot_connection = multiprocessing.Pipe()
+        self.sender, receiver = multiprocessing.Pipe()
 
-        plotting=multiprocessing.Process(target=plot_process, args=(self.dataframe, plot_connection))
-        plotting.start()
+        self.plotting=multiprocessing.Process(target=plot_process, args=(self.dataframe, receiver))
+        self.plotting.start()
 
-def plot_process(dataframe, plot_connection):
-    df = dataframe
+def plot_process(df: pd.DataFrame, receiver):
 
-    figure = plt.figure()
-    ax = figure.add_subplot(projection='3d')
+    plt.ion()
+
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
     colors = []
     for r, g, b in zip(df["r"], df["g"], df["b"]):
         colors.append((r, g, b))
@@ -543,9 +554,27 @@ def plot_process(dataframe, plot_connection):
     ax.set_ylabel('Y Label')
     ax.set_zlabel('Z Label')
 
-    plt.show()
 
-    
+    print(f"canvas: {fig.canvas}")
+    fig.canvas.draw()
+    plt.show(block=False)
+    plt.pause(.001)
+
+    while True:
+
+        try:
+            print("Got to update handler!")
+            update = receiver.recv()
+            print(f"Plot receiver got: {update}")
+            ax.scatter(update["x"], update["y"], update["z"], c=update["colors"])
+            plt.pause(.001)
+        except KeyboardInterrupt:
+            plt.close('all')
+            break
+
+
+        
+
 
 
 class DocumentDelegate(object):

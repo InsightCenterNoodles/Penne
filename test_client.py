@@ -87,11 +87,16 @@ class Tests(unittest.TestCase):
          # Test Plotting
         print(f"{style.ACCENT}{style.BOLD}Attempting to plot table...{style.END}")
         table_delegate.plot2()
+        time.sleep(5)
+
+        # Insert after plot created
+        table_delegate.request_insert(row_list=[[8, 8, 8, .3, .2, 1, .02, .02, .02],[9,9,9,.1,.2,.5,.02,.02,.02]], on_done=called_back)
+        wait_for_callback(test_client.callback_map, test_client)
 
         # Close connection
         print(f"{style.ACCENT}{style.BOLD}Shutting down connection...{style.END}")
         #print(test_client.state)
-        test_client.shutdown()
+        #test_client.shutdown()
 
 
 if __name__ == "__main__":
