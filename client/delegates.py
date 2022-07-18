@@ -1,14 +1,54 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import tkinter
 import multiprocessing
 
 from . import messages
 
-"""
-Injection Methods
-"""
+
+class Delegate(object):
+    """Parent class for all delegates
+    
+    Defines general methods that should be available for all delegates
+    
+    Attributes:
+        _client (Client): Client delegate is attached to
+        info (Message): Message containing all info on delegate
+        specifier (str): Keyword specifying delegate in state
+        methods (list): List of avalilable methods to help UI
+    """
+
+    def __init__(self, client, message, specifier):
+        self._client = client
+        self.info = message
+        self.specifier = specifier
+        self.methods = None
+    
+    def __repr__(self):
+        return f"{self.specifier} delegate | {self.info.id}"
+
+    # For all except Document Delegate
+    def on_new(self, message):
+        pass
+
+    # For Document, Table, Entity, Plot, Material, Light Delegates
+    def on_update(self, message):
+        pass
+
+    # For all except Document Delegate
+    def on_remove(self, message):
+        pass
+
+
+    def show_methods(self):
+        """Show methods available on this delegate"""
+
+        print(f"-- Methods on {self} --")
+        print("------------------------")
+        for method in self.methods:
+            print(f">> '{method.__name__}'\n{method.__doc__}")
+
+
 class InjectedMethod(object):
     """Class for representing injected method in delegate
 
@@ -99,7 +139,7 @@ def inject_signals(delegate, signals: list):
 Default Delegates for Python Client
 """
 
-class MethodDelegate(object):
+class MethodDelegate(Delegate):
     """Delegate representing a method which can be invoked on the server
 
     Attributes:
@@ -154,11 +194,11 @@ class MethodDelegate(object):
         return rep
 
 
-class SignalDelegate(object):
+class SignalDelegate(Delegate):
     """Delegate representing a signal coming from the server
 
     Attributes:
-        _client (client object): 
+        _client (Client): 
             client delegate is a part of 
         info (message): 
             message containing information on the signal
@@ -209,7 +249,7 @@ class Selection(object):
         return getattr(self, attribute)
 
 
-class TableDelegate(object):
+class TableDelegate(Delegate):
     """Delegate representing a table
 
     Each table delegate corresponds with a table on the server
@@ -231,9 +271,7 @@ class TableDelegate(object):
     """
 
     def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
+        super().__init__(client, message, specifier)
         self.dataframe = None
         self.name = "Table Delegate"
         self.selections = {}
@@ -243,6 +281,15 @@ class TableDelegate(object):
             "tbl_updated" : self.update_rows,
             "tbl_selection_updated" : self.update_selection
         }
+        self.methods = [
+            self.subscribe, 
+            self.request_clear, 
+            self.request_insert, 
+            self.request_remove, 
+            self.request_update, 
+            self.request_update_selection,
+            self.plot
+        ]
         self.plotting = None
 
 
@@ -418,7 +465,6 @@ class TableDelegate(object):
         """Subscribe to this delegate's table
 
         Calls on_table_init as callback
-        Wrapper for injected method from server
         
         Raises:
             Exception: Could not subscribe to table
@@ -434,7 +480,6 @@ class TableDelegate(object):
         """Add rows to end of table
 
         User endpoint for interacting with table and invoking method
-        wrapper for method injected from server
 
         Args:
             col_list (list, optional): add rows as list of columns
@@ -451,7 +496,6 @@ class TableDelegate(object):
         """Update the table using a DataFrame
 
         User endpoint for interacting with table and invoking method
-        wrapper for method injected from server
 
         Args:
             data_frame (DataFrame):
@@ -473,7 +517,6 @@ class TableDelegate(object):
         """Remove rows from table by their keys
 
         User endpoint for interacting with table and invoking method
-        wrapper for method injected from server
 
         Args:
             keys (list):
@@ -488,7 +531,6 @@ class TableDelegate(object):
         """Clear the table
 
         User endpoint for interacting with table and invoking method
-        wrapper for method injected from server
 
         Args:
             on_done (function, optional): callback function called when complete
@@ -499,7 +541,6 @@ class TableDelegate(object):
         """Update a selection object in the table
 
         User endpoint for interacting with table and invoking method
-        wrapper for method injected from server
 
         Args:
             name (str):
@@ -521,9 +562,9 @@ class TableDelegate(object):
 
 
     def plot(self):
-        """Creates plot in a new process
+        """Creates plot in a new window
 
-        Uses matplotlib to plot a representation of the table in a new window
+        Uses matplotlib to plot a representation of the table
         """
 
         self.sender, receiver = multiprocessing.Pipe()
@@ -595,180 +636,35 @@ def plot_process(df: pd.DataFrame, receiver):
             break
 
 
-class DocumentDelegate(object):
+class DocumentDelegate(Delegate):
+    pass
     
-    def __init__(self, client):
-        self._client = client
+class EntityDelegate(Delegate):
+    pass
 
-    def on_update(self, message):
-        pass
+class PlotDelegate(Delegate):
+    pass
 
-    def on_reset(self, message): 
-        pass
+class MaterialDelegate(Delegate):
+    pass
 
-class EntityDelegate(object):
+class GeometryDelegate(Delegate):
+    pass
 
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
+class LightDelegate(Delegate):
+    pass
 
-    def on_new(self, message):
-        pass
+class ImageDelegate(Delegate):
+    pass
 
-    def on_update(self, message):
-        pass
+class TextureDelegate(Delegate):
+    pass
 
-    def on_remove(self, message): 
-        pass
+class SamplerDelegate(Delegate):
+    pass
 
-    def handle_signal(self, signal_data):
-        print(signal_data)
+class BufferDelegate(Delegate):
+    pass
 
-class PlotDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        print(message)
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
-
-    def handle_signal(self, signal_data):
-        print(signal_data)
-
-class MaterialDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
-
-class GeometryDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
-
-class LightDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
-
-class ImageDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
-
-class TextureDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
-
-class SamplerDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
-
-class BufferDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
-
-class BufferViewDelegate(object):
-
-    def __init__(self, client, message, specifier):
-        self._client = client
-        self.info = message
-        self.specifier = specifier
-
-    def on_new(self, message):
-        pass
-
-    def on_update(self, message):
-        pass
-
-    def on_remove(self, message): 
-        pass
+class BufferViewDelegate(Delegate):
+    pass

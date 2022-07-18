@@ -140,7 +140,7 @@ class Client(object):
                 self.delegates[key] = default_delegates[key]
             else:
                 self.delegates[key] = custom_delegate_hash[key]
-        self.state["document"] = self.delegates["document"](self)
+        self.state["document"] = self.delegates["document"](self, None, "document")
 
 
     def method_from_name(self, name: str):
