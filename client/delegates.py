@@ -276,11 +276,12 @@ class TableDelegate(Delegate):
         self.name = "Table Delegate"
         self.selections = {}
         self.signals = {
-            "tbl_reset" : self.reset_table,
-            "tbl_rows_removed" : self.remove_rows,
-            "tbl_updated" : self.update_rows,
-            "tbl_selection_updated" : self.update_selection
+            "tbl_reset" : self._reset_table,
+            "tbl_rows_removed" : self._remove_rows,
+            "tbl_updated" : self._update_rows,
+            "tbl_selection_updated" : self._update_selection
         }
+        # Good idea? kinda messy / repetitive just to help out UI
         self.methods = [
             self.subscribe, 
             self.request_clear, 
@@ -293,7 +294,7 @@ class TableDelegate(Delegate):
         self.plotting = None
 
 
-    def on_table_init(self, init_info):
+    def _on_table_init(self, init_info):
         """Creates table from server response info
 
         Args:
@@ -314,7 +315,7 @@ class TableDelegate(Delegate):
         print(f"Initialized data table...\n{self.dataframe}")
 
 
-    def reset_table(self):
+    def _reset_table(self):
         """Reset dataframe and selections to blank objects
 
         Method is linked to 'tbl_reset' signal
@@ -324,10 +325,10 @@ class TableDelegate(Delegate):
         self.selections = {}
 
         if self.plotting:
-            self.update_plot()
+            self._update_plot()
 
 
-    def remove_rows(self, key_list):
+    def _remove_rows(self, key_list):
         """Removes rows from table
 
         Method is linked to 'tbl_rows_removed' signal
@@ -340,10 +341,10 @@ class TableDelegate(Delegate):
         print(f"Removed Rows: {key_list}...\n", self.dataframe)
 
         if self.plotting:
-            self.update_plot()
+            self._update_plot()
 
 
-    def update_rows(self, keys: list, cols: list):
+    def _update_rows(self, keys: list, cols: list):
         """Update rows in table
 
         Method is linked to 'tbl_updated' signal
@@ -363,12 +364,12 @@ class TableDelegate(Delegate):
         self.dataframe = new_df_filled
 
         if self.plotting:
-            self.update_plot()
+            self._update_plot()
     
         print(f"Updated Rows...{keys}\n", self.dataframe)
         
 
-    def update_selection(self, selection_obj: Selection):
+    def _update_selection(self, selection_obj: Selection):
         """Change selection in delegate's state to new selection object
 
         Method is linked to 'tbl_selection_updated' signal
@@ -412,17 +413,17 @@ class TableDelegate(Delegate):
         return df
 
 
-    def relink_signals(self):
+    def _relink_signals(self):
         """Relink the signals for built in methods
 
         These should always be linked, along with whatever is injected,
         so relink on new and on update messages
         """
 
-        self.signals["tbl_reset"] = self.reset_table
-        self.signals["tbl_rows_removed"] = self.remove_rows
-        self.signals["tbl_updated"] = self.update_rows
-        self.signals["tbl_selection_updated"] = self.update_selection
+        self.signals["tbl_reset"] = self._reset_table
+        self.signals["tbl_rows_removed"] = self._remove_rows
+        self.signals["tbl_updated"] = self._update_rows
+        self.signals["tbl_selection_updated"] = self._update_selection
 
 
     def on_new(self, message: messages.Message):
@@ -443,8 +444,8 @@ class TableDelegate(Delegate):
         if signals: inject_signals(self, signals)
 
         # Reset
-        self.reset_table()
-        self.relink_signals()
+        self._reset_table()
+        self._relink_signals()
 
     def on_update(self, message):
         """Handler when update message is received
@@ -453,7 +454,7 @@ class TableDelegate(Delegate):
             message (Message): update message with the new table's info
         """
 
-        self.relink_signals()
+        self._relink_signals()
         # update dataframe
     
 
@@ -471,7 +472,7 @@ class TableDelegate(Delegate):
         """
 
         try:
-            self.tbl_subscribe(on_done=self.on_table_init)
+            self.tbl_subscribe(on_done=self._on_table_init)
         except:
             raise Exception("Could not subscribe to table")
 
@@ -554,7 +555,7 @@ class TableDelegate(Delegate):
         self.tbl_update_selection(on_done, name, {"rows": keys})
 
 
-    def update_plot(self):
+    def _update_plot(self):
         """Update plotting process when dataframe is updated"""
 
         df = self.dataframe
