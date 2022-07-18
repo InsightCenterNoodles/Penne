@@ -220,7 +220,17 @@ class Client(object):
                     handlers.handle(self, message)
                 except Exception as e:
                     print(f"Exception: {e}")
+
     
+    def show_methods(self):
+        """Displays Available Methods to the User"""
+
+        print("\n-- Available Methods to call --")
+        print("client.invoke_method(method_name, args, optional callback function)")
+        print("-------------------------------------------------------------------")
+        for method in self.state["methods"].values():
+            if not "noo::" in method.info.name:
+                print(method)
 
     def shutdown(self):
         """Method for shutting down Websocket connection"""

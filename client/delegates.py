@@ -145,6 +145,13 @@ class MethodDelegate(object):
         self._client.invoke_method(self.info.id, args, context = context, callback = callback)
 
 
+    def __repr__(self):
+        rep = f"{self.info.name}:\n\t{self.info.doc}\n\tReturns: {self.info.return_doc}\n\tArgs:"
+        for arg in self.info.arg_doc:
+            rep += f"\n\t\t{arg.name}: {arg.doc}"
+        return rep
+
+
 class SignalDelegate(object):
     """Delegate representing a signal coming from the server
 
@@ -562,11 +569,10 @@ def plot_process(df: pd.DataFrame, receiver):
             plt.pause(.001)
 
         # Keep GUI event loop going as long as window is still open
+        elif plt.fignum_exists(fig.number):
+            plt.pause(1)
         else:
-            if plt.fignum_exists(fig.number):
-                plt.pause(1)
-            else:
-                break
+            break
 
 
 class DocumentDelegate(object):

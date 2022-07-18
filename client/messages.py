@@ -60,7 +60,7 @@ class Message(object):
 
 
     def __repr__(self):
-        return f"<<Message Obj: {self.__dict__}>>"
+        return f"{self.__dict__}"
 
 
 class HandleInfo(object):

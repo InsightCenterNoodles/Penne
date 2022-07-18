@@ -61,6 +61,7 @@ class Tests(unittest.TestCase):
         print(f"{style.ACCENT}{style.BOLD}Creating table...{style.END}")
         test_client.invoke_method(METHOD, ARGS, callback=called_back)
         wait_for_callback(test_client.callback_map, test_client)
+        test_client.show_methods()
 
         # Test subscribe
         print(f"{style.ACCENT}{style.BOLD}Subscribing to table...{style.END}")
