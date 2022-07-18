@@ -60,9 +60,6 @@ plot()
 ```
 Once invoked, signals from the server will update the table in the delegate. When using these methods, the user has the option of including a callback function that will execute once complete.
 
-## Helpful Methods
-To get started, the user can call `show_methods()` on the client
-
 ## Getting Started
 1. Install the library
 2. Create a client using `create_client(address, delegate_hash)`
