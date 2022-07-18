@@ -8,9 +8,8 @@ from client.delegates import TableDelegate
 
 # Globals used for testing
 WS_URL = "ws://localhost:50000"
-METHOD = [0, 0]# Create Point Plot
 #ARGS = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11], [12, 13, 14, 15]]
-ARGS = [[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5]]
+ARGS = [[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5],[(0,1,1),(0,1,1),(0,1,1),(0,1,1),(0,1,1)]]
 
 class style:
    CYAN = '\033[96m'
@@ -55,11 +54,12 @@ class Tests(unittest.TestCase):
         print(f"{style.ACCENT}{style.BOLD}Creating client...{style.END}")
         del_hash = {"geometries" : TestDelegate}
         test_client = client.create_client(WS_URL)
-        test_client.is_connected.wait()
+        test_client.is_connected.wait() # Better way? wait for client to be initialized with info from server as well
+        time.sleep(1)
 
         # Test Invoke Method
         print(f"{style.ACCENT}{style.BOLD}Creating table...{style.END}")
-        test_client.invoke_method(METHOD, ARGS, callback=called_back)
+        test_client.invoke_method("new_point_plot", ARGS, callback=called_back)
         wait_for_callback(test_client.callback_map, test_client)
         test_client.show_methods()
 

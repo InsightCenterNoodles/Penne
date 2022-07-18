@@ -141,7 +141,26 @@ class Client(object):
             else:
                 self.delegates[key] = custom_delegate_hash[key]
         self.state["document"] = self.delegates["document"](self)
-        
+
+
+    def method_from_name(self, name: str):
+        """Get a method's id from its name
+
+        Args:
+            name (str): name of method
+
+        Returns:
+            Id group attached to the method
+
+        Raises:
+            Couldn't find method exception
+        """
+        methods = self.state["methods"].values()
+        for method in methods:
+            if method.info.name == name:
+                return method.info.id
+        raise Exception(f"Couldn't find method '{name}'")
+            
 
     def invoke_method(self, id, args, context = None, callback = None):
         """Invoke method on server
@@ -157,8 +176,8 @@ class Client(object):
         it from the map and call the method if there is one
 
         Args:
-            id (list): 
-                id for method
+            id (list or str): 
+                id or name for method
             args (list): 
                 arguments for method
             context (InvokeIDType): 
@@ -166,6 +185,10 @@ class Client(object):
             callback (function): 
                 function to be called upon response
         """
+        
+        # Get proper ID
+        if isinstance(id, str):
+            id = self.method_from_name(id)
 
         # Get invoke ID
         invoke_id = str(self._current_invoke)

@@ -128,6 +128,5 @@ def handle(client, encoded_message):
         target_delegate.signals[signal.info.name](*signal_data)
 
     else:
-        # Communication messages or document messages
-        # For right now just print these, could add handlers for "invoke", "reset" actions
+        # Document reset messages
         print(message_obj)
