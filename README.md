@@ -25,6 +25,7 @@ A diagram representing the simplified relationships between the client, server, 
 flowchart LR;
     User-- Request to Invoke Method -->Delegate;
     User-- Create Custom Delegates --> Client;
+    User-- Create New Plot --> Client;
     Delegate-- Call Injected Method -->Client;
     Client-- Send Invoke Method Message -->Server;
     Server-- Message -->Client;
