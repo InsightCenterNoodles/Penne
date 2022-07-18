@@ -146,6 +146,8 @@ class MethodDelegate(object):
 
 
     def __repr__(self):
+        """Custom string representation for methods"""
+        
         rep = f"{self.info.name}:\n\t{self.info.doc}\n\tReturns: {self.info.return_doc}\n\tArgs:"
         for arg in self.info.arg_doc:
             rep += f"\n\t\t{arg.name}: {arg.doc}"
@@ -512,11 +514,17 @@ class TableDelegate(object):
 
 
     def update_plot(self):
+        """Update plotting process when dataframe is updated"""
+
         df = self.dataframe
         self.sender.send(get_plot_data(df))
 
 
     def plot(self):
+        """Creates plot in a new process
+
+        Uses matplotlib to plot a representation of the table in a new window
+        """
 
         self.sender, receiver = multiprocessing.Pipe()
 
@@ -525,6 +533,8 @@ class TableDelegate(object):
 
 
 def get_plot_data(df: pd.DataFrame):
+    """Helper function to extract data for the plot from the dataframe"""
+
     data = {
         "xs": df["x"], 
         "ys": df["y"], 
@@ -536,10 +546,20 @@ def get_plot_data(df: pd.DataFrame):
 
 
 def on_close(event):
+    """Event handler for when window is closed"""
+
     plt.close('all')
 
 
 def plot_process(df: pd.DataFrame, receiver):
+    """Process for plotting the table as a 3d scatter plot
+
+    Args:
+        df (DataFrame): 
+            the data to be plotted
+        receiver (Pipe connection object):
+            connection to receive updates from root process
+    """
 
     # Enable interactive mode
     plt.ion()

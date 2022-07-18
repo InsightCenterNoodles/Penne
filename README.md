@@ -51,17 +51,23 @@ delegates use the same key in your dictionary.
 ### Tables
 The table delegate comes with several built in methods covering basic table manipulation. The delegate includes...
 ```python
-request_insert(self, col_list: list=None, row_list: list=None, on_done=None)
-request_remove(self, keys: list, on_done=None)
-request_update(self, data_frame: pandas.DataFrame, on_done=None)
-request_clear(self, on_done=None)
-request_update_selection(self, name: str, keys: list, on_done=None)
+request_insert(col_list: list=None, row_list: list=None, on_done=None)
+request_remove(keys: list, on_done=None)
+request_update(data_frame: pandas.DataFrame, on_done=None)
+request_clear(on_done=None)
+request_update_selection(name: str, keys: list, on_done=None)
+plot()
 ```
-Once invoked, signals from the server will update the table in the delegate. When using these methods, the user has the option of 
-including a callback function that will execute once complete.
+Once invoked, signals from the server will update the table in the delegate. When using these methods, the user has the option of including a callback function that will execute once complete.
 
+## Helpful Methods
+To get started, the user can call `show_methods()` on the client
 
 ## Getting Started
 1. Install the library
-2. Create a client
-3. Use default methods or create custom delegates
+2. Create a client using `create_client(address, delegate_hash)`
+    - Specify the websocket URL as the address
+    - (Optional) use delegate hash to map custom delegates
+3. Explore and manipulate data on the server using client or delegate methods
+    - call `show_methods()` on the client to see a list of available methods with documentation
+    - call `show_methods()` on a delegate to see a list of available methods for that instance

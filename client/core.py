@@ -255,6 +255,7 @@ class Client(object):
             if not "noo::" in method.info.name:
                 print(method)
 
+
     def shutdown(self):
         """Method for shutting down Websocket connection"""
         
