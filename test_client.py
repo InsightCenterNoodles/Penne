@@ -77,7 +77,7 @@ class Tests(unittest.TestCase):
         table_delegate.request_insert(row_list=[[7, 8, 8, 1, 1, 1, .02, .02, .02],[6,6,6,.1,.2,.5,.02,.02,.02]], on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
 
-        data = pd.DataFrame([[4, 4, 4, .5, .5, .5, .02, .02, .02],[5,5,5,.3,.9,1,.02,.02,.02]], [4, 5])
+        data = pd.DataFrame([[4, 4, 4, .5, .5, .5, .09, .09, .09],[5,5,5,.3,.9,1,.04,.04,.04]], [4, 5])
         table_delegate.request_update(data, on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
 
@@ -86,11 +86,11 @@ class Tests(unittest.TestCase):
 
          # Test Plotting
         print(f"{style.ACCENT}{style.BOLD}Attempting to plot table...{style.END}")
-        table_delegate.plot2()
+        table_delegate.plot()
         time.sleep(5)
 
         # Insert after plot created
-        table_delegate.request_insert(row_list=[[8, 8, 8, .3, .2, 1, .02, .02, .02],[9,9,9,.1,.2,.5,.02,.02,.02]], on_done=called_back)
+        table_delegate.request_insert(row_list=[[8, 8, 8, .3, .2, 1, .05, .05, .05],[9,9,9,.1,.2,.5,.02,.02,.02]], on_done=called_back)
         wait_for_callback(test_client.callback_map, test_client)
 
         # Close connection

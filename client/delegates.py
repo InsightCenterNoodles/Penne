@@ -498,39 +498,12 @@ class TableDelegate(object):
         self.tbl_update_selection(on_done, name, {"rows": keys})
 
 
-    def plot(self):
-
-        df = self.dataframe
-
-        figure = plt.figure()
-        ax = figure.add_subplot(projection='3d')
-        colors = []
-        for r, g, b in zip(df["r"], df["g"], df["b"]):
-            colors.append((r, g, b))
-        ax.scatter(df["x"], df["y"], df["z"], c=colors)
-
-        ax.set_xlabel('X Label')
-        ax.set_ylabel('Y Label')
-        ax.set_zlabel('Z Label')
-
-        plt.show()
-
-
     def update_plot(self):
         df = self.dataframe
-
-        new_cols = {
-            "x": df["x"],
-            "y": df["y"],
-            "z": df["z"],
-            "colors": []
-        }
-        for r, g, b in zip(df["r"], df["g"], df["b"]):
-            new_cols["colors"].append((r, g, b))
-        self.sender.send(new_cols)
+        self.sender.send(get_plot_data(df))
 
 
-    def plot2(self):
+    def plot(self):
 
         #window = tkinter.Tk()
         q = multiprocessing.Queue()
@@ -539,42 +512,46 @@ class TableDelegate(object):
         self.plotting=multiprocessing.Process(target=plot_process, args=(self.dataframe, receiver))
         self.plotting.start()
 
+
+def get_plot_data(df: pd.DataFrame):
+    data = {
+        "xs": df["x"], 
+        "ys": df["y"], 
+        "zs": df["z"],
+        "s" : [(((sx + sy + sz) / 3) * 1000) for sx, sy, sz in zip(df["sx"], df["sy"], df["sz"])],
+        "c" : [(r, g, b) for r, g, b in zip(df["r"], df["g"], df["b"])]
+    }
+    return data
+
+
 def plot_process(df: pd.DataFrame, receiver):
 
+    # Enable interactive mode
     plt.ion()
 
+    # Make initial plot
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    colors = []
-    for r, g, b in zip(df["r"], df["g"], df["b"]):
-        colors.append((r, g, b))
-    ax.scatter(df["x"], df["y"], df["z"], c=colors)
+    data = get_plot_data(df)
+    ax.scatter(**data)
 
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')
     ax.set_zlabel('Z Label')
 
-
-    print(f"canvas: {fig.canvas}")
-    fig.canvas.draw()
-    plt.show(block=False)
+    plt.draw()
     plt.pause(.001)
 
+    # Update loop
     while True:
-
-        try:
-            print("Got to update handler!")
+        
+        if receiver.poll(.1):
             update = receiver.recv()
             print(f"Plot receiver got: {update}")
-            ax.scatter(update["x"], update["y"], update["z"], c=update["colors"])
+            ax.scatter(**update) # use scatter or update a different way?
             plt.pause(.001)
-        except KeyboardInterrupt:
-            plt.close('all')
-            break
-
-
-        
-
+        else:
+            plt.pause(1)
 
 
 class DocumentDelegate(object):

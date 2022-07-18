@@ -47,7 +47,7 @@ def delegate_from_context(client, context):
 
 
 def handle(client, encoded_message):
-    """handle message from server
+    """Handle message from server
 
     'Handle' uses the ID attached to message to get handling info, and uses this info 
     to take proper course of action with message. The function has 5 main sections 
