@@ -1,10 +1,14 @@
+# Allow type hinting
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from penne.messages import Message
+    from penne.core import Client
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import multiprocessing
-
-from . import messages
-
 
 class Delegate(object):
     """Parent class for all delegates
@@ -15,27 +19,28 @@ class Delegate(object):
         _client (Client): Client delegate is attached to
         info (Message): Message containing all info on delegate
         specifier (str): Keyword specifying delegate in state
-        methods (list): List of avalilable methods to help UI
+        signals (dict): Signals that can be called on delegate
     """
 
-    def __init__(self, client, message, specifier):
+    def __init__(self, client: Client, message: Message, specifier: str):
         self._client = client
         self.info = message
         self.specifier = specifier
+        self.signals = {}
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.specifier} delegate | {self.info.id}"
 
     # For all except Document Delegate
-    def on_new(self, message):
+    def on_new(self, message: Message):
         pass
 
     # For Document, Table, Entity, Plot, Material, Light Delegates
-    def on_update(self, message):
+    def on_update(self, message: Message):
         pass
 
     # For all except Document Delegate
-    def on_remove(self, message):
+    def on_remove(self, message: Message):
         pass
 
 
@@ -116,7 +121,7 @@ def inject_methods(delegate: Delegate, methods: list):
         setattr(delegate, name, injected)
 
 
-def inject_signals(delegate: Delegate, signals: list):
+def inject_signals(delegate: Delegate, signals: list[list[int]]):
     """Method to inject signals into delegate
 
     Args:
@@ -129,7 +134,7 @@ def inject_signals(delegate: Delegate, signals: list):
     state_signals = delegate._client.state["signals"]
     injected_signals = {}
     for id in signals:
-        signal = state_signals[tuple(id)]
+        signal: SignalDelegate = state_signals[tuple(id)]
         injected_signals[signal.info.name] = signal.info
     delegate.signals = injected_signals
 
@@ -153,7 +158,7 @@ class MethodDelegate(Delegate):
             mapping specifier to context for method invocation
     """
 
-    def __init__(self, client, message, specifier):
+    def __init__(self, client: Client, message: Message, specifier: str):
         self._client = client
         self.info = message
         self.specifier = specifier
@@ -163,13 +168,13 @@ class MethodDelegate(Delegate):
             "entities": "entity"
         }
 
-    def on_new(self, message):
+    def on_new(self, message: Message):
         pass
 
-    def on_remove(self):
+    def on_remove(self, message: Message):
         pass
 
-    def invoke(self, on_delegate, args = None, callback = None):
+    def invoke(self, on_delegate: Delegate, args = None, callback = None):
         """Invoke this delegate's method
 
         Args:
@@ -185,7 +190,7 @@ class MethodDelegate(Delegate):
         self._client.invoke_method(self.info.id, args, context = context, callback = callback)
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Custom string representation for methods"""
         
         rep = f"{self.info.name}:\n\t{self.info.doc}\n\tReturns: {self.info.return_doc}\n\tArgs:"
@@ -206,25 +211,25 @@ class SignalDelegate(Delegate):
             keyword for specifying the type of delegate
     """
     
-    def __init__(self, client, message, specifier):
+    def __init__(self, client: Client, message: Message, specifier: str):
         self._client = client
         self.info = message
         self.specifier = specifier
 
-    def on_new(self, message):
+    def on_new(self, message: Message):
         pass
 
-    def on_remove(self, message): 
+    def on_remove(self, message: Message): 
         pass
 
 
 class SelectionRange(tuple):
     """Selection of range of rows"""
 
-    def __new__(cls, key_from, key_to):
+    def __new__(cls, key_from: int, key_to: int):
         return super().__new__(SelectionRange, (key_from, key_to))
 
-
+# Working right?
 class Selection(object):
     """Selection of certain rows in a table
 
@@ -237,7 +242,7 @@ class Selection(object):
             ranges of selected rows
     """
 
-    def __init__(self, name: str, rows: list[int] = None, row_ranges: list[SelectionRange] = None) -> None:
+    def __init__(self, name: str, rows: list[int] = None, row_ranges: list[SelectionRange] = None):
         self.name = name
         self.rows = rows
         self.row_ranges = row_ranges
@@ -270,9 +275,9 @@ class TableDelegate(Delegate):
             id group for delegate in state and table on server
     """
 
-    def __init__(self, client, message, specifier):
+    def __init__(self, client: Client, message: Message, specifier: str):
         super().__init__(client, message, specifier)
-        self.dataframe = None
+        self.dataframe: pd.DataFrame = None
         self.name = "Table Delegate"
         self.selections = {}
         self.signals = {
@@ -294,7 +299,7 @@ class TableDelegate(Delegate):
         self.plotting = None
 
 
-    def _on_table_init(self, init_info):
+    def _on_table_init(self, init_info: Message):
         """Creates table from server response info
 
         Args:
@@ -328,7 +333,7 @@ class TableDelegate(Delegate):
             self._update_plot()
 
 
-    def _remove_rows(self, key_list):
+    def _remove_rows(self, key_list: list[int]):
         """Removes rows from table
 
         Method is linked to 'tbl_rows_removed' signal
@@ -343,8 +348,8 @@ class TableDelegate(Delegate):
         if self.plotting:
             self._update_plot()
 
-
-    def _update_rows(self, keys: list, cols: list):
+    # FIX FOR ROWS
+    def _update_rows(self, keys: list[int], cols: list):
         """Update rows in table
 
         Method is linked to 'tbl_updated' signal
@@ -383,7 +388,7 @@ class TableDelegate(Delegate):
         print(f"Made selection {selection_obj.name} = {selection_obj}")
         
 
-    def get_selection(self, name):
+    def get_selection(self, name: str):
         """Get a selection object and construct Dataframe representation
 
         Args:
@@ -426,7 +431,7 @@ class TableDelegate(Delegate):
         self.signals["tbl_selection_updated"] = self._update_selection
 
 
-    def on_new(self, message: messages.Message):
+    def on_new(self, message: Message):
         """Handler when create message is received
 
         Args:
@@ -447,7 +452,7 @@ class TableDelegate(Delegate):
         self._reset_table()
         self._relink_signals()
 
-    def on_update(self, message):
+    def on_update(self, message: Message):
         """Handler when update message is received
         
         Args:
@@ -458,7 +463,7 @@ class TableDelegate(Delegate):
         # update dataframe
     
 
-    def on_remove(self):
+    def on_remove(self, message: Message):
         pass
 
 
@@ -477,21 +482,32 @@ class TableDelegate(Delegate):
             raise Exception("Could not subscribe to table")
 
     
-    def request_insert(self, col_list: list=None, row_list: list=None, on_done=None):
+    def request_insert(self, col_list: list[list[int]]=None, row_list: list[list[int]]=None, on_done=None):
         """Add rows to end of table
 
         User endpoint for interacting with table and invoking method
+        For input, col list is list of columns where each column is list of cols 
+        to be inserted, and row list is list of rows. Also note that tables have
+        nine columns by default (x, y, z, r, g, b, sx, sy, sz)
+
+        Two ways to insert a row at bottom of the table:
+        Col_list: [[1],[2],[3],[4],[5],[6],[7],[8],[9]]
+        Row_list: [[1, 2, 3, 4, 5, 6, 7, 8, 9]]
 
         Args:
             col_list (list, optional): add rows as list of columns
             row_list (list, optional): add rows using list of rows
             on_done (function, optional): callback function
+        Raises:
+            Data not specified for insertion exception
         """
 
         if col_list is not None:
             self.tbl_insert(on_done, col_list)
         elif row_list is not None:
             self.tbl_insert(on_done, np.transpose(row_list).tolist())
+        else:
+            raise Exception("Data not specified for insertion")
 
     def request_update(self, data_frame: pd.DataFrame, on_done=None):
         """Update the table using a DataFrame
@@ -514,7 +530,7 @@ class TableDelegate(Delegate):
             col_list.append(data_frame[col].tolist())
         self.tbl_update(on_done, data_frame.index.to_list(), col_list)
 
-    def request_remove(self, keys: list, on_done=None):
+    def request_remove(self, keys: list[int], on_done=None):
         """Remove rows from table by their keys
 
         User endpoint for interacting with table and invoking method
@@ -538,7 +554,7 @@ class TableDelegate(Delegate):
         """
         self.tbl_clear(on_done)
 
-    def request_update_selection(self, name: str, keys: list, on_done=None):
+    def request_update_selection(self, name: str, keys: list[int], on_done=None):
         """Update a selection object in the table
 
         User endpoint for interacting with table and invoking method

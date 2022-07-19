@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 
 class Message(object):
     """Generic Message Class for casting messages sent from server
@@ -7,7 +9,7 @@ class Message(object):
     """
 
     @classmethod
-    def from_dict(cls, raw_dict):
+    def from_dict(cls, raw_dict: dict[str, Any]):
         """Function to generate generic message objects
         
         Recursively catches nested structures

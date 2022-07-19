@@ -1,10 +1,17 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from penne.delegates import Delegate
+    from penne.messages import Message
+    from penne.core import Client
+
 import weakref
 from cbor2 import loads
 
 from . import messages
 
 # Helper Methods
-def handle_update(client, message, specifier):
+def handle_update(client, message: Message, specifier: str):
     """Update a delegate in the current state
 
     Args:
@@ -21,7 +28,7 @@ def handle_update(client, message, specifier):
         setattr(current_state, attribute, value)
 
 
-def delegate_from_context(client, context):
+def delegate_from_context(client: Client, context: Message) -> Delegate:
     """Get delegate object from a context message object
     
     Args:
@@ -46,7 +53,7 @@ def delegate_from_context(client, context):
     return target_delegate
 
 
-def handle(client, encoded_message):
+def handle(client: Client, encoded_message):
     """Handle message from server
 
     'Handle' uses the ID attached to message to get handling info, and uses this info 
@@ -70,7 +77,7 @@ def handle(client, encoded_message):
     handle_info = client.server_message_map[raw_message[0]]
     action = handle_info.action
     specifier = handle_info.specifier
-    message_obj = messages.Message.from_dict(raw_message[1])
+    message_obj: Message = messages.Message.from_dict(raw_message[1])
 
     if specifier == "plots":
         print(f"\n  {action} - {specifier}\n{message_obj}")
@@ -82,7 +89,7 @@ def handle(client, encoded_message):
         specifier = specifier
         reference = weakref.ref(client)
         reference_obj = reference()
-        delegate = client.delegates[specifier](reference_obj, message_obj, specifier)
+        delegate: Delegate = client.delegates[specifier](reference_obj, message_obj, specifier)
 
         # Update state and pass message info to the delegate's handler
         client.state[specifier][message_obj.id] = delegate
@@ -90,7 +97,7 @@ def handle(client, encoded_message):
     
     elif action == "delete":
 
-        state_delegate = client.state[specifier][message_obj.id]
+        state_delegate: Delegate = client.state[specifier][message_obj.id]
 
         # Update delegate and state
         state_delegate.on_remove(message_obj)
@@ -118,7 +125,7 @@ def handle(client, encoded_message):
 
         # Handle invoke message from server
         signal_data = message_obj.signal_data
-        signal = client.state["signals"][message_obj.id]
+        signal: Delegate = client.state["signals"][message_obj.id]
 
         # Determine the delegate the signal is being invoked on
         context = getattr(message_obj, "context", False)
@@ -126,6 +133,10 @@ def handle(client, encoded_message):
 
         # Invoke signal attached to target delegate
         target_delegate.signals[signal.info.name](*signal_data)
+
+    elif action =="":
+
+        client.on_connected()
 
     else:
         # Document reset messages

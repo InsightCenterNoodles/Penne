@@ -2,8 +2,9 @@ import unittest
 import time
 import pandas as pd
 
-from client import client
-from client.delegates import TableDelegate
+from penne.client import create_client
+from penne.core import Client
+from penne.delegates import TableDelegate
 
 
 # Globals used for testing
@@ -53,8 +54,7 @@ class Tests(unittest.TestCase):
         # Create client and connect to url
         print(f"{style.ACCENT}{style.BOLD}Creating client...{style.END}")
         del_hash = {"geometries" : TestDelegate}
-        test_client = client.create_client(WS_URL)
-        test_client.is_connected.wait() # Better way? wait for client to be initialized with info from server as well
+        test_client = create_client(WS_URL)
         time.sleep(1)
 
         # Test Invoke Method
@@ -97,6 +97,7 @@ class Tests(unittest.TestCase):
 
         # Remove after plot
         table_delegate.request_remove([5], on_done=called_back)
+        table_delegate.request_insert(col_list=[[3],[3],[3],[0],[0],[0],[.1],[.1],[.1]], on_done=called_back)
         wait_for_callback(test_client.callback_map)
         time.sleep(2)
 

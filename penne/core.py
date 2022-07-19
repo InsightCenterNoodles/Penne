@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import asyncio
+from typing import Any
 import websockets
 from cbor2 import dumps
 
-from . import messages
-from . import handlers
-from . import delegates
+from . import messages, handlers, delegates
 
 
 default_delegates = {
@@ -54,7 +55,7 @@ class Client(object):
             mapping invoke_id to callback function
     """
 
-    def __init__(self, url, loop, custom_delegate_hash, is_connected):
+    def __init__(self, url: str, loop, custom_delegate_hash: dict[str, delegates.Delegate], on_connected=None):
         """Constructor for the Client Class
 
         Args:
@@ -70,7 +71,7 @@ class Client(object):
 
         self._url = url
         self._loop = loop
-        self.is_connected = is_connected
+        self.on_connected = on_connected
         self.delegates = {}
         self.thread = None
         self._socket = None
@@ -143,7 +144,7 @@ class Client(object):
         self.state["document"] = self.delegates["document"](self, None, "document")
 
 
-    def method_from_name(self, name: str):
+    def method_from_name(self, name: str) -> list[int]:
         """Get a method's id from its name
 
         Args:
@@ -155,14 +156,14 @@ class Client(object):
         Raises:
             Couldn't find method exception
         """
-        methods = self.state["methods"].values()
+        methods: list[delegates.MethodDelegate] = self.state["methods"].values()
         for method in methods:
             if method.info.name == name:
                 return method.info.id
         raise Exception(f"Couldn't find method '{name}'")
             
 
-    def invoke_method(self, id, args, context = None, callback = None):
+    def invoke_method(self, id, args: list, context: dict[str, tuple] = None, callback = None):
         """Invoke method on server
 
         Constructs a dictionary of arguments to use in send_message. The
@@ -180,7 +181,7 @@ class Client(object):
                 id or name for method
             args (list): 
                 arguments for method
-            context (InvokeIDType): 
+            context (dict): 
                 optional, target context for method call
             callback (function): 
                 function to be called upon response
@@ -208,11 +209,12 @@ class Client(object):
         self.send_message(arg_dict, "invoke")
 
 
-    def send_message(self, message_dict, type):
+    def send_message(self, message_dict: dict[str, Any], type: str):
         """Send message to server
 
         Args:
-            message (InvokeMethodMessage) : message object to be sent
+            message_dict (dict): dict mapping message attribute to value
+            type (str): either 'invoke' or 'intro' to indicate type of client message
         """
 
         # Construct message with ID from map and converted message object
@@ -235,7 +237,6 @@ class Client(object):
             # send intro message
             intro = {"client_name": self.name}
             self.send_message(intro, "intro")
-            self.is_connected.set()
 
             # handle all incoming messages
             async for message in self._socket:

@@ -1,10 +1,15 @@
+# Allow type hinting
+from __future__ import annotations
+
 import asyncio
 import threading
+from typing import Callable
 from urllib.parse import urlparse
 
-from .core import Client 
+from penne.delegates import Delegate
+from penne.core import Client 
 
-def thread_function(loop, client):
+def thread_function(loop: asyncio.AbstractEventLoop, client: Client):
     """Method for starting background thread
 
     Args:
@@ -19,7 +24,7 @@ def thread_function(loop, client):
         print("Connection terminated")
  
 
-def create_client(address, custom_delegate_hash = {}):
+def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = {}, on_connected: Callable=None):
     """Create a client object and start background thread
 
     Args:
@@ -27,6 +32,8 @@ def create_client(address, custom_delegate_hash = {}):
             url for connecting to server
         custom_delegate_hash (dict):
             mapping specifiers to new delegate methods to override default
+        on_connected (callable):
+            function to be called once connection is established
 
     Raises:
         ValueError: Address given must be a websocket
@@ -38,10 +45,10 @@ def create_client(address, custom_delegate_hash = {}):
         raise ValueError("Address given must be a websocket!")
 
     loop = asyncio.new_event_loop()
-    is_connected = threading.Event()
+    
 
     # Create client instance and thread
-    client = Client(address, loop, custom_delegate_hash, is_connected)
+    client = Client(address, loop, custom_delegate_hash, on_connected)
     t = threading.Thread(target=thread_function, args=(loop, client))
  
     client.thread = t
