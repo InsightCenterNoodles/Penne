@@ -22,7 +22,6 @@ class Delegate(object):
         self._client = client
         self.info = message
         self.specifier = specifier
-        self.methods = None
     
     def __repr__(self):
         return f"{self.specifier} delegate | {self.info.id}"
@@ -44,9 +43,10 @@ class Delegate(object):
         """Show methods available on this delegate"""
 
         print(f"-- Methods on {self} --")
-        print("------------------------")
-        for method in self.methods:
-            print(f">> '{method.__name__}'\n{method.__doc__}")
+        print("--------------------------------------")
+        for name in self.__all__:
+            method = getattr(self, name)
+            print(f">> '{name}'\n{method.__doc__}")
 
 
 class InjectedMethod(object):
@@ -77,7 +77,7 @@ class LinkedMethod(object):
             the method's delegate 
     """
 
-    def __init__(self, object_delegate, method_delegate):
+    def __init__(self, object_delegate: Delegate, method_delegate: Delegate):
         self._obj_delegate = object_delegate
         self._method_delegate = method_delegate
 
@@ -85,7 +85,7 @@ class LinkedMethod(object):
         self._method_delegate.invoke(self._obj_delegate, arguments, callback=on_done)
 
 
-def inject_methods(delegate, methods: list):
+def inject_methods(delegate: Delegate, methods: list):
     """Inject methods into a delegate class
 
     Args:
@@ -116,7 +116,7 @@ def inject_methods(delegate, methods: list):
         setattr(delegate, name, injected)
 
 
-def inject_signals(delegate, signals: list):
+def inject_signals(delegate: Delegate, signals: list):
     """Method to inject signals into delegate
 
     Args:
@@ -281,15 +281,15 @@ class TableDelegate(Delegate):
             "tbl_updated" : self._update_rows,
             "tbl_selection_updated" : self._update_selection
         }
-        # Good idea? kinda messy / repetitive just to help out UI
-        self.methods = [
-            self.subscribe, 
-            self.request_clear, 
-            self.request_insert, 
-            self.request_remove, 
-            self.request_update, 
-            self.request_update_selection,
-            self.plot
+        # Specify public methods 
+        self.__all__ = [
+            "subscribe", 
+            "request_clear", 
+            "request_insert", 
+            "request_remove", 
+            "request_update", 
+            "request_update_selection",
+            "plot"
         ]
         self.plotting = None
 
