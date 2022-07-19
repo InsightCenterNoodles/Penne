@@ -47,7 +47,15 @@ Note: PENNE currently offers support primarily for the table delegate class
 >How can I use custom delegates?
 
 To work with your own delegates, use a custom delegate hash in `create_client()`. To overide a default
-delegates use the same key in your dictionary.
+delegates use the same key in your dictionary. The library also provides a generic `Delegate` class that
+should be used as the parent class for any delegate.
+
+>How do you call methods on a delegate?
+
+Once instantiated, delegates are injected with methods designated by the server. These methods can be called by using
+public methods on the delegate that essentially wrap the injected ones. Once the method is invoked, the server will 
+respond with a signal that updates the client. Each signal is linked to a method in the delegate which keeps the state of 
+the client up to date. To customize the client's behavior, these callback methods can be overwritten in a custom delegate.
 
 ### Tables
 The table delegate comes with several built in methods covering basic table manipulation. The delegate includes...
