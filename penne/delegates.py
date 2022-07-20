@@ -5,9 +5,6 @@ if TYPE_CHECKING:
     from penne.messages import Message
     from penne.core import Client
 
-import pandas as pd
-import numpy as np
-
 
 class Delegate(object):
     """Parent class for all delegates
@@ -276,7 +273,6 @@ class TableDelegate(Delegate):
 
     def __init__(self, client: Client, message: Message, specifier: str):
         super().__init__(client, message, specifier)
-        self.dataframe: pd.DataFrame = None
         self.name = "Table Delegate"
         self.selections = {}
         self.signals = {
@@ -309,19 +305,8 @@ class TableDelegate(Delegate):
 
         # Extract data from init info and transpose rows to cols
         row_data = getattr(init_info, "data")
-        col_data = [list(i) for i in zip(*row_data)]
         cols = getattr(init_info, "columns")
-        data_dict = {getattr(col, "name"): data for col, data in zip(cols, col_data)}
-        
-        self.dataframe = pd.DataFrame(data_dict, index=getattr(init_info, "keys"))
-
-        # Initialize selections if any
-        selections = getattr(init_info, "selections", [])
-        for selection in selections:
-            self.selections[selection.name] = selection
-        
-        print(f"Initialized data table...\n{self.dataframe}")
-        if on_done: on_done()
+        print(f"Table Initialized with cols: {cols} and row data: {row_data}")
 
 
     def _reset_table(self):
@@ -330,11 +315,7 @@ class TableDelegate(Delegate):
         Method is linked to 'tbl_reset' signal
         """
 
-        self.dataframe = pd.DataFrame()
         self.selections = {}
-
-        if self.plotting:
-            self._update_plot()
 
 
     def _remove_rows(self, key_list: list[int]):
@@ -346,11 +327,8 @@ class TableDelegate(Delegate):
             key_list (list): list of keys corresponding to rows to be removed
         """
 
-        self.dataframe.drop(index=key_list, inplace=True)
         print(f"Removed Rows: {key_list}...\n", self.dataframe)
 
-        if self.plotting:
-            self._update_plot()
 
 
     def _update_rows(self, keys: list[int], rows: list):
@@ -366,19 +344,7 @@ class TableDelegate(Delegate):
                 should be col for each col in table, and value for each key
         """
 
-        # headers = self.dataframe.columns.values
-        # new_df = pd.DataFrame({col: data for col, data in zip(
-        #     headers, cols)}, index=keys)
-        # new_df_filled = new_df.combine_first(self.dataframe) # changes order of columns - problem?
-        # self.dataframe = new_df_filled
-
-        for key, row in zip(keys, rows):
-            self.dataframe.loc[key] = row
-
-        if self.plotting:
-            self._update_plot()
-    
-        print(f"Updated Rows...{keys}\n", self.dataframe)
+        print(f"Updated Rows...{keys}\n")
         
 
     def _update_selection(self, selection_obj: Selection):
@@ -393,36 +359,6 @@ class TableDelegate(Delegate):
 
         self.selections[selection_obj.name] = selection_obj
         print(f"Made selection {selection_obj.name} = {selection_obj}")
-        
-
-    def get_selection(self, name: str):
-        """Get a selection object and construct Dataframe representation
-
-        Args:
-            name (str) : name of selection object to get
-        """
-        # Try to retrieve selection object from instance or return blank frame
-        try:
-            sel_obj = self.selections[name]
-        except:
-            return pd.DataFrame(columns=self.dataframe.columns)
-
-        frames = []
-
-        # Get rows already in that selection
-        if sel_obj.rows:
-            frames.append(self.dataframe.loc[sel_obj["rows"]])
-
-        # Uses ranges in object to get other rows
-        if sel_obj.row_ranges:
-            ranges = sel_obj["row_ranges"]
-            for r in ranges:
-                frames.append(self.dataframe.loc[r[0]:r[1]-1])
-
-        # Return frames concatenated
-        df = pd.concat(frames)
-        print(f"Got selection for {sel_obj}\n{df}")
-        return df
 
 
     def _relink_signals(self):
@@ -467,7 +403,6 @@ class TableDelegate(Delegate):
         """
 
         self._relink_signals()
-        # update dataframe
     
 
     def on_remove(self, message: Message):
@@ -491,16 +426,16 @@ class TableDelegate(Delegate):
             raise Exception("Could not subscribe to table")
 
     
-    def request_insert(self, col_list: list[list[int]]=None, row_list: list[list[int]]=None, on_done=None):
+    def request_insert(self, row_list: list[list[int]], on_done=None):
         """Add rows to end of table
 
         User endpoint for interacting with table and invoking method
-        For input, col list is list of columns where each column is list of cols 
-        to be inserted, and row list is list of rows. Also note that tables have
-        nine columns by default (x, y, z, r, g, b, sx, sy, sz)
+        For input, row list is list of rows. Also note that tables have
+        nine columns by default (x, y, z, r, g, b, sx, sy, sz).
+        x, y, z -> coordinates
+        r, g, b -> color values [0, 1]
+        sx, sy, sz -> scaling factors, default size is 1 meter
 
-        Two ways to insert a row at bottom of the table:
-        Col_list: [[1],[2],[3],[4],[5],[6],[7],[8],[9]]
         Row_list: [[1, 2, 3, 4, 5, 6, 7, 8, 9]]
 
         Args:
@@ -511,12 +446,8 @@ class TableDelegate(Delegate):
             Invalid input for request insert exception
         """
 
-        if row_list is not None:
-            self.tbl_insert(on_done, row_list)
-        elif col_list is not None:
-            self.tbl_insert(on_done, np.transpose(col_list).tolist())
-        else:
-            raise Exception("Invalid input for request insert")
+        self.tbl_insert(on_done, row_list)
+    
 
     def request_update(self, keys:list[int], rows:list[list[int]], on_done=None):
         """Update the table using a DataFrame
