@@ -219,11 +219,12 @@ class Tests(unittest.TestCase):
         subscribe = lambda response: client.state["tables"][(0, 0)].subscribe(on_done=plot)
         plot = lambda: client.state["tables"][(0, 0)].plot(on_done=insert_points)
         insert_points = lambda: client.state["tables"][(0, 0)].request_insert(
-            row_list=[[8, 8, 8, .3, .2, 1, .05, .05, .05],[9,9,9,.1,.2,.5,.02,.02,.02]], 
+            row_list=[[8, 8, 8, .3, .2, 1, .05, .05, .05],[9,9,9,.1,.2,.5,.02,.02,.02, "Annotation"]], 
             on_done=update_rows
             )
-        update_rows = lambda response: client.state["tables"][(0, 0)].request_update([3],[[4,6,3,0,1,0,.1,.1,.1]], on_done=get_selection)
-        get_selection = lambda response: client.state["tables"][(0, 0)].request_update_selection("Test Select", [1, 2, 3], on_done=shutdown)
+        update_rows = lambda response: client.state["tables"][(0, 0)].request_update([3],[[4,6,3,0,1,0,.1,.1,.1,"Updated this row"]], on_done=get_selection)
+        get_selection = lambda response: client.state["tables"][(0, 0)].request_update_selection("Test Select", [1, 2, 3], on_done=remove_row)
+        remove_row = lambda response: client.state["tables"][(0, 0)].request_remove([2], on_done=shutdown)
         shutdown = lambda response: client.shutdown()
 
         # Creat client and start callback chain

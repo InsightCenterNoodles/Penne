@@ -395,6 +395,7 @@ class TableDelegate(Delegate):
         self._reset_table()
         self._relink_signals()
 
+
     def on_update(self, message: Message):
         """Handler when update message is received
         
@@ -463,6 +464,7 @@ class TableDelegate(Delegate):
         
         self.tbl_update(on_done, keys, rows)
 
+
     def request_remove(self, keys: list[int], on_done=None):
         """Remove rows from table by their keys
 
@@ -477,6 +479,7 @@ class TableDelegate(Delegate):
 
         self.tbl_remove(on_done, keys)
 
+
     def request_clear(self, on_done=None):
         """Clear the table
 
@@ -486,6 +489,7 @@ class TableDelegate(Delegate):
             on_done (function, optional): callback function called when complete
         """
         self.tbl_clear(on_done)
+
 
     def request_update_selection(self, name: str, keys: list[int], on_done=None):
         """Update a selection object in the table

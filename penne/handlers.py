@@ -6,7 +6,6 @@ if TYPE_CHECKING:
     from penne.core import Client
 
 import weakref
-from cbor2 import loads
 
 from . import messages
 
