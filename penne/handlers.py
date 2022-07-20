@@ -53,7 +53,7 @@ def delegate_from_context(client: Client, context: Message) -> Delegate:
     return target_delegate
 
 
-def handle(client: Client, encoded_message):
+def handle(client: Client, id, message_dict):
     """Handle message from server
 
     'Handle' uses the ID attached to message to get handling info, and uses this info 
@@ -69,15 +69,14 @@ def handle(client: Client, encoded_message):
         client (Client): client receiving the message
         encoded_message (CBOR array): array with id and message as dictionary
     """
-
-    # Decode message
-    raw_message = loads(encoded_message)
     
     # Process message using ID from dict
-    handle_info = client.server_message_map[raw_message[0]]
+    handle_info = client.server_message_map[id]
     action = handle_info.action
     specifier = handle_info.specifier
-    message_obj: Message = messages.Message.from_dict(raw_message[1])
+    message_obj: Message = messages.Message.from_dict(message_dict)
+
+    print(f"Message: {message_obj}")
 
     if specifier == "plots":
         print(f"\n  {action} - {specifier}\n{message_obj}")
@@ -121,6 +120,7 @@ def handle(client: Client, encoded_message):
             if callback:
                 callback(message_obj.result)
 
+
     elif action == "invoke":
 
         # Handle invoke message from server
@@ -134,7 +134,7 @@ def handle(client: Client, encoded_message):
         # Invoke signal attached to target delegate
         target_delegate.signals[signal.info.name](*signal_data)
 
-    elif action =="":
+    elif action == "initialized":
 
         client.on_connected()
 

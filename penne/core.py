@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 import websockets
-from cbor2 import dumps
+from cbor2 import loads, dumps
 
 from . import messages, handlers, delegates
 
@@ -130,7 +130,8 @@ class Client(object):
             31 : messages.HandleInfo("document", "update"),
             32 : messages.HandleInfo("document", "reset"),  
             33 : messages.HandleInfo("signals", "invoke"),  
-            34 : messages.HandleInfo("methods", "reply")
+            34 : messages.HandleInfo("methods", "reply"),
+            35 : messages.HandleInfo("document", "initialized")
         }
         self._current_invoke = 0
         self.callback_map = {}
@@ -227,23 +228,25 @@ class Client(object):
     async def run(self):
         """Network thread for managing websocket connection"""  
 
-        print(f"Connecting to server @ {self._url}")
         async with websockets.connect(self._url) as websocket:
-            
+
             # update class
             self._socket = websocket
-            self.name = (f"Python Client @ {self._url}") # couldn't get self._socket.gethostname() to work from source
+            self.name = (f"Python Client @ {self._url}")
 
             # send intro message
             intro = {"client_name": self.name}
             self.send_message(intro, "intro")
 
-            # handle all incoming messages
+            # decode, iterate over, and handle all incoming messages
             async for message in self._socket:
-                try:
-                    handlers.handle(self, message)
-                except Exception as e:
-                    print(f"Exception: {e}")
+                raw_message = loads(message)
+                iterator = iter(raw_message)
+                for id in iterator:
+                    try:
+                        handlers.handle(self, id, next(iterator))
+                    except Exception as e:
+                        print(f"Exception: {e}")
 
     
     def show_methods(self):

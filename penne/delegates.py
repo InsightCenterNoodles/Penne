@@ -1,6 +1,6 @@
 # Allow type hinting
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
     from penne.messages import Message
     from penne.core import Client
@@ -135,7 +135,7 @@ def inject_signals(delegate: Delegate, signals: list[list[int]]):
     injected_signals = {}
     for id in signals:
         signal: SignalDelegate = state_signals[tuple(id)]
-        injected_signals[signal.info.name] = signal.info
+        injected_signals[signal.info.name] = None
     delegate.signals = injected_signals
 
 
@@ -299,7 +299,7 @@ class TableDelegate(Delegate):
         self.plotting = None
 
 
-    def _on_table_init(self, init_info: Message):
+    def _on_table_init(self, init_info: Message, on_done=None):
         """Creates table from server response info
 
         Args:
@@ -308,8 +308,12 @@ class TableDelegate(Delegate):
                 and possibly selections
         """
 
-        data_dict = {getattr(col, "name"): data for col, data in zip(
-            getattr(init_info, "columns"), getattr(init_info, "data"))}
+        # Extract data from init info and transpose rows to cols
+        row_data = getattr(init_info, "data")
+        col_data = [list(i) for i in zip(*row_data)]
+        cols = getattr(init_info, "columns")
+        data_dict = {getattr(col, "name"): data for col, data in zip(cols, col_data)}
+        
         self.dataframe = pd.DataFrame(data_dict, index=getattr(init_info, "keys"))
 
         # Initialize selections if any
@@ -318,6 +322,7 @@ class TableDelegate(Delegate):
             self.selections[selection.name] = selection
         
         print(f"Initialized data table...\n{self.dataframe}")
+        if on_done: on_done()
 
 
     def _reset_table(self):
@@ -348,8 +353,8 @@ class TableDelegate(Delegate):
         if self.plotting:
             self._update_plot()
 
-    # FIX FOR ROWS
-    def _update_rows(self, keys: list[int], cols: list):
+
+    def _update_rows(self, keys: list[int], rows: list):
         """Update rows in table
 
         Method is linked to 'tbl_updated' signal
@@ -362,11 +367,14 @@ class TableDelegate(Delegate):
                 should be col for each col in table, and value for each key
         """
 
-        headers = self.dataframe.columns.values
-        new_df = pd.DataFrame({col: data for col, data in zip(
-            headers, cols)}, index=keys)
-        new_df_filled = new_df.combine_first(self.dataframe) # changes order of columns - problem?
-        self.dataframe = new_df_filled
+        # headers = self.dataframe.columns.values
+        # new_df = pd.DataFrame({col: data for col, data in zip(
+        #     headers, cols)}, index=keys)
+        # new_df_filled = new_df.combine_first(self.dataframe) # changes order of columns - problem?
+        # self.dataframe = new_df_filled
+
+        for key, row in zip(keys, rows):
+            self.dataframe.loc[key] = row
 
         if self.plotting:
             self._update_plot()
@@ -467,7 +475,7 @@ class TableDelegate(Delegate):
         pass
 
 
-    def subscribe(self):
+    def subscribe(self, on_done: Callable=None):
         """Subscribe to this delegate's table
 
         Calls on_table_init as callback
@@ -477,7 +485,9 @@ class TableDelegate(Delegate):
         """
 
         try:
-            self.tbl_subscribe(on_done=self._on_table_init)
+            # Allow for calback after table init
+            lam = lambda data: self._on_table_init(data, on_done)
+            self.tbl_subscribe(on_done=lam)
         except:
             raise Exception("Could not subscribe to table")
 

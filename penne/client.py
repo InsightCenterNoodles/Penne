@@ -18,11 +18,13 @@ def thread_function(loop: asyncio.AbstractEventLoop, client: Client):
     """
 
     try:
+        print(f"Trying client: {client}")
         asyncio.set_event_loop(loop)
         loop.run_until_complete(client.run())
+        print("Connection thread opened...")
     except:
         print("Connection terminated")
- 
+
 
 def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = {}, on_connected: Callable=None):
     """Create a client object and start background thread
