@@ -7,8 +7,7 @@ if TYPE_CHECKING:
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import multiprocessing
+
 
 class Delegate(object):
     """Parent class for all delegates
@@ -174,7 +173,7 @@ class MethodDelegate(Delegate):
     def on_remove(self, message: Message):
         pass
 
-    def invoke(self, on_delegate: Delegate, args = None, callback = None):
+    def invoke(self, on_delegate: Delegate, args=None, callback=None):
         """Invoke this delegate's method
 
         Args:
@@ -187,7 +186,7 @@ class MethodDelegate(Delegate):
                 function to be called when complete
         """
         context = {self.context_map[on_delegate.specifier]: on_delegate.info.id}
-        self._client.invoke_method(self.info.id, args, context = context, callback = callback)
+        self._client.invoke_method(self.info.id, args, context=context, on_done=callback)
 
 
     def __repr__(self) -> str:
@@ -433,10 +432,10 @@ class TableDelegate(Delegate):
         so relink on new and on update messages
         """
 
-        self.signals["tbl_reset"] = self._reset_table
-        self.signals["tbl_rows_removed"] = self._remove_rows
-        self.signals["tbl_updated"] = self._update_rows
-        self.signals["tbl_selection_updated"] = self._update_selection
+        self.signals["noo::tbl_reset"] = self._reset_table
+        self.signals["noo::tbl_rows_removed"] = self._remove_rows
+        self.signals["noo::tbl_updated"] = self._update_rows
+        self.signals["noo::tbl_selection_updated"] = self._update_selection
 
 
     def on_new(self, message: Message):
@@ -509,17 +508,17 @@ class TableDelegate(Delegate):
             row_list (list, optional): add rows using list of rows
             on_done (function, optional): callback function
         Raises:
-            Data not specified for insertion exception
+            Invalid input for request insert exception
         """
 
-        if col_list is not None:
-            self.tbl_insert(on_done, col_list)
-        elif row_list is not None:
-            self.tbl_insert(on_done, np.transpose(row_list).tolist())
+        if row_list is not None:
+            self.tbl_insert(on_done, row_list)
+        elif col_list is not None:
+            self.tbl_insert(on_done, np.transpose(col_list).tolist())
         else:
-            raise Exception("Data not specified for insertion")
+            raise Exception("Invalid input for request insert")
 
-    def request_update(self, data_frame: pd.DataFrame, on_done=None):
+    def request_update(self, keys:list[int], rows:list[list[int]], on_done=None):
         """Update the table using a DataFrame
 
         User endpoint for interacting with table and invoking method
@@ -531,14 +530,7 @@ class TableDelegate(Delegate):
                 callback function called when complete
         """
         
-        if len(data_frame.columns) != len(self.dataframe.columns):
-            raise Exception(
-                "Dataframes should have the same number of columns")
-        
-        col_list = []
-        for col in list(data_frame):
-            col_list.append(data_frame[col].tolist())
-        self.tbl_update(on_done, data_frame.index.to_list(), col_list)
+        self.tbl_update(on_done, keys, rows)
 
     def request_remove(self, keys: list[int], on_done=None):
         """Remove rows from table by their keys
@@ -579,88 +571,6 @@ class TableDelegate(Delegate):
         """
 
         self.tbl_update_selection(on_done, name, {"rows": keys})
-
-
-    def _update_plot(self):
-        """Update plotting process when dataframe is updated"""
-
-        df = self.dataframe
-        self.sender.send(get_plot_data(df))
-
-
-    def plot(self):
-        """Creates plot in a new window
-
-        Uses matplotlib to plot a representation of the table
-        """
-
-        self.sender, receiver = multiprocessing.Pipe()
-
-        self.plotting=multiprocessing.Process(target=plot_process, args=(self.dataframe, receiver))
-        self.plotting.start()
-
-
-def get_plot_data(df: pd.DataFrame):
-    """Helper function to extract data for the plot from the dataframe"""
-
-    data = {
-        "xs": df["x"], 
-        "ys": df["y"], 
-        "zs": df["z"],
-        "s" : [(((sx + sy + sz) / 3) * 1000) for sx, sy, sz in zip(df["sx"], df["sy"], df["sz"])],
-        "c" : [(r, g, b) for r, g, b in zip(df["r"], df["g"], df["b"])]
-    }
-    return data
-
-
-def on_close(event):
-    """Event handler for when window is closed"""
-
-    plt.close('all')
-
-
-def plot_process(df: pd.DataFrame, receiver):
-    """Process for plotting the table as a 3d scatter plot
-
-    Args:
-        df (DataFrame): 
-            the data to be plotted
-        receiver (Pipe connection object):
-            connection to receive updates from root process
-    """
-
-    # Enable interactive mode
-    plt.ion()
-
-    # Make initial plot
-    fig = plt.figure()
-    fig.canvas.mpl_connect('close_event', on_close)
-    ax = fig.add_subplot(projection='3d')
-    data = get_plot_data(df)
-    ax.scatter(**data)
-
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-
-    plt.draw()
-    plt.pause(.001)
-
-    # Update loop
-    while True:
-
-        # If update received, redraw the scatter plot
-        if receiver.poll(.1):
-            update = receiver.recv()
-            plt.cla() # efficient? better way to set directly?
-            ax.scatter(**update) 
-            plt.pause(.001)
-
-        # Keep GUI event loop going as long as window is still open
-        elif plt.fignum_exists(fig.number):
-            plt.pause(1)
-        else:
-            break
 
 
 class DocumentDelegate(Delegate):

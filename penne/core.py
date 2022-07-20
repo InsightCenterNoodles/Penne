@@ -145,7 +145,7 @@ class Client(object):
         self.state["document"] = self.delegates["document"](self, None, "document")
 
 
-    def method_from_name(self, name: str) -> list[int]:
+    def object_from_name(self, name: str, specifier: str) -> list[int]:
         """Get a method's id from its name
 
         Args:
@@ -157,14 +157,14 @@ class Client(object):
         Raises:
             Couldn't find method exception
         """
-        methods: list[delegates.MethodDelegate] = self.state["methods"].values()
-        for method in methods:
-            if method.info.name == name:
-                return method.info.id
-        raise Exception(f"Couldn't find method '{name}'")
+        objects: list[delegates.MethodDelegate] = self.state[specifier].values()
+        for object in objects:
+            if hasattr(object.info, "name") and object.info.name == name:
+                return object.info.id
+        raise Exception(f"Couldn't find object '{name}' in {specifier}")
             
 
-    def invoke_method(self, id, args: list, context: dict[str, tuple] = None, callback = None):
+    def invoke_method(self, id, args: list, context: dict[str, tuple] = None, on_done = None):
         """Invoke method on server
 
         Constructs a dictionary of arguments to use in send_message. The
@@ -190,14 +190,14 @@ class Client(object):
         
         # Get proper ID
         if isinstance(id, str):
-            id = self.method_from_name(id)
+            id = self.object_from_name(id, "methods")
 
         # Get invoke ID
         invoke_id = str(self._current_invoke)
         self._current_invoke += 1
 
         # Keep track of callback
-        self.callback_map[invoke_id] = callback
+        self.callback_map[invoke_id] = on_done
 
         # Construct message dict
         arg_dict = {

@@ -76,8 +76,6 @@ def handle(client: Client, id, message_dict):
     specifier = handle_info.specifier
     message_obj: Message = messages.Message.from_dict(message_dict)
 
-    print(f"Message: {message_obj}")
-
     if specifier == "plots":
         print(f"\n  {action} - {specifier}\n{message_obj}")
     
@@ -132,6 +130,7 @@ def handle(client: Client, id, message_dict):
         target_delegate = delegate_from_context(client, context)
 
         # Invoke signal attached to target delegate
+        print(f"Invoking {signal.info.name} w/ args: {signal_data}")
         target_delegate.signals[signal.info.name](*signal_data)
 
     elif action == "initialized":
