@@ -16,6 +16,7 @@ class Delegate(object):
         info (Message): Message containing all info on delegate
         specifier (str): Keyword specifying delegate in state
         signals (dict): Signals that can be called on delegate
+        __all__ (list): Specify public methods, used in show_methods()
     """
 
     def __init__(self, client: Client, message: Message, specifier: str):
@@ -23,6 +24,7 @@ class Delegate(object):
         self.info = message
         self.specifier = specifier
         self.signals = {}
+        self.__all__ = []
     
     def __repr__(self) -> str:
         return f"{self.specifier} delegate | {self.info.id}"
@@ -225,7 +227,7 @@ class SelectionRange(tuple):
     def __new__(cls, key_from: int, key_to: int):
         return super().__new__(SelectionRange, (key_from, key_to))
 
-# Working right?
+
 class Selection(object):
     """Selection of certain rows in a table
 

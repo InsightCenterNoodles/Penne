@@ -74,6 +74,7 @@ def handle(client: Client, id, message_dict):
     action = handle_info.action
     specifier = handle_info.specifier
     message_obj: Message = messages.Message.from_dict(message_dict)
+    print(f"Message: {action} {specifier}")
 
     if specifier == "plots":
         print(f"\n  {action} - {specifier}\n{message_obj}")
@@ -111,11 +112,11 @@ def handle(client: Client, id, message_dict):
 
         # Handle callback functions
         if hasattr(message_obj, "method_exception"):
-            raise Exception(f"Method call ({message_obj}) resulted in exception from server")
+            raise Exception(f"Method call ({message_obj.invoke_id}) resulted in exception from server: {message_obj.method_exception}")
         else:
             callback = client.callback_map.pop(message_obj.invoke_id)
             if callback:
-                callback(message_obj.result)
+                callback(message_obj.result) if hasattr(message_obj, "result") else callback()
 
 
     elif action == "invoke":

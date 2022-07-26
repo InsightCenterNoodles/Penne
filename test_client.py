@@ -71,7 +71,7 @@ def plot_process(df: pd.DataFrame, receiver):
 
         # Keep GUI event loop going as long as window is still open
         elif plt.fignum_exists(fig.number):
-            plt.pause(.001)
+            plt.pause(.01)
         else:
             break
 
