@@ -3,9 +3,8 @@ Python Client for NOODLES protocol
 (Python Encoded Native NOODLES Endpoint)
 
 ## Description
-Client implementing the NOODLES messaging protocol for communicating with serverside data visualisation applications.
-The client uses a websocket connection to send CBOR encoded messages. To customize its implementation, the
-library offers hooks in the form of delegates which can be overwritten with new methods.
+The client library is based on the NOODLES messaging protocol for communicating with serverside data visualisation applications. The client uses a websocket connection to send CBOR encoded messages. To customize its implementation, the
+library offers hooks in the form of delegates classes which can be extended and overwritten.
 
 ## How does the client work?
 When a message is received from the server, the client passes the CBOR encoded message to a handler function which uses
