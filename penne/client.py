@@ -1,4 +1,10 @@
-# Allow type hinting
+"""Module for Creating a Client
+
+Functions:
+    thread
+    create_client
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -9,7 +15,7 @@ from urllib.parse import urlparse
 from penne.delegates import Delegate
 from penne.core import Client 
 
-def thread_function(loop: asyncio.AbstractEventLoop, client: Client):
+def thread(loop: asyncio.AbstractEventLoop, client: Client):
     """Method for starting background thread
 
     Args:
@@ -49,7 +55,7 @@ def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = {}, 
 
     # Create client instance and thread
     client = Client(address, loop, custom_delegate_hash, on_connected)
-    t = threading.Thread(target=thread_function, args=(loop, client))
+    t = threading.Thread(target=thread, args=(loop, client))
  
     client.thread = t
     client.thread.start()

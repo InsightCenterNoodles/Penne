@@ -1,3 +1,5 @@
+"""Module for Handling Raw Messages from the Server"""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

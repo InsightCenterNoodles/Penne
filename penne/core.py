@@ -1,3 +1,5 @@
+"""Module with Core Implementation of Client"""
+
 from __future__ import annotations
 
 import asyncio

@@ -1,6 +1,11 @@
+"""Client Test Script
+
+Test the functionality of the client using a custom delegate and callback functions.
+Designed to interact with PlottyN server to create a 3d scatter chart
+"""
+
 from typing import Callable
 import unittest
-import time
 import multiprocessing
 
 import pandas as pd

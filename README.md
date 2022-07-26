@@ -50,7 +50,8 @@ should be used as the parent class for any delegate. An example of a custom dele
 Once instantiated, delegates are injected with methods designated by the server. These methods can be called by using
 public methods on the delegate that essentially wrap the injected ones. Once the method is invoked, the server will 
 respond with a signal that updates the client. Each signal is linked to a method in the delegate which keeps the state of 
-the client up to date. To customize the client's behavior, these callback methods can be overwritten in a custom delegate.
+the client up to date. To customize the client's behavior, these methods can be overwritten in a custom delegate. Each 
+public method also accepts a callback function to be executed once a response is received from the server. This way, method calls can be chained together and run in sequence. An example is provided in `test_client.py`.
 
 ### Tables
 The table delegate comes with several built in methods covering basic table manipulation. The delegate includes...
@@ -65,6 +66,9 @@ Once invoked, signals from the server will update the table in the delegate. Whe
 
 ## Getting Started
 1. Install the library
+```python
+pip install penne
+```
 2. Create a client using `create_client(address, delegate_hash)`
     - Specify the websocket URL as the address
     - (Optional) use delegate hash to map custom delegates
