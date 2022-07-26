@@ -9,7 +9,7 @@ authors = [
     {name = "Alex Racapé"},
 ]
 dynamic = ["version", "description"]
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.8"
 keywords = ["noodles", "cbor", "Websockets", "client", "NOODLES"]
 license = {text = "MIT"}
