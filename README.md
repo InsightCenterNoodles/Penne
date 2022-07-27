@@ -70,8 +70,11 @@ Once invoked, signals from the server will update the table in the delegate. Whe
 pip install penne
 ```
 2. Create a client using `create_client(address, delegate_hash)`
-    - Specify the websocket URL as the address
+```python
+client: penne.Client = penne.create_client("ws://localhost:50000")
+```
     - (Optional) use delegate hash to map custom delegates
+    - Note: make sure to close client thread at some point - `client.thread.join()`
 3. Explore and manipulate data on the server using client or delegate methods
     - call `show_methods()` on the client to see a list of available methods with documentation
     - call `show_methods()` on a delegate to see a list of available methods for that instance
