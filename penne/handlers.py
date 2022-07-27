@@ -137,7 +137,8 @@ def handle(client: Client, id, message_dict):
 
     elif action == "initialized":
 
-        client.on_connected()
+        if client.on_connected:
+            client.on_connected()
 
     else:
         # Document reset messages
