@@ -241,5 +241,4 @@ class Tests(unittest.TestCase):
         print(f"Finished Testing")
 
 if __name__ == "__main__":
-    #main()
     unittest.main()

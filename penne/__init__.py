@@ -12,4 +12,10 @@ Modules:
     messages.py
 """
 
-__version__ = "0.1"
+__version__ = "1.0.0"
+
+
+# Imports for easier user access
+from .client import create_client
+from .core import Client
+from . import delegates
