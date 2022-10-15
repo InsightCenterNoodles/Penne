@@ -294,7 +294,6 @@ class TableDelegate(Delegate):
             "request_update_selection",
             "plot"
         ]
-        self.plotting = None
 
 
     def _on_table_init(self, init_info: Message, on_done=None):

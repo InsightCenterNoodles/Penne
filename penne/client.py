@@ -11,6 +11,7 @@ import asyncio
 import threading
 from typing import Callable
 from urllib.parse import urlparse
+import queue
 
 from penne.delegates import Delegate
 from penne.core import Client 
@@ -54,7 +55,8 @@ def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = {}, 
     
 
     # Create client instance and thread
-    client = Client(address, loop, custom_delegate_hash, on_connected)
+    callback_queue = queue.Queue()
+    client = Client(address, loop, custom_delegate_hash, on_connected, callback_queue)
     t = threading.Thread(target=thread, args=(loop, client))
  
     client.thread = t

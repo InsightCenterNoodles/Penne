@@ -1,6 +1,7 @@
 """Module for Handling Raw Messages from the Server"""
 
 from __future__ import annotations
+import asyncio
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from penne.delegates import Delegate
@@ -24,7 +25,7 @@ def handle_update(client, message: Message, specifier: str):
             which part of state to update
     """
 
-    current_state = client.state[specifier][message.id]
+    current_state = client.state[specifier][message.id].info
     for attribute, value in message.as_dict().items():
         setattr(current_state, attribute, value)
 
@@ -118,7 +119,10 @@ def handle(client: Client, id, message_dict):
         else:
             callback = client.callback_map.pop(message_obj.invoke_id)
             if callback:
-                callback(message_obj.result) if hasattr(message_obj, "result") else callback()
+            
+                callback_info = (callback, message_obj.result) if hasattr(message_obj, "result") else (callback, None)
+                client.callback_queue.put(callback_info)
+                #callback(message_obj.result) if hasattr(message_obj, "result") else callback()
 
 
     elif action == "invoke":
@@ -138,7 +142,8 @@ def handle(client: Client, id, message_dict):
     elif action == "initialized":
 
         if client.on_connected:
-            client.on_connected()
+            client.callback_queue.put((client.on_connected, None))
+            #client.on_connected()
 
     else:
         # Document reset messages

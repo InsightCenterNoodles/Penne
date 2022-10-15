@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from queue import Queue
 from typing import Any
 import websockets
 from cbor2 import loads, dumps
@@ -57,7 +58,7 @@ class Client(object):
             mapping invoke_id to callback function
     """
 
-    def __init__(self, url: str, loop, custom_delegate_hash: dict[str, delegates.Delegate], on_connected=None):
+    def __init__(self, url: str, loop, custom_delegate_hash: dict[str, delegates.Delegate], on_connected, callback_queue: Queue):
         """Constructor for the Client Class
 
         Args:
@@ -137,6 +138,8 @@ class Client(object):
         }
         self._current_invoke = 0
         self.callback_map = {}
+        self.callback_queue = callback_queue
+        self.is_shutdown = False
 
         # Hook up delegate map to default or custom based on input hash
         for key in default_delegates:
@@ -222,7 +225,7 @@ class Client(object):
 
         # Construct message with ID from map and converted message object
         message = [self.client_message_map[type], message_dict]
-        #print(f"Sending Message: {message}")
+        print(f"Sending Message: {message}")
         
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
 
@@ -263,8 +266,11 @@ class Client(object):
 
 
     def shutdown(self):
-        """Method for shutting down Websocket connection"""
+        """Method for shutting down the client
+        
+        Closes websocket connection then blocks to finish all callbacks
+        """
         
         asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
-
+        self.is_shutdown = True
     

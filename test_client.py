@@ -7,6 +7,7 @@ Designed to interact with PlottyN server to create a 3d scatter chart
 from typing import Callable
 import unittest
 import multiprocessing
+import queue
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -87,6 +88,7 @@ class TestDelegate(TableDelegate):
     def __init__(self, client, message, specifier) -> None:
         super().__init__(client, message, specifier)
         self.dataframe: pd.DataFrame = None
+        self.plotting = None
 
     def _on_table_init(self, init_info, on_done=None):
         """Creates table from server response info
@@ -219,26 +221,37 @@ class Tests(unittest.TestCase):
 
         # Create callback functions
         # Not sure about 'response' - cleaner way?
-        args = [[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5],[(0,1,1),(0,1,1),(0,1,1),(0,1,1),(0,1,1)]]
-        create_table = lambda: client.invoke_method("new_point_plot", args, on_done=subscribe)
+        points = [[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5],[(0,1,1),(0,1,1),(0,1,1),(0,1,1),(0,1,1)]]
+        create_table = lambda: client.invoke_method("new_point_plot", points, on_done=subscribe)
         subscribe = lambda response: client.state["tables"][(0, 0)].subscribe(on_done=plot)
         plot = lambda: client.state["tables"][(0, 0)].plot(on_done=insert_points)
         insert_points = lambda: client.state["tables"][(0, 0)].request_insert(
             row_list=[[8, 8, 8, .3, .2, 1, .05, .05, .05],[9,9,9,.1,.2,.5,.02,.02,.02, "Annotation"]], 
             on_done=update_rows
             )
-        update_rows = lambda response: client.state["tables"][(0, 0)].request_update([3],[[4,6,3,0,1,0,.1,.1,.1,"Updated this row"]], on_done=get_selection)
-        get_selection = lambda response: client.state["tables"][(0, 0)].request_update_selection("Test Select", [1, 2, 3], on_done=remove_row)
-        remove_row = lambda response: client.state["tables"][(0, 0)].request_remove([2], on_done=shutdown)
-        shutdown = lambda response: client.shutdown()
+        update_rows = lambda: client.state["tables"][(0, 0)].request_update([3],[[4,6,3,0,1,0,.1,.1,.1,"Updated this row"]], on_done=get_selection)
+        get_selection = lambda: client.state["tables"][(0, 0)].request_update_selection("Test Select", [1, 2, 3], on_done=remove_row)
+        remove_row = lambda: client.state["tables"][(0, 0)].request_remove([2], on_done=shutdown)
+        shutdown = lambda: client.shutdown()
 
         # Creat client and start callback chain
         del_hash = {"tables" : TestDelegate}
         client = create_client("ws://localhost:50000", del_hash, on_connected=create_table)
 
+        while True:
+            if client.is_shutdown:
+                break
+            try:
+                callback_info = client.callback_queue.get(block=False)
+            except queue.Empty:
+                continue
+            callback, args = callback_info
+            callback(args) if args else callback()
+
         # Wait for client thread to finish
         client.thread.join()
         print(f"Finished Testing")
+
 
 if __name__ == "__main__":
     unittest.main()
