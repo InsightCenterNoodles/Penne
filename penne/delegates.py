@@ -13,7 +13,7 @@ class Delegate(object):
     Defines general methods that should be available for all delegates
     
     Attributes:
-        _client (Client): Client delegate is attached to
+        client (Client): Client delegate is attached to
         info (Message): Message containing all info on delegate
         specifier (str): Keyword specifying delegate in state
         signals (dict): Signals that can be called on delegate
@@ -21,7 +21,7 @@ class Delegate(object):
     """
 
     def __init__(self, client: Client, message: Message, specifier: str):
-        self._client = client
+        self.client = client
         self.info = message
         self.specifier = specifier
         self.signals = {}
