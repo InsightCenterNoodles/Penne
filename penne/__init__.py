@@ -18,4 +18,4 @@ __version__ = "0.2.0"
 # Imports for easier user access
 from .client import create_client
 from .core import Client
-from . import delegates
+from .delegates import *
