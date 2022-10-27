@@ -106,7 +106,7 @@ def inject_methods(delegate: Delegate, methods: list):
             print(f"Deleting: {name} in inject methods")
             delattr(delegate, name)
 
-    state_methods = delegate._client.state["methods"] 
+    state_methods = delegate.client.state["methods"] 
     for id in methods:
 
         # Get method delegate and manipulate name to exclude noo::
@@ -130,7 +130,7 @@ def inject_signals(delegate: Delegate, signals: list[list[int]]):
             list of signal id's to be injected
     """
 
-    state_signals = delegate._client.state["signals"]
+    state_signals = delegate.client.state["signals"]
     injected_signals = {}
     for id in signals:
         signal: SignalDelegate = state_signals[tuple(id)]
@@ -147,7 +147,7 @@ class MethodDelegate(Delegate):
     """Delegate representing a method which can be invoked on the server
 
     Attributes:
-        _client (client object): 
+        client (client object): 
             client delegate is a part of 
         info (message): 
             message containing information on the method
@@ -158,7 +158,7 @@ class MethodDelegate(Delegate):
     """
 
     def __init__(self, client: Client, message: Message, specifier: str):
-        self._client = client
+        self.client = client
         self.info = message
         self.specifier = specifier
         self.context_map = {
@@ -186,7 +186,7 @@ class MethodDelegate(Delegate):
                 function to be called when complete
         """
         context = {self.context_map[on_delegate.specifier]: on_delegate.info.id}
-        self._client.invoke_method(self.info.id, args, context=context, on_done=callback)
+        self.client.invoke_method(self.info.id, args, context=context, on_done=callback)
 
 
     def __repr__(self) -> str:
@@ -202,7 +202,7 @@ class SignalDelegate(Delegate):
     """Delegate representing a signal coming from the server
 
     Attributes:
-        _client (Client): 
+        client (Client): 
             client delegate is a part of 
         info (message): 
             message containing information on the signal
@@ -211,7 +211,7 @@ class SignalDelegate(Delegate):
     """
     
     def __init__(self, client: Client, message: Message, specifier: str):
-        self._client = client
+        self.client = client
         self.info = message
         self.specifier = specifier
 
@@ -260,7 +260,7 @@ class TableDelegate(Delegate):
     To use the table, you must first subscribe 
 
     Attributes:
-        _client (Client): 
+        client (Client): 
             weak ref to client to invoke methods and such
         dataframe (Dataframe): 
             dataframe representing current state of the table
