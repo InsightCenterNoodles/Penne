@@ -10,23 +10,26 @@ from cbor2 import loads, dumps
 
 from . import messages, handlers, delegates
 
+from common import ComponentType
+
 
 default_delegates = {
-    "entities" : delegates.EntityDelegate,
-    "tables" : delegates.TableDelegate,
-    "plots" : delegates.PlotDelegate,
-    "signals" : delegates.SignalDelegate,
-    "methods" : delegates.MethodDelegate,
-    "materials" : delegates.MaterialDelegate,
-    "geometries" : delegates.GeometryDelegate,
-    "lights" : delegates.LightDelegate,
-    "images" : delegates.ImageDelegate,
-    "textures" : delegates.TextureDelegate,
-    "samplers" : delegates.SamplerDelegate,
-    "buffers" : delegates.BufferDelegate,
-    "bufferviews" : delegates.BufferViewDelegate,
-    "document" : delegates.DocumentDelegate
+    ComponentType.ENTITY: delegates.EntityDelegate,
+    ComponentType.TABLE: delegates.TableDelegate,
+    ComponentType.PLOT: delegates.PlotDelegate,
+    ComponentType.SIGNAL: delegates.SignalDelegate,
+    ComponentType.METHOD: delegates.MethodDelegate,
+    ComponentType.MATERIAL: delegates.MaterialDelegate,
+    ComponentType.GEOMETRY: delegates.GeometryDelegate,
+    ComponentType.LIGHT: delegates.LightDelegate,
+    ComponentType.IMAGE: delegates.ImageDelegate,
+    ComponentType.TEXTURE: delegates.TextureDelegate,
+    ComponentType.SAMPLER: delegates.SamplerDelegate,
+    ComponentType.BUFFER: delegates.BufferDelegate,
+    ComponentType.BUFFERVIEW: delegates.BufferViewDelegate,
+    ComponentType.DOCUMENT: delegates.DocumentDelegate
 }
+
 
 class Client(object):
     """Client for communicating with server
@@ -80,61 +83,62 @@ class Client(object):
         self._socket = None
         self.name = "Python Client"
         self.state = {
-            "entities": {},
-            "tables": {},
-            "plots": {},
-            "signals": {},
-            "methods": {},
-            "materials": {},
-            "geometries": {},
-            "lights": {},
-            "images": {},
-            "textures": {},
-            "samplers": {},
-            "buffers": {},
-            "bufferviews": {}
+            ComponentType.ENTITY: {},
+            ComponentType.TABLE: {},
+            ComponentType.PLOT: {},
+            ComponentType.SIGNAL: {},
+            ComponentType.METHOD: {},
+            ComponentType.MATERIAL: {},
+            ComponentType.GEOMETRY: {},
+            ComponentType.LIGHT:  {},
+            ComponentType.IMAGE:  {},
+            ComponentType.TEXTURE:  {},
+            ComponentType.SAMPLER: {},
+            ComponentType.BUFFER:  {},
+            ComponentType.BUFFERVIEW:  {},
+            ComponentType.DOCUMENT:  {},
         }
         self.client_message_map = {
             "intro": 0,
             "invoke": 1
         }
         self.server_message_map = {
-            0 : messages.HandleInfo("methods", "create"),
-            1 : messages.HandleInfo("methods", "delete"),
-            2 : messages.HandleInfo("signals", "create"),
-            3 : messages.HandleInfo("signals", "delete"),
-            4 : messages.HandleInfo("entities", "create"),
-            5 : messages.HandleInfo("entities", "update"),
-            6 : messages.HandleInfo("entities", "delete"),
-            7 : messages.HandleInfo("plots", "create"),
-            8 : messages.HandleInfo("plots", "update"),
-            9 : messages.HandleInfo("plots", "delete"),
-            10 : messages.HandleInfo("buffers", "create"),
-            11 : messages.HandleInfo("buffers", "delete"),
-            12 : messages.HandleInfo("bufferviews", "create"),
-            13 : messages.HandleInfo("bufferviews", "delete"),
-            14 : messages.HandleInfo("materials", "create"),
-            15 : messages.HandleInfo("materials", "update"),
-            16 : messages.HandleInfo("materials", "delete"),
-            17 : messages.HandleInfo("images", "create"),
-            18 : messages.HandleInfo("images", "delete"),
-            19 : messages.HandleInfo("textures", "create"), 
-            20 : messages.HandleInfo("textures", "delete"),
-            21 : messages.HandleInfo("samplers", "create"),
-            22 : messages.HandleInfo("samplers", "delete"),
-            23 : messages.HandleInfo("lights", "create"),
-            24 : messages.HandleInfo("lights", "update"),
-            25 : messages.HandleInfo("lights", "delete"),
-            26 : messages.HandleInfo("geometries", "create"),
-            27 : messages.HandleInfo("geometries", "delete"),
-            28 : messages.HandleInfo("tables", "create"),
-            29 : messages.HandleInfo("tables", "update"),
-            30 : messages.HandleInfo("tables", "delete"),
-            31 : messages.HandleInfo("document", "update"),
-            32 : messages.HandleInfo("document", "reset"),  
-            33 : messages.HandleInfo("signals", "invoke"),  
-            34 : messages.HandleInfo("methods", "reply"),
-            35 : messages.HandleInfo("document", "initialized")
+            0: messages.HandleInfo(ComponentType.METHOD, "create"),
+            1: messages.HandleInfo(ComponentType.METHOD, "delete"),
+            2: messages.HandleInfo(ComponentType.SIGNAL, "create"),
+            3: messages.HandleInfo(ComponentType.SIGNAL, "delete"),
+            4: messages.HandleInfo(ComponentType.ENTITY, "create"),
+            5: messages.HandleInfo(ComponentType.ENTITY, "update"),
+            6: messages.HandleInfo(ComponentType.ENTITY, "delete"),
+            7: messages.HandleInfo(ComponentType.PLOT, "create"),
+            8: messages.HandleInfo(ComponentType.PLOT, "update"),
+            9: messages.HandleInfo(ComponentType.PLOT, "delete"),
+            10: messages.HandleInfo(ComponentType.BUFFER, "create"),
+            11: messages.HandleInfo(ComponentType.BUFFER, "delete"),
+            12: messages.HandleInfo(ComponentType.BUFFERVIEW, "create"),
+            13: messages.HandleInfo(ComponentType.BUFFERVIEW, "delete"),
+            14: messages.HandleInfo(ComponentType.MATERIAL, "create"),
+            15: messages.HandleInfo(ComponentType.MATERIAL, "update"),
+            16: messages.HandleInfo(ComponentType.MATERIAL, "delete"),
+            17: messages.HandleInfo(ComponentType.IMAGE, "create"),
+            18: messages.HandleInfo(ComponentType.IMAGE, "delete"),
+            19: messages.HandleInfo(ComponentType.TEXTURE, "create"),
+            20: messages.HandleInfo(ComponentType.TEXTURE, "delete"),
+            21: messages.HandleInfo(ComponentType.SAMPLER, "create"),
+            22: messages.HandleInfo(ComponentType.SAMPLER, "delete"),
+            23: messages.HandleInfo(ComponentType.LIGHT, "create"),
+            24: messages.HandleInfo(ComponentType.LIGHT, "update"),
+            25: messages.HandleInfo(ComponentType.LIGHT, "delete"),
+            26: messages.HandleInfo(ComponentType.GEOMETRY, "create"),
+            27: messages.HandleInfo(ComponentType.GEOMETRY, "delete"),
+            28: messages.HandleInfo(ComponentType.TABLE, "create"),
+            29: messages.HandleInfo(ComponentType.TABLE, "update"),
+            30: messages.HandleInfo(ComponentType.TABLE, "delete"),
+            31: messages.HandleInfo(ComponentType.DOCUMENT, "update"),
+            32: messages.HandleInfo(ComponentType.DOCUMENT, "reset"),
+            33: messages.HandleInfo(ComponentType.SIGNAL, "invoke"),
+            34: messages.HandleInfo(ComponentType.METHOD, "reply"),
+            35: messages.HandleInfo(ComponentType.DOCUMENT, "initialized")
         }
         self._current_invoke = 0
         self.callback_map = {}
@@ -147,10 +151,10 @@ class Client(object):
                 self.delegates[key] = default_delegates[key]
             else:
                 self.delegates[key] = custom_delegate_hash[key]
-        self.state["document"] = self.delegates["document"](self, None, "document")
+        self.state[ComponentType.DOCUMENT] = self.delegates[ComponentType.DOCUMENT](
+            self, None, "document")
 
-
-    def object_from_name(self, name: str, specifier: str) -> list[int]:
+    def method_id_from_name(self, name: str, specifier: str) -> list[int]:
         """Get a method's id from its name
 
         Args:
@@ -167,9 +171,8 @@ class Client(object):
             if hasattr(object.info, "name") and object.info.name == name:
                 return object.info.id
         raise Exception(f"Couldn't find object '{name}' in {specifier}")
-            
 
-    def invoke_method(self, id, args: list, context: dict[str, tuple] = None, on_done = None):
+    def invoke_method(self, id, args: list, context: dict[str, tuple] = None, on_done=None):
         """Invoke method on server
 
         Constructs a dictionary of arguments to use in send_message. The
@@ -192,10 +195,10 @@ class Client(object):
             callback (function): 
                 function to be called upon response
         """
-        
+
         # Get proper ID
         if isinstance(id, str):
-            id = self.object_from_name(id, "methods")
+            id = self.method_id_from_name(id, "methods")
 
         # Get invoke ID
         invoke_id = str(self._current_invoke)
@@ -210,10 +213,10 @@ class Client(object):
             "args": args,
             "invoke_id": invoke_id
         }
-        if context: arg_dict["context"] = context
-        
-        self.send_message(arg_dict, "invoke")
+        if context:
+            arg_dict["context"] = context
 
+        self.send_message(arg_dict, "invoke")
 
     def send_message(self, message_dict: dict[str, Any], type: str):
         """Send message to server
@@ -226,12 +229,12 @@ class Client(object):
         # Construct message with ID from map and converted message object
         message = [self.client_message_map[type], message_dict]
         print(f"Sending Message: {message}")
-        
-        asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
 
+        asyncio.run_coroutine_threadsafe(
+            self._socket.send(dumps(message)), self._loop)
 
     async def run(self):
-        """Network thread for managing websocket connection"""  
+        """Network thread for managing websocket connection"""
 
         async with websockets.connect(self._url) as websocket:
 
@@ -253,7 +256,6 @@ class Client(object):
                     except Exception as e:
                         print(f"Exception: {e}")
 
-    
     def show_methods(self):
         """Displays Available Methods to the User"""
 
@@ -264,13 +266,11 @@ class Client(object):
             if not "noo::" in method.info.name:
                 print(method)
 
-
     def shutdown(self):
         """Method for shutting down the client
-        
+
         Closes websocket connection then blocks to finish all callbacks
         """
-        
+
         asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
         self.is_shutdown = True
-    

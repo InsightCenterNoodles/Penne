@@ -12,7 +12,11 @@ import weakref
 
 from . import messages
 
+from common import ComponentType
+
 # Helper Methods
+
+
 def handle_update(client, message: Message, specifier: str):
     """Update a delegate in the current state
 
@@ -32,26 +36,26 @@ def handle_update(client, message: Message, specifier: str):
 
 def delegate_from_context(client: Client, context: Message) -> Delegate:
     """Get delegate object from a context message object
-    
+
     Args:
         client (Client): client to get delegate from
         context (Message): object containing context
-    
+
     Raises:
         Exception: Couldn't get delegate from context
     """
 
     if not context:
-        target_delegate = client.state["document"]
+        target_delegate = client.state[ComponentType.DOCUMENT]
     elif hasattr(context, "table"):
-        target_delegate = client.state["tables"][context.table]
+        target_delegate = client.state[ComponentType.TABLE][context.table]
     elif hasattr(context, "entity"):
-        target_delegate = client.state["entities"][context.entity]
+        target_delegate = client.state[ComponentType.ENTITY][context.entity]
     elif hasattr(context, "plot"):
-        target_delegate = client.state["plots"][context.plot]
+        target_delegate = client.state[ComponentType.PLOT][context.plot]
     else:
         raise Exception("Couldn't get delegate from context")
-    
+
     return target_delegate
 
 
@@ -71,7 +75,7 @@ def handle(client: Client, id, message_dict):
         client (Client): client receiving the message
         encoded_message (CBOR array): array with id and message as dictionary
     """
-    
+
     # Process message using ID from dict
     handle_info = client.server_message_map[id]
     action = handle_info.action
@@ -79,9 +83,9 @@ def handle(client: Client, id, message_dict):
     message_obj: Message = messages.Message.from_dict(message_dict)
     print(f"Message: {action} {specifier}")
 
-    if specifier == "plots":
+    if specifier == ComponentType.PLOT:
         print(f"\n  {action} - {specifier}\n{message_obj}")
-    
+
     # Update state based on map info
     if action == "create":
 
@@ -89,12 +93,13 @@ def handle(client: Client, id, message_dict):
         specifier = specifier
         reference = weakref.ref(client)
         reference_obj = reference()
-        delegate: Delegate = client.delegates[specifier](reference_obj, message_obj, specifier)
+        delegate: Delegate = client.delegates[specifier](
+            reference_obj, message_obj, specifier)
 
         # Update state and pass message info to the delegate's handler
         client.state[specifier][message_obj.id] = delegate
         delegate.on_new(message_obj)
-    
+
     elif action == "delete":
 
         state_delegate: Delegate = client.state[specifier][message_obj.id]
@@ -115,21 +120,22 @@ def handle(client: Client, id, message_dict):
 
         # Handle callback functions
         if hasattr(message_obj, "method_exception"):
-            raise Exception(f"Method call ({message_obj.invoke_id}) resulted in exception from server: {message_obj.method_exception}")
+            raise Exception(
+                f"Method call ({message_obj.invoke_id}) resulted in exception from server: {message_obj.method_exception}")
         else:
             callback = client.callback_map.pop(message_obj.invoke_id)
             if callback:
-            
-                callback_info = (callback, message_obj.result) if hasattr(message_obj, "result") else (callback, None)
+
+                callback_info = (callback, message_obj.result) if hasattr(
+                    message_obj, "result") else (callback, None)
                 client.callback_queue.put(callback_info)
                 #callback(message_obj.result) if hasattr(message_obj, "result") else callback()
-
 
     elif action == "invoke":
 
         # Handle invoke message from server
         signal_data = message_obj.signal_data
-        signal: Delegate = client.state["signals"][message_obj.id]
+        signal: Delegate = client.state[ComponentType.SIGNAL][message_obj.id]
 
         # Determine the delegate the signal is being invoked on
         context = getattr(message_obj, "context", False)
@@ -143,7 +149,7 @@ def handle(client: Client, id, message_dict):
 
         if client.on_connected:
             client.callback_queue.put((client.on_connected, None))
-            #client.on_connected()
+            # client.on_connected()
 
     else:
         # Document reset messages
