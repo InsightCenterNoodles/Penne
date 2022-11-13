@@ -167,6 +167,20 @@ class Client(object):
             if hasattr(object.info, "name") and object.info.name == name:
                 return object.info.id
         raise Exception(f"Couldn't find object '{name}' in {specifier}")
+
+
+    def get_component(self, specifier, id):
+        """Getter to easily retrieve components from state
+        
+        Args:
+            specifier (str): type of component
+            id (list): id for the component
+
+        Returns:
+            Component delegate from state
+        """
+
+        return self.state[specifier][id]
             
 
     def invoke_method(self, id, args: list, context: dict[str, tuple] = None, on_done = None):
