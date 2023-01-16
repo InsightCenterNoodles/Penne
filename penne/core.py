@@ -28,6 +28,16 @@ default_delegates = {
     "document" : delegates.DocumentDelegate
 }
 
+
+def uri_tag_hook(decoder, tag, shareable_index=None):
+    """Hook for URI CBOR Tag"""
+
+    if tag.tag != 32:
+        return tag
+    else:
+        return tag.value
+
+
 class Client(object):
     """Client for communicating with server
 
@@ -259,7 +269,7 @@ class Client(object):
 
             # decode, iterate over, and handle all incoming messages
             async for message in self._socket:
-                raw_message = loads(message)
+                raw_message = loads(message, tag_hook=uri_tag_hook)
                 iterator = iter(raw_message)
                 for id in iterator:
                     try:
