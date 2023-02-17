@@ -8,25 +8,7 @@ from typing import Any
 import websockets
 from cbor2 import loads, dumps
 
-from . import messages, handlers, delegates
-
-
-default_delegates = {
-    "entities" : delegates.EntityDelegate,
-    "tables" : delegates.TableDelegate,
-    "plots" : delegates.PlotDelegate,
-    "signals" : delegates.SignalDelegate,
-    "methods" : delegates.MethodDelegate,
-    "materials" : delegates.MaterialDelegate,
-    "geometries" : delegates.GeometryDelegate,
-    "lights" : delegates.LightDelegate,
-    "images" : delegates.ImageDelegate,
-    "textures" : delegates.TextureDelegate,
-    "samplers" : delegates.SamplerDelegate,
-    "buffers" : delegates.BufferDelegate,
-    "bufferviews" : delegates.BufferViewDelegate,
-    "document" : delegates.DocumentDelegate
-}
+from . import handlers, delegates
 
 
 def uri_tag_hook(decoder, tag, shareable_index=None):
@@ -36,6 +18,20 @@ def uri_tag_hook(decoder, tag, shareable_index=None):
         return tag
     else:
         return tag.value
+
+
+class HandleInfo(object):
+    """Class to organize useful info for processing each type of message
+
+    Attributes:
+        specifier (str) : keyword for delegate and state maps
+        action (str)    : action performed by message
+    """
+
+    def __init__(self, specifier, action, id_type):
+        self.specifier = specifier
+        self.action = action
+        self.id_type = id_type
 
 
 class Client(object):
@@ -60,7 +56,7 @@ class Client(object):
             dict keeping track of created objects
         client_message_map (dict): 
             mapping message type to corresponding id
-        server_message_map (dict):
+        server_messages (dict):
             mapping message id's to handling info
         current_invoke (str):  
             id for next method invoke
@@ -89,72 +85,59 @@ class Client(object):
         self.thread = None
         self._socket = None
         self.name = "Python Client"
-        self.state = {
-            "entities": {},
-            "tables": {},
-            "plots": {},
-            "signals": {},
-            "methods": {},
-            "materials": {},
-            "geometries": {},
-            "lights": {},
-            "images": {},
-            "textures": {},
-            "samplers": {},
-            "buffers": {},
-            "bufferviews": {}
-        }
+        self.state = {}
         self.client_message_map = {
             "intro": 0,
             "invoke": 1
         }
-        self.server_message_map = {
-            0 : messages.HandleInfo("methods", "create"),
-            1 : messages.HandleInfo("methods", "delete"),
-            2 : messages.HandleInfo("signals", "create"),
-            3 : messages.HandleInfo("signals", "delete"),
-            4 : messages.HandleInfo("entities", "create"),
-            5 : messages.HandleInfo("entities", "update"),
-            6 : messages.HandleInfo("entities", "delete"),
-            7 : messages.HandleInfo("plots", "create"),
-            8 : messages.HandleInfo("plots", "update"),
-            9 : messages.HandleInfo("plots", "delete"),
-            10 : messages.HandleInfo("buffers", "create"),
-            11 : messages.HandleInfo("buffers", "delete"),
-            12 : messages.HandleInfo("bufferviews", "create"),
-            13 : messages.HandleInfo("bufferviews", "delete"),
-            14 : messages.HandleInfo("materials", "create"),
-            15 : messages.HandleInfo("materials", "update"),
-            16 : messages.HandleInfo("materials", "delete"),
-            17 : messages.HandleInfo("images", "create"),
-            18 : messages.HandleInfo("images", "delete"),
-            19 : messages.HandleInfo("textures", "create"), 
-            20 : messages.HandleInfo("textures", "delete"),
-            21 : messages.HandleInfo("samplers", "create"),
-            22 : messages.HandleInfo("samplers", "delete"),
-            23 : messages.HandleInfo("lights", "create"),
-            24 : messages.HandleInfo("lights", "update"),
-            25 : messages.HandleInfo("lights", "delete"),
-            26 : messages.HandleInfo("geometries", "create"),
-            27 : messages.HandleInfo("geometries", "delete"),
-            28 : messages.HandleInfo("tables", "create"),
-            29 : messages.HandleInfo("tables", "update"),
-            30 : messages.HandleInfo("tables", "delete"),
-            31 : messages.HandleInfo("document", "update"),
-            32 : messages.HandleInfo("document", "reset"),  
-            33 : messages.HandleInfo("signals", "invoke"),  
-            34 : messages.HandleInfo("methods", "reply"),
-            35 : messages.HandleInfo("document", "initialized")
-        }
+        self.server_messages = [
+            HandleInfo("methods", "create"),
+            HandleInfo("methods", "delete"),
+            HandleInfo("signals", "create"),
+            HandleInfo("signals", "delete"),
+            HandleInfo("entities", "create"),
+            HandleInfo("entities", "update"),
+            HandleInfo("entities", "delete"),
+            HandleInfo("plots", "create"),
+            HandleInfo("plots", "update"),
+            HandleInfo("plots", "delete"),
+            HandleInfo("buffers", "create"),
+            HandleInfo("buffers", "delete"),
+            HandleInfo("bufferviews", "create"),
+            HandleInfo("bufferviews", "delete"),
+            HandleInfo("materials", "create"),
+            HandleInfo("materials", "update"),
+            HandleInfo("materials", "delete"),
+            HandleInfo("images", "create"),
+            HandleInfo("images", "delete"),
+            HandleInfo("textures", "create"), 
+            HandleInfo("textures", "delete"),
+            HandleInfo("samplers", "create"),
+            HandleInfo("samplers", "delete"),
+            HandleInfo("lights", "create"),
+            HandleInfo("lights", "update"),
+            HandleInfo("lights", "delete"),
+            HandleInfo("geometries", "create"),
+            HandleInfo("geometries", "delete"),
+            HandleInfo("tables", "create"),
+            HandleInfo("tables", "update"),
+            HandleInfo("tables", "delete"),
+            HandleInfo("document", "update"),
+            HandleInfo("document", "reset"),  
+            HandleInfo("signals", "invoke"),  
+            HandleInfo("methods", "reply"),
+            HandleInfo("document", "initialized")
+        ]
         self._current_invoke = 0
         self.callback_map = {}
         self.callback_queue = callback_queue
         self.is_shutdown = False
 
         # Hook up delegate map to default or custom based on input hash
-        for key in default_delegates:
+        defaults = delegates.default_delegates
+        for key in defaults:
             if key not in custom_delegate_hash:
-                self.delegates[key] = default_delegates[key]
+                self.delegates[key] = defaults[key]
             else:
                 self.delegates[key] = custom_delegate_hash[key]
         self.state["document"] = self.delegates["document"](self, None, "document")
