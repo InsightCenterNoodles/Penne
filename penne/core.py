@@ -1,10 +1,10 @@
 """Module with Core Implementation of Client"""
 
 from __future__ import annotations
-
+from typing import Any, List
 import asyncio
 from queue import Queue
-from typing import Any
+
 import websockets
 from cbor2 import loads, dumps
 
@@ -28,10 +28,9 @@ class HandleInfo(object):
         action (str)    : action performed by message
     """
 
-    def __init__(self, specifier, action, id_type):
+    def __init__(self, specifier, action):
         self.specifier = specifier
         self.action = action
-        self.id_type = id_type
 
 
 class Client(object):
@@ -140,11 +139,10 @@ class Client(object):
                 self.delegates[key] = defaults[key]
             else:
                 self.delegates[key] = custom_delegate_hash[key]
-        self.state["document"] = self.delegates["document"](self, None, "document")
 
 
-    def object_from_name(self, name: str, specifier: str) -> list[int]:
-        """Get a method's id from its name
+    def object_from_name(self, name: str) -> List[int]:
+        """Get a delegate's id from its name
 
         Args:
             name (str): name of method
@@ -155,11 +153,11 @@ class Client(object):
         Raises:
             Couldn't find method exception
         """
-        objects: list[delegates.MethodDelegate] = self.state[specifier].values()
+        objects: List[delegates.Method] = self.state.values()
         for object in objects:
-            if hasattr(object.info, "name") and object.info.name == name:
-                return object.info.id
-        raise Exception(f"Couldn't find object '{name}' in {specifier}")
+            if object.name == name:
+                return object.id
+        raise Exception(f"Couldn't find object '{name}' in state")
 
 
     def get_component(self, specifier, id):
@@ -202,7 +200,7 @@ class Client(object):
         
         # Get proper ID
         if isinstance(id, str):
-            id = self.object_from_name(id, "methods")
+            id = self.object_from_name(id)
 
         # Get invoke ID
         invoke_id = str(self._current_invoke)
@@ -268,7 +266,7 @@ class Client(object):
         print("client.invoke_method(method_name, args, optional callback function)")
         print("-------------------------------------------------------------------")
         for method in self.state["methods"].values():
-            if not "noo::" in method.info.name:
+            if not "noo::" in method.name:
                 print(method)
 
 

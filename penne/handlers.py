@@ -8,10 +8,10 @@ if TYPE_CHECKING:
 import weakref
 
 from penne.delegates import Delegate, id_map, default_delegates
-from penne.delegates import TableID, PlotID, EntityID
+from penne.delegates import TableID, PlotID, EntityID, ID
 
 # Helper Methods
-def handle_update(client, message: dict, specifier: str):
+def update_state(client, message: dict, component_id: ID):
     """Update a delegate in the current state
 
     Args:
@@ -23,9 +23,16 @@ def handle_update(client, message: dict, specifier: str):
             which part of state to update
     """
 
-    current_state = client.state[specifier][message.id].info
-    for attribute, value in message.as_dict().items():
-        setattr(current_state, attribute, value)
+    current_state = client.state[component_id]
+    for attribute, value in message.items():
+        current_attr = getattr(current_state, attribute)
+        attr_type = type(current_attr)
+        if isinstance(value, list):
+            setattr(current_state, attribute, attr_type(*value))
+        elif isinstance(value, dict):
+            setattr(current_state, attribute, attr_type(**value))
+        else:
+            setattr(current_state, attribute, value)
 
 
 def delegate_from_context(client: Client, context: dict) -> Delegate:
@@ -48,11 +55,11 @@ def delegate_from_context(client: Client, context: dict) -> Delegate:
     plot = context.get("plot")
 
     if table:
-        target_delegate = client.state[TableID(table)]
+        target_delegate = client.state[TableID(*table)]
     elif hasattr(context, "entity"):
-        target_delegate = client.state[EntityID(entity)]
+        target_delegate = client.state[EntityID(*entity)]
     elif hasattr(context, "plot"):
-        target_delegate = client.state[PlotID(plot)]
+        target_delegate = client.state[PlotID(*plot)]
     else:
         raise Exception("Couldn't get delegate from context")
     
@@ -97,7 +104,7 @@ def handle(client: Client, message_id, message: dict[str, Any]):
     
     elif action == "delete":
         
-        id = id_type(message["id"])
+        id = id_type(*message["id"])
         state_delegate: Delegate = client.state[id]
 
         # Update delegate and state
@@ -107,8 +114,8 @@ def handle(client: Client, message_id, message: dict[str, Any]):
     elif action == "update":
 
         if specifier != "document":
-            id = id_type(message["id"])
-            handle_update(client, message, specifier)
+            id = id_type(*message["id"])
+            update_state(client, message, id)
             client.state[id].on_update(message)
         else:
             client.state[specifier].on_update(message)
@@ -134,7 +141,7 @@ def handle(client: Client, message_id, message: dict[str, Any]):
 
         # Handle invoke message from server
         signal_data = message["signal_data"]
-        id = id_type(message["id"])
+        id = id_type(*message["id"])
         signal: Delegate = client.state[id]
 
         # Determine the delegate the signal is being invoked on
@@ -147,9 +154,11 @@ def handle(client: Client, message_id, message: dict[str, Any]):
 
     elif action == "initialized":
 
+        client.state["document"] = client.delegates["document"](client=client)
         if client.on_connected:
             client.callback_queue.put((client.on_connected, None))
 
     else:
         # Document reset messages
+        client.state["document"].reset()
         print(message)

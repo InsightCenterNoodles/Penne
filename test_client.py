@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from penne.client import create_client
-from penne.delegates import TableDelegate
+from penne.delegates import Table, TableID
 
 
 
@@ -82,15 +82,13 @@ def plot_process(df: pd.DataFrame, receiver):
             break
 
 
-class TestDelegate(TableDelegate):
+class TestDelegate(Table):
     """Overide Table Delegate to Add Plotting Capabilities"""
 
-    def __init__(self, client, message, specifier) -> None:
-        super().__init__(client, message, specifier)
-        self.dataframe: pd.DataFrame = None
-        self.plotting = None
+    dataframe: pd.DataFrame = None
+    plotting: multiprocessing.Process = None
 
-    def _on_table_init(self, init_info, on_done=None):
+    def _on_table_init(self, init_info: dict, on_done=None):
         """Creates table from server response info
 
         Args:
@@ -100,17 +98,17 @@ class TestDelegate(TableDelegate):
         """
 
         # Extract data from init info and transpose rows to cols
-        row_data = getattr(init_info, "data")
+        row_data = init_info["data"]
         col_data = [list(i) for i in zip(*row_data)]
-        cols = getattr(init_info, "columns")
-        data_dict = {getattr(col, "name"): data for col, data in zip(cols, col_data)}
+        cols = init_info["columns"]
+        data_dict = {col["name"]: data for col, data in zip(cols, col_data)}
         
-        self.dataframe = pd.DataFrame(data_dict, index=getattr(init_info, "keys"))
+        self.dataframe = pd.DataFrame(data_dict, index=init_info["keys"])
 
         # Initialize selections if any
-        selections = getattr(init_info, "selections", [])
+        selections = init_info.get("selections", [])
         for selection in selections:
-            self.selections[selection.name] = selection
+            self.selections[selection["name"]] = selection
         
         print(f"Initialized data table...\n{self.dataframe}")
         if on_done: on_done()
@@ -221,17 +219,18 @@ class Tests(unittest.TestCase):
 
         # Create callback functions
         # Not sure about 'response' - cleaner way?
+        table = TableID(0, 0)
         points = [[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5],[(0,1,1),(0,1,1),(0,1,1),(0,1,1),(0,1,1)]]
         create_table = lambda: client.invoke_method("new_point_plot", points, on_done=subscribe)
-        subscribe = lambda response: client.state["tables"][(0, 0)].subscribe(on_done=plot)
-        plot = lambda: client.state["tables"][(0, 0)].plot(on_done=insert_points)
-        insert_points = lambda: client.state["tables"][(0, 0)].request_insert(
+        subscribe = lambda response: client.state[table].subscribe(on_done=plot)
+        plot = lambda: client.state[table].plot(on_done=insert_points)
+        insert_points = lambda: client.state[table].request_insert(
             row_list=[[8, 8, 8, .3, .2, 1, .05, .05, .05],[9,9,9,.1,.2,.5,.02,.02,.02, "Annotation"]], 
             on_done=update_rows
             )
-        update_rows = lambda: client.state["tables"][(0, 0)].request_update([3],[[4,6,3,0,1,0,.1,.1,.1,"Updated this row"]], on_done=get_selection)
-        get_selection = lambda: client.state["tables"][(0, 0)].request_update_selection("Test Select", [1, 2, 3], on_done=remove_row)
-        remove_row = lambda: client.state["tables"][(0, 0)].request_remove([2], on_done=shutdown)
+        update_rows = lambda: client.state[table].request_update([3],[[4,6,3,0,1,0,.1,.1,.1,"Updated this row"]], on_done=get_selection)
+        get_selection = lambda: client.state[table].request_update_selection("Test Select", [1, 2, 3], on_done=remove_row)
+        remove_row = lambda: client.state[table].request_remove([2], on_done=shutdown)
         shutdown = lambda: client.shutdown()
 
         # Creat client and start callback chain

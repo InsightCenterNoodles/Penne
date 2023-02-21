@@ -5,15 +5,12 @@ implements strict validation
 """
 
 from __future__ import annotations
-from typing import Literal, Optional, Any, Union, Callable, TYPE_CHECKING
-if TYPE_CHECKING:
-    from penne.core import Client
-
+from typing import Literal, Optional, Any, Union, Callable, List
 from collections import namedtuple
 from enum import Enum
 from math import pi
 
-from pydantic import BaseModel, root_validator
+from pydantic import BaseModel, root_validator, Extra
 
 
 """ =============================== ID's ============================= """
@@ -88,6 +85,7 @@ class NoodleObject(BaseModel):
 
         arbitrary_types_allowed = True
         use_enum_values = True
+        extra = Extra.allow # Allow injected methods
 
     def __repr__(self) -> str:
         return f"{type(self)}"
@@ -108,14 +106,14 @@ class Delegate(NoodleObject):
     Attributes:
         client (Client): Client delegate is attached to
         signals (dict): Signals that can be called on delegate
-        __all__ (list): Specify public methods, used in show_methods()
+        methods (list): Specify public methods, used in show_methods()
     """
 
     client: Client
     id: ID = None
-    name: Optional[str]
-    signals: dict = {}
-    __all__: list = []
+    name: Optional[str] = "No-Name Delegate"
+    signals: Optional[dict] = {}
+    methods: Optional[List] = []
 
     def __repr__(self):
         return f"{type(self)} | {self.id}"
@@ -141,9 +139,10 @@ class Delegate(NoodleObject):
 
         print(f"-- Methods on {self} --")
         print("--------------------------------------")
-        for name in self.__all__:
+        for name in self.methods:
             method = getattr(self, name)
             print(f">> '{name}'\n{method.__doc__}")
+
 
 
 """ ====================== Common Definitions ====================== """
@@ -202,8 +201,8 @@ class SelectionRange(NoodleObject):
 
 class Selection(NoodleObject):
     name: str
-    rows: Optional[list[int]] = None
-    row_ranges: Optional[list[SelectionRange]] = None
+    rows: Optional[List[int]] = None
+    row_ranges: Optional[List[SelectionRange]] = None
 
 class MethodArg(NoodleObject): 
     name: str
@@ -267,8 +266,8 @@ class Attribute(NoodleObject):
     offset: Optional[int] = 0
     stride: Optional[int] = 0
     format: Format
-    minimum_value: Optional[list[float]] = None
-    maximum_value: Optional[list[float]] = None
+    minimum_value: Optional[List[float]] = None
+    maximum_value: Optional[List[float]] = None
     normalized: Optional[bool] = False
 
 class Index(NoodleObject):
@@ -279,7 +278,7 @@ class Index(NoodleObject):
     format: Literal["U8", "U16", "U32"]
 
 class GeometryPatch(NoodleObject):
-    attributes: list[Attribute]
+    attributes: List[Attribute]
     vertex_count: int
     indices: Optional[Index] = None
     type: PrimitiveType
@@ -309,10 +308,10 @@ class TableColumnInfo(NoodleObject):
     type: Literal["TEXT", "REAL", "INTEGER"]
 
 class TableInitData(NoodleObject):
-    columns: list[TableColumnInfo]
-    keys: list[int]
-    data: list[list[Union[float, int, str]]]
-    selections: Optional[list[Selection]] = None
+    columns: List[TableColumnInfo]
+    keys: List[int]
+    data: List[List[Union[float, int, str]]]
+    selections: Optional[List[Selection]] = None
 
     # too much overhead? - strict mode
     @root_validator
@@ -326,9 +325,6 @@ class TableInitData(NoodleObject):
                     raise ValueError(f"Column Info doesn't match type in data: {col, row[i]}")
         return values
 
-
-class Document(NoodleObject):
-    pass
         
 
 """ ====================== NOOODLE COMPONENTS ====================== """
@@ -339,7 +335,7 @@ class Method(Delegate):
     name: str
     doc: Optional[str] = None
     return_doc: Optional[str] = None
-    arg_doc: list[MethodArg] = []
+    arg_doc: List[MethodArg] = []
 
     def invoke(self, on_delegate: Delegate, args=None, callback=None):
         """Invoke this delegate's method
@@ -353,12 +349,13 @@ class Method(Delegate):
             callback (function):
                 function to be called when complete
         """
-        context_map = {
-            Table: "table",
-            Plot: "plot",
-            Entity: "entity"
-        }
-        context = {context_map[type(on_delegate)]: on_delegate.id}
+
+        if isinstance(on_delegate, Table): kind = "table"
+        elif isinstance(on_delegate, Plot): kind = "plot"
+        elif isinstance(on_delegate, Entity): kind = "entity"
+        else: raise Exception("Invalid delegate context")
+
+        context = {kind: on_delegate.id}
         self.client.invoke_method(self.id, args, context=context, on_done=callback)
 
 
@@ -375,7 +372,7 @@ class Signal(Delegate):
     id: SignalID
     name: str
     doc: Optional[str] = None
-    arg_doc: list[MethodArg] = None
+    arg_doc: List[MethodArg] = None
 
 
 class Entity(Delegate):
@@ -389,12 +386,12 @@ class Entity(Delegate):
     web_rep: Optional[WebRepresentation] = None
     render_rep: Optional[RenderRepresentation] = None
 
-    lights: Optional[list[LightID]] = None
-    tables: Optional[list[TableID]] = None
-    plots: Optional[list[PlotID]] = None
-    tags: Optional[list[str]] = None
-    methods_list: Optional[list[MethodID]] = None
-    signals_list: Optional[list[SignalID]] = None
+    lights: Optional[List[LightID]] = None
+    tables: Optional[List[TableID]] = None
+    plots: Optional[List[PlotID]] = None
+    tags: Optional[List[str]] = None
+    methods_list: Optional[List[MethodID]] = None
+    signals_list: Optional[List[SignalID]] = None
 
     influence: Optional[BoundingBox] = None
 
@@ -408,8 +405,8 @@ class Plot(Delegate):
     simple_plot: Optional[str] = None
     url_plot: Optional[str] = None
 
-    methods_list: Optional[list[MethodID]] = None
-    signals_list: Optional[list[SignalID]] = None
+    methods_list: Optional[List[MethodID]] = None
+    signals_list: Optional[List[SignalID]] = None
 
     @root_validator
     def one_of(cls, values):
@@ -526,7 +523,7 @@ class Light(Delegate):
 class Geometry(Delegate):
     id: GeometryID
     name: Optional[str] = "Unnamed Geometry Delegate"
-    patches: list[GeometryPatch]
+    patches: List[GeometryPatch]
 
 
 class Table(Delegate):
@@ -534,28 +531,29 @@ class Table(Delegate):
     name: Optional[str] = "Unnamed Table Delegate"
 
     meta: Optional[str] = None
-    methods_list: Optional[list[MethodID]] = None
-    signals_list: Optional[list[SignalID]] = None
+    methods_list: Optional[List[MethodID]] = None
+    signals_list: Optional[List[SignalID]] = None
+
+    methods: List[str] = [
+        "subscribe", 
+        "request_clear", 
+        "request_insert", 
+        "request_remove", 
+        "request_update", 
+        "request_update_selection",
+        "plot"
+    ]
 
     def __init__(self, **kwargs):
-        """Overide init to set default values"""
-
-        super.__init__(**kwargs)
-        self.signals: dict[str, Callable] = {
+        """Overide init to link default values with methods"""
+        super().__init__(**kwargs)
+        self.signals = {
             "tbl_reset" : self._reset_table,
             "tbl_rows_removed" : self._remove_rows,
             "tbl_updated" : self._update_rows,
             "tbl_selection_updated" : self._update_selection
         }
-        self.__all__: list[str] = [
-                "subscribe", 
-                "request_clear", 
-                "request_insert", 
-                "request_remove", 
-                "request_update", 
-                "request_update_selection",
-                "plot"
-            ]
+        
 
     def _on_table_init(self, init_info: dict, on_done=None):
         """Creates table from server response info
@@ -581,7 +579,7 @@ class Table(Delegate):
         self.selections = {}
 
 
-    def _remove_rows(self, key_list: list[int]):
+    def _remove_rows(self, key_list: List[int]):
         """Removes rows from table
 
         Method is linked to 'tbl_rows_removed' signal
@@ -594,7 +592,7 @@ class Table(Delegate):
 
 
 
-    def _update_rows(self, keys: list[int], rows: list):
+    def _update_rows(self, keys: List[int], rows: list):
         """Update rows in table
 
         Method is linked to 'tbl_updated' signal
@@ -688,7 +686,7 @@ class Table(Delegate):
             raise Exception("Could not subscribe to table")
 
     
-    def request_insert(self, row_list: list[list[int]], on_done=None):
+    def request_insert(self, row_list: List[List[int]], on_done=None):
         """Add rows to end of table
 
         User endpoint for interacting with table and invoking method
@@ -711,7 +709,7 @@ class Table(Delegate):
         self.tbl_insert(on_done, row_list)
     
 
-    def request_update(self, keys:list[int], rows:list[list[int]], on_done=None):
+    def request_update(self, keys:List[int], rows:List[List[int]], on_done=None):
         """Update the table using a DataFrame
 
         User endpoint for interacting with table and invoking method
@@ -726,7 +724,7 @@ class Table(Delegate):
         self.tbl_update(on_done, keys, rows)
 
 
-    def request_remove(self, keys: list[int], on_done=None):
+    def request_remove(self, keys: List[int], on_done=None):
         """Remove rows from table by their keys
 
         User endpoint for interacting with table and invoking method
@@ -752,7 +750,7 @@ class Table(Delegate):
         self.tbl_clear(on_done)
 
 
-    def request_update_selection(self, name: str, keys: list[int], on_done=None):
+    def request_update_selection(self, name: str, keys: List[int], on_done=None):
         """Update a selection object in the table
 
         User endpoint for interacting with table and invoking method
@@ -769,7 +767,12 @@ class Table(Delegate):
         self.tbl_update_selection(on_done, name, {"rows": keys})
 
     
-    
+class Document(Delegate):
+    name: str = "Document"
+
+    def reset(self):
+        pass
+
  
 
 """ ====================== Communication Objects ====================== """
@@ -778,7 +781,7 @@ class Table(Delegate):
 class Invoke(NoodleObject):
     id: SignalID
     context: Optional[InvokeIDType] = None # if empty - document
-    signal_data: list[Any]
+    signal_data: List[Any]
 
 
 # Note: this isn't technically an exception
@@ -867,7 +870,7 @@ class LinkedMethod(object):
         self._method_delegate.invoke(self._obj_delegate, arguments, callback=on_done)
 
 
-def inject_methods(delegate: Delegate, methods: list[MethodID]):
+def inject_methods(delegate: Delegate, methods: List[MethodID]):
     """Inject methods into a delegate class
 
     Args:
@@ -878,9 +881,8 @@ def inject_methods(delegate: Delegate, methods: list[MethodID]):
     """
 
     # Clear out old injected methods
-    for name in dir(delegate):
-        att = getattr(delegate, name)
-        if hasattr(att, "injected"):
+    for field, value in delegate:
+        if hasattr(value, "injected"):
             print(f"Deleting: {name} in inject methods")
             delattr(delegate, name)
 
@@ -897,7 +899,7 @@ def inject_methods(delegate: Delegate, methods: list[MethodID]):
         setattr(delegate, name, injected)
 
 
-def inject_signals(delegate: Delegate, signals: list[SignalID]):
+def inject_signals(delegate: Delegate, signals: List[SignalID]):
     """Method to inject signals into delegate
 
     Args:
@@ -919,3 +921,7 @@ def inject_signals(delegate: Delegate, signals: list[SignalID]):
         delegate.signals[signal.name] = None
 
 
+# Update forward refs where model -> client -> model ...
+from penne.core import Client
+for component in id_map:
+    component.update_forward_refs()
