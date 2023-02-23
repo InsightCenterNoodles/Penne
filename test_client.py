@@ -13,19 +13,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from penne.client import create_client
-from penne.delegates import TableDelegate
-
+from penne.delegates import Table, TableID
 
 
 def get_plot_data(df: pd.DataFrame):
     """Helper function to extract data for the plot from the dataframe"""
 
     data = {
-        "xs": df["x"], 
-        "ys": df["y"], 
+        "xs": df["x"],
+        "ys": df["y"],
         "zs": df["z"],
-        "s" : [(((sx + sy + sz) / 3) * 1000) for sx, sy, sz in zip(df["sx"], df["sy"], df["sz"])],
-        "c" : [(r, g, b) for r, g, b in zip(df["r"], df["g"], df["b"])]
+        "s": [(((sx + sy + sz) / 3) * 1000) for sx, sy, sz in zip(df["sx"], df["sy"], df["sz"])],
+        "c": [(r, g, b) for r, g, b in zip(df["r"], df["g"], df["b"])]
     }
     return data
 
@@ -34,6 +33,7 @@ def on_close(event):
     """Event handler for when window is closed"""
 
     plt.close('all')
+
 
 def plot_process(df: pd.DataFrame, receiver):
     """Process for plotting the table as a 3d scatter plot
@@ -68,11 +68,11 @@ def plot_process(df: pd.DataFrame, receiver):
         # If update received, redraw the scatter plot
         if receiver.poll(.1):
             update = receiver.recv()
-            plt.cla() # efficient? better way to set directly?
+            plt.cla()  # efficient? better way to set directly?
             ax.scatter(**update)
             ax.set_xlabel('X Label')
             ax.set_ylabel('Y Label')
-            ax.set_zlabel('Z Label') 
+            ax.set_zlabel('Z Label')
             plt.pause(.001)
 
         # Keep GUI event loop going as long as window is still open
@@ -82,15 +82,14 @@ def plot_process(df: pd.DataFrame, receiver):
             break
 
 
-class TestDelegate(TableDelegate):
-    """Overide Table Delegate to Add Plotting Capabilities"""
+class TestDelegate(Table):
+    """Override Table Delegate to Add Plotting Capabilities"""
 
-    def __init__(self, client, message, specifier) -> None:
-        super().__init__(client, message, specifier)
-        self.dataframe: pd.DataFrame = None
-        self.plotting = None
+    dataframe: pd.DataFrame = None
+    plotting: multiprocessing.Process = None
+    sender = None
 
-    def _on_table_init(self, init_info, on_done=None):
+    def _on_table_init(self, init_info: dict, on_done=None):
         """Creates table from server response info
 
         Args:
@@ -100,21 +99,21 @@ class TestDelegate(TableDelegate):
         """
 
         # Extract data from init info and transpose rows to cols
-        row_data = getattr(init_info, "data")
+        row_data = init_info["data"]
         col_data = [list(i) for i in zip(*row_data)]
-        cols = getattr(init_info, "columns")
-        data_dict = {getattr(col, "name"): data for col, data in zip(cols, col_data)}
-        
-        self.dataframe = pd.DataFrame(data_dict, index=getattr(init_info, "keys"))
+        cols = init_info["columns"]
+        data_dict = {col["name"]: data for col, data in zip(cols, col_data)}
+
+        self.dataframe = pd.DataFrame(data_dict, index=init_info["keys"])
 
         # Initialize selections if any
-        selections = getattr(init_info, "selections", [])
+        selections = init_info.get("selections", [])
         for selection in selections:
-            self.selections[selection.name] = selection
-        
-        print(f"Initialized data table...\n{self.dataframe}")
-        if on_done: on_done()
+            self.selections[selection["name"]] = selection
 
+        print(f"Initialized data table...\n{self.dataframe}")
+        if on_done:
+            on_done()
 
     def _reset_table(self):
         """Reset dataframe and selections to blank objects
@@ -127,7 +126,6 @@ class TestDelegate(TableDelegate):
 
         if self.plotting:
             self._update_plot()
-
 
     def _remove_rows(self, key_list: list[int]):
         """Removes rows from table
@@ -144,7 +142,6 @@ class TestDelegate(TableDelegate):
         if self.plotting:
             self._update_plot()
 
-
     def _update_rows(self, keys: list[int], rows: list):
         """Update rows in table
 
@@ -153,8 +150,8 @@ class TestDelegate(TableDelegate):
         Args:
             keys (list): 
                 list of keys to update
-            cols (list): 
-                list of cols containing the values for each new row,
+            rows (list):
+                list of rows containing the values for each new row,
                 should be col for each col in table, and value for each key
         """
 
@@ -163,9 +160,8 @@ class TestDelegate(TableDelegate):
 
         if self.plotting:
             self._update_plot()
-    
-        print(f"Updated Rows...{keys}\n", self.dataframe)
 
+        print(f"Updated Rows...{keys}\n", self.dataframe)
 
     def get_selection(self, name: str):
         """Get a selection object and construct Dataframe representation
@@ -173,10 +169,11 @@ class TestDelegate(TableDelegate):
         Args:
             name (str) : name of selection object to get
         """
+
         # Try to retrieve selection object from instance or return blank frame
         try:
             sel_obj = self.selections[name]
-        except:
+        except ValueError:
             return pd.DataFrame(columns=self.dataframe.columns)
 
         frames = []
@@ -189,7 +186,7 @@ class TestDelegate(TableDelegate):
         if sel_obj.row_ranges:
             ranges = sel_obj["row_ranges"]
             for r in ranges:
-                frames.append(self.dataframe.loc[r[0]:r[1]-1])
+                frames.append(self.dataframe.loc[r[0]:r[1] - 1])
 
         # Return frames concatenated
         df = pd.concat(frames)
@@ -202,7 +199,7 @@ class TestDelegate(TableDelegate):
         df = self.dataframe
         self.sender.send(get_plot_data(df))
 
-    def plot(self, on_done: Callable=None):
+    def plot(self, on_done: Callable = None):
         """Creates plot in a new window
 
         Uses matplotlib to plot a representation of the table
@@ -210,32 +207,53 @@ class TestDelegate(TableDelegate):
 
         self.sender, receiver = multiprocessing.Pipe()
 
-        self.plotting=multiprocessing.Process(target=plot_process, args=(self.dataframe, receiver))
+        self.plotting = multiprocessing.Process(target=plot_process, args=(self.dataframe, receiver))
         self.plotting.start()
-        if on_done: on_done()
+        if on_done:
+            on_done()
 
 
 class Tests(unittest.TestCase):
-    
+
     def test(self):
 
         # Create callback functions
         # Not sure about 'response' - cleaner way?
-        points = [[1,2,3,4,5],[1,2,3,4,5],[1,2,3,4,5],[(0,1,1),(0,1,1),(0,1,1),(0,1,1),(0,1,1)]]
-        create_table = lambda: client.invoke_method("new_point_plot", points, on_done=subscribe)
-        subscribe = lambda response: client.state["tables"][(0, 0)].subscribe(on_done=plot)
-        plot = lambda: client.state["tables"][(0, 0)].plot(on_done=insert_points)
-        insert_points = lambda: client.state["tables"][(0, 0)].request_insert(
-            row_list=[[8, 8, 8, .3, .2, 1, .05, .05, .05],[9,9,9,.1,.2,.5,.02,.02,.02, "Annotation"]], 
-            on_done=update_rows
-            )
-        update_rows = lambda: client.state["tables"][(0, 0)].request_update([3],[[4,6,3,0,1,0,.1,.1,.1,"Updated this row"]], on_done=get_selection)
-        get_selection = lambda: client.state["tables"][(0, 0)].request_update_selection("Test Select", [1, 2, 3], on_done=remove_row)
-        remove_row = lambda: client.state["tables"][(0, 0)].request_remove([2], on_done=shutdown)
-        shutdown = lambda: client.shutdown()
+        table = TableID(0, 0)
+        points = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5],
+                  [(0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1)]]
 
-        # Creat client and start callback chain
-        del_hash = {"tables" : TestDelegate}
+        # Callbacks
+        def create_table():
+            client.invoke_method("new_point_plot", points, on_done=subscribe)
+
+        def subscribe(response):
+            client.state[table].subscribe(on_done=plot)
+
+        def plot():
+            client.state[table].plot(on_done=insert_points)
+
+        def insert_points():
+            client.state[table].request_insert(
+                row_list=[[8, 8, 8, .3, .2, 1, .05, .05, .05], [9, 9, 9, .1, .2, .5, .02, .02, .02, "Annotation"]],
+                on_done=update_rows
+            )
+
+        def update_rows():
+            client.state[table].request_update([3], [[4, 6, 3, 0, 1, 0, .1, .1, .1, "Updated this row"]],
+                                               on_done=get_selection)
+
+        def get_selection():
+            client.state[table].request_update_selection("Test Select", [1, 2, 3], on_done=remove_row)
+
+        def remove_row():
+            client.state[table].request_remove([2], on_done=shutdown)
+
+        def shutdown():
+            client.shutdown()
+
+        # Create client and start callback chain
+        del_hash = {"tables": TestDelegate}
         client = create_client("ws://localhost:50000", del_hash, on_connected=create_table)
 
         while True:
