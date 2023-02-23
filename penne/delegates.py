@@ -17,14 +17,16 @@ from pydantic import BaseModel, root_validator, Extra
 
 IDGroup = namedtuple("IDGroup", ["slot", "gen"])
 
+
 class ID(IDGroup):
 
     __slots__ = ()
+
     def __repr__(self):
         return f"{self.__class__}|{self.slot}/{self.gen}|"
 
     def __key(self):
-        return (type(self), self.slot, self.gen)
+        return type(self), self.slot, self.gen
 
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, ID):
@@ -35,47 +37,61 @@ class ID(IDGroup):
     def __hash__(self):
         return hash(self.__key())
 
+
 class MethodID(ID):
     pass
+
 
 class SignalID(ID):
     pass
 
+
 class EntityID(ID):
     pass
+
 
 class PlotID(ID):
     pass
 
+
 class BufferID(ID):
     pass
+
 
 class BufferViewID(ID):
     pass
 
+
 class MaterialID(ID):
     pass
+
 
 class ImageID(ID):
     pass
 
+
 class TextureID(ID):
     pass
+
 
 class SamplerID(ID):
     pass
 
+
 class LightID(ID):
     pass
 
+
 class GeometryID(ID):
     pass
+
 
 class TableID(ID):
     pass
 
 
 """ ====================== Generic Parent Class ====================== """
+
 
 class NoodleObject(BaseModel):
     """Parent Class for all noodle objects"""
@@ -85,10 +101,11 @@ class NoodleObject(BaseModel):
 
         arbitrary_types_allowed = True
         use_enum_values = True
-        extra = Extra.allow # Allow injected methods
+        extra = Extra.allow  # Allow injected methods
 
     def __repr__(self) -> str:
         return f"{type(self)}"
+
 
 class Component(NoodleObject):
     """Parent class for all components"""
@@ -97,6 +114,7 @@ class Component(NoodleObject):
 
     def __repr__(self):
         return f"{type(self)} | {self.id}"
+
 
 class Delegate(NoodleObject):
     """Parent class for all delegates
@@ -118,9 +136,6 @@ class Delegate(NoodleObject):
     def __repr__(self):
         return f"{type(self)} | {self.id}"
 
-    def __repr__(self) -> str:
-        return f"{self.specifier} delegate | {self.id}"
-
     # For all except Document Delegate
     def on_new(self, message: dict):
         pass
@@ -133,7 +148,6 @@ class Delegate(NoodleObject):
     def on_remove(self, message: dict):
         pass
 
-
     def show_methods(self):
         """Show methods available on this delegate"""
 
@@ -144,13 +158,12 @@ class Delegate(NoodleObject):
             print(f">> '{name}'\n{method.__doc__}")
 
 
-
 """ ====================== Common Definitions ====================== """
 
 Vec3 = tuple[float, float, float]
 Vec4 = tuple[float, float, float, float]
-Mat3 = tuple[float, float, float, 
-             float, float, float, 
+Mat3 = tuple[float, float, float,
+             float, float, float,
              float, float, float]
 Mat4 = tuple[float, float, float, float,
              float, float, float, float,
@@ -160,12 +173,14 @@ Mat4 = tuple[float, float, float, float,
 RGB = Vec3
 RGBA = Vec4
 
+
 class AttributeSemantic(Enum):
     position = "POSITION"
     normal = "NORMAL"
     tangent = "TANGENT"
     texture = "TEXTURE"
     color = "COLOR"
+
 
 class Format(Enum):
     u8 = "U8"
@@ -179,6 +194,7 @@ class Format(Enum):
     mat3 = "MAT3"
     mat4 = "MAT4"
 
+
 class PrimitiveType(Enum):
     points = "POINTS"
     lines = "LINES"
@@ -187,31 +203,38 @@ class PrimitiveType(Enum):
     triangles = "TRIANGLES"
     triangle_strip = "TRIANGLE_STRIP"
 
+
 class SamplerMode(Enum):
     clamp_to_edge = "CLAMP_TO_EDGE"
     mirrored_repeat = "MIRRORED_REPEAT"
     repeat = "REPEAT"
 
+
 class URL(NoodleObject):
     url: str
+
 
 class SelectionRange(NoodleObject):
     key_from_inclusive: int
     key_to_exclusive: int
+
 
 class Selection(NoodleObject):
     name: str
     rows: Optional[List[int]] = None
     row_ranges: Optional[List[SelectionRange]] = None
 
-class MethodArg(NoodleObject): 
+
+class MethodArg(NoodleObject):
     name: str
-    doc: Optional[str] = None 
+    doc: Optional[str] = None
     editor_hint: Optional[str] = None
+
 
 class BoundingBox(NoodleObject):
     min: Vec3
     max: Vec3
+
 
 class TextRepresentation(NoodleObject):
     txt: str
@@ -219,45 +242,54 @@ class TextRepresentation(NoodleObject):
     height: Optional[float] = .25
     width: Optional[float] = -1.0
 
+
 class WebRepresentation(NoodleObject):
     source: str
     height: Optional[float] = .5
     width: Optional[float] = .5
 
+
 class InstanceSource(NoodleObject):
-    view: BufferViewID # view of mat4
-    stride: int 
+    view: BufferViewID  # view of mat4
+    stride: int
     bb: Optional[BoundingBox] = None
+
 
 class RenderRepresentation(NoodleObject):
     mesh: GeometryID
     instances: Optional[InstanceSource] = None
 
+
 class TextureRef(NoodleObject):
     texture: TextureID
     transform: Optional[Mat3] = [1.0, 0.0, 0.0,
-                       0.0, 1.0, 0.0,
-                       0.0, 0.0, 1.0,]
+                                 0.0, 1.0, 0.0,
+                                 0.0, 0.0, 1.0]
     texture_coord_slot: Optional[int] = 0.0
+
 
 class PBRInfo(NoodleObject):
     base_color: RGBA = [1.0, 1.0, 1.0, 1.0]
-    base_color_texture: Optional[TextureRef] = None # assume SRGB, no premult alpha
+    base_color_texture: Optional[TextureRef] = None  # assume SRGB, no premult alpha
 
     metallic: Optional[float] = 1.0
     roughness: Optional[float] = 1.0
-    metal_rough_texture: Optional[TextureRef] = None # assume linear, ONLY RG used
+    metal_rough_texture: Optional[TextureRef] = None  # assume linear, ONLY RG used
+
 
 class PointLight(NoodleObject):
     range: float = -1.0
+
 
 class SpotLight(NoodleObject):
     range: float = -1.0
     inner_cone_angle_rad: float = 0.0
     outer_cone_angle_rad: float = pi/4
 
+
 class DirectionalLight(NoodleObject):
     range: float = -1.0
+
 
 class Attribute(NoodleObject):
     view: BufferViewID
@@ -270,19 +302,22 @@ class Attribute(NoodleObject):
     maximum_value: Optional[List[float]] = None
     normalized: Optional[bool] = False
 
+
 class Index(NoodleObject):
-    view: BufferViewID 
+    view: BufferViewID
     count: int
     offset: Optional[int] = 0
     stride: Optional[int] = 0
     format: Literal["U8", "U16", "U32"]
+
 
 class GeometryPatch(NoodleObject):
     attributes: List[Attribute]
     vertex_count: int
     indices: Optional[Index] = None
     type: PrimitiveType
-    material: MaterialID # Material ID
+    material: MaterialID  # Material ID
+
 
 class InvokeIDType(NoodleObject):
     entity: Optional[EntityID] = None
@@ -291,21 +326,23 @@ class InvokeIDType(NoodleObject):
 
     @root_validator
     def one_of_three(cls, values):
-        already_found  = False
+        already_found = False
         for field in values:
             if values[field] and already_found:
                 raise ValueError("More than one field entered")
             elif values[field]:
                 already_found = True
-        
+
         if not already_found:
             raise ValueError("No field provided")
         else:
             return values
 
+
 class TableColumnInfo(NoodleObject):
     name: str
     type: Literal["TEXT", "REAL", "INTEGER"]
+
 
 class TableInitData(NoodleObject):
     columns: List[TableColumnInfo]
@@ -325,9 +362,8 @@ class TableInitData(NoodleObject):
                     raise ValueError(f"Column Info doesn't match type in data: {col, row[i]}")
         return values
 
-        
 
-""" ====================== NOOODLE COMPONENTS ====================== """
+""" ====================== NOODLE COMPONENTS ====================== """
 
 
 class Method(Delegate):
@@ -350,18 +386,21 @@ class Method(Delegate):
                 function to be called when complete
         """
 
-        if isinstance(on_delegate, Table): kind = "table"
-        elif isinstance(on_delegate, Plot): kind = "plot"
-        elif isinstance(on_delegate, Entity): kind = "entity"
-        else: raise Exception("Invalid delegate context")
+        if isinstance(on_delegate, Table):
+            kind = "table"
+        elif isinstance(on_delegate, Plot):
+            kind = "plot"
+        elif isinstance(on_delegate, Entity):
+            kind = "entity"
+        else:
+            raise Exception("Invalid delegate context")
 
         context = {kind: on_delegate.id}
         self.client.invoke_method(self.id, args, context=context, on_done=callback)
 
-
     def __repr__(self) -> str:
         """Custom string representation for methods"""
-        
+
         rep = f"{self.name}:\n\t{self.doc}\n\tReturns: {self.return_doc}\n\tArgs:"
         for arg in self.arg_doc:
             rep += f"\n\t\t{arg.name}: {arg.doc}"
@@ -434,14 +473,14 @@ class Buffer(Delegate):
 
 class BufferView(Delegate):
     id: BufferViewID
-    name: Optional[str] = "Unnamed Buffer-View Delegate"    
+    name: Optional[str] = "Unnamed Buffer-View Delegate"
     source_buffer: BufferID
 
     type: Literal["UNK", "GEOMETRY", "IMAGE"]
     offset: int
     length: int
 
-    
+
 class Material(Delegate):
     id: MaterialID
     name: Optional[str] = "Unnamed Material Delegate"
@@ -449,10 +488,10 @@ class Material(Delegate):
     pbr_info: Optional[PBRInfo] = PBRInfo()
     normal_texture: Optional[TextureRef] = None
 
-    occlusion_texture: Optional[TextureRef] = None # assumed to be linear, ONLY R used
+    occlusion_texture: Optional[TextureRef] = None  # assumed to be linear, ONLY R used
     occlusion_texture_factor: Optional[float] = 1.0
 
-    emissive_texture: Optional[TextureRef] = None # assumed to be SRGB, ignore A
+    emissive_texture: Optional[TextureRef] = None  # assumed to be SRGB, ignore A
     emissive_factor: Optional[Vec3] = [1.0, 1.0, 1.0]
 
     use_alpha: Optional[bool] = False
@@ -490,8 +529,8 @@ class Sampler(Delegate):
     mag_filter: Optional[Literal["NEAREST", "LINEAR"]] = "LINEAR"
     min_filter: Optional[Literal["NEAREST", "LINEAR", "LINEAR_MIPMAP_LINEAR"]] = "LINEAR_MIPMAP_LINEAR"
 
-    wrap_s: Optional[SamplerMode] = "REPEAT" 
-    wrap_t: Optional[SamplerMode] = "REPEAT" 
+    wrap_s: Optional[SamplerMode] = "REPEAT"
+    wrap_t: Optional[SamplerMode] = "REPEAT"
 
 
 class Light(Delegate):
@@ -507,13 +546,13 @@ class Light(Delegate):
 
     @root_validator
     def one_of(cls, values):
-        already_found  = False
+        already_found = False
         for field in ['point', 'spot', 'directional']:
             if values[field] and already_found:
                 raise ValueError("More than one field entered")
             elif values[field]:
                 already_found = True
-        
+
         if not already_found:
             raise ValueError("No field provided")
         else:
@@ -535,25 +574,31 @@ class Table(Delegate):
     signals_list: Optional[List[SignalID]] = None
 
     methods: List[str] = [
-        "subscribe", 
-        "request_clear", 
-        "request_insert", 
-        "request_remove", 
-        "request_update", 
+        "subscribe",
+        "request_clear",
+        "request_insert",
+        "request_remove",
+        "request_update",
         "request_update_selection",
         "plot"
     ]
 
+    tbl_subscribe: InjectedMethod = None
+    tbl_insert: InjectedMethod = None
+    tbl_update: InjectedMethod = None
+    tbl_remove: InjectedMethod = None
+    tbl_clear: InjectedMethod = None
+    tbl_update_selection: InjectedMethod = None
+
     def __init__(self, **kwargs):
-        """Overide init to link default values with methods"""
+        """Override init to link default values with methods"""
         super().__init__(**kwargs)
         self.signals = {
-            "tbl_reset" : self._reset_table,
-            "tbl_rows_removed" : self._remove_rows,
-            "tbl_updated" : self._update_rows,
-            "tbl_selection_updated" : self._update_selection
+            "tbl_reset": self._reset_table,
+            "tbl_rows_removed": self._remove_rows,
+            "tbl_updated": self._update_rows,
+            "tbl_selection_updated": self._update_selection
         }
-        
 
     def _on_table_init(self, init_info: dict, on_done=None):
         """Creates table from server response info
@@ -569,7 +614,6 @@ class Table(Delegate):
         cols = init_info["columns"]
         print(f"Table Initialized with cols: {cols} and row data: {row_data}")
 
-
     def _reset_table(self):
         """Reset dataframe and selections to blank objects
 
@@ -577,7 +621,6 @@ class Table(Delegate):
         """
 
         self.selections = {}
-
 
     def _remove_rows(self, key_list: List[int]):
         """Removes rows from table
@@ -588,9 +631,7 @@ class Table(Delegate):
             key_list (list): list of keys corresponding to rows to be removed
         """
 
-        print(f"Removed Rows: {key_list}...\n", self.dataframe)
-
-
+        print(f"Removed Rows: {key_list}...\n")
 
     def _update_rows(self, keys: List[int], rows: list):
         """Update rows in table
@@ -600,13 +641,11 @@ class Table(Delegate):
         Args:
             keys (list): 
                 list of keys to update
-            cols (list): 
-                list of cols containing the values for each new row,
-                should be col for each col in table, and value for each key
+            rows (list):
+                list of rows containing the values for each new row
         """
 
         print(f"Updated Rows...{keys}\n")
-        
 
     def _update_selection(self, selection_obj: Selection):
         """Change selection in delegate's state to new selection object
@@ -621,9 +660,8 @@ class Table(Delegate):
         self.selections[selection_obj.name] = selection_obj
         print(f"Made selection {selection_obj.name} = {selection_obj}")
 
-
     def relink_signals(self):
-        """Relink the signals for built in methods
+        """Relink the signals for built-in methods
 
         These should always be linked, along with whatever is injected,
         so relink on new and on update messages
@@ -634,26 +672,26 @@ class Table(Delegate):
         self.signals["noo::tbl_updated"] = self._update_rows
         self.signals["noo::tbl_selection_updated"] = self._update_selection
 
-
     def on_new(self, message: dict):
         """Handler when create message is received
 
         Args:
             message (Message): create message with the table's info
         """
-        
+
         # Set name
         methods = self.methods_list
         signals = self.signals_list
-    
+
         # Inject methods and signals
-        if methods: inject_methods(self, methods)
-        if signals: inject_signals(self, signals)
+        if methods:
+            inject_methods(self, methods)
+        if signals:
+            inject_signals(self, signals)
 
         # Reset
         self._reset_table()
         self.relink_signals()
-
 
     def on_update(self, message: dict):
         """Handler when update message is received
@@ -663,13 +701,11 @@ class Table(Delegate):
         """
 
         self.relink_signals()
-    
 
     def on_remove(self, message: dict):
         pass
 
-
-    def subscribe(self, on_done: Callable=None):
+    def subscribe(self, on_done: Callable = None):
         """Subscribe to this delegate's table
 
         Calls on_table_init as callback
@@ -679,13 +715,11 @@ class Table(Delegate):
         """
 
         try:
-            # Allow for calback after table init
-            lam = lambda data: self._on_table_init(data, on_done)
-            self.tbl_subscribe(on_done=lam)
-        except:
+            # Allow for callback after table init
+            self.tbl_subscribe(on_done=lambda data: self._on_table_init(data, on_done))
+        except Exception:
             raise Exception("Could not subscribe to table")
 
-    
     def request_insert(self, row_list: List[List[int]], on_done=None):
         """Add rows to end of table
 
@@ -699,7 +733,6 @@ class Table(Delegate):
         Row_list: [[1, 2, 3, 4, 5, 6, 7, 8, 9]]
 
         Args:
-            col_list (list, optional): add rows as list of columns
             row_list (list, optional): add rows using list of rows
             on_done (function, optional): callback function
         Raises:
@@ -707,22 +740,22 @@ class Table(Delegate):
         """
 
         self.tbl_insert(on_done, row_list)
-    
 
-    def request_update(self, keys:List[int], rows:List[List[int]], on_done=None):
+    def request_update(self, keys: List[int], rows: List[List[int]], on_done=None):
         """Update the table using a DataFrame
 
         User endpoint for interacting with table and invoking method
 
         Args:
-            data_frame (DataFrame):
-                data frame containing the values to be updated
+            keys (list[int]):
+                list of keys to update
+            rows (list[list[int]])
+                list of new rows to update with
             on_done (function, optional): 
                 callback function called when complete
         """
-        
-        self.tbl_update(on_done, keys, rows)
 
+        self.tbl_update(on_done, keys, rows)
 
     def request_remove(self, keys: List[int], on_done=None):
         """Remove rows from table by their keys
@@ -738,7 +771,6 @@ class Table(Delegate):
 
         self.tbl_remove(on_done, keys)
 
-
     def request_clear(self, on_done=None):
         """Clear the table
 
@@ -748,7 +780,6 @@ class Table(Delegate):
             on_done (function, optional): callback function called when complete
         """
         self.tbl_clear(on_done)
-
 
     def request_update_selection(self, name: str, keys: List[int], on_done=None):
         """Update a selection object in the table
@@ -766,21 +797,20 @@ class Table(Delegate):
 
         self.tbl_update_selection(on_done, name, {"rows": keys})
 
-    
+
 class Document(Delegate):
     name: str = "Document"
 
     def reset(self):
         pass
 
- 
 
 """ ====================== Communication Objects ====================== """
 
 
 class Invoke(NoodleObject):
     id: SignalID
-    context: Optional[InvokeIDType] = None # if empty - document
+    context: Optional[InvokeIDType] = None  # if empty - document
     signal_data: List[Any]
 
 
@@ -791,6 +821,7 @@ class MethodException(NoodleObject):
     message: Optional[str] = None
     data: Optional[Any] = None
 
+
 class Reply(NoodleObject):
     invoke_id: str
     result: Optional[Any] = None
@@ -800,20 +831,20 @@ class Reply(NoodleObject):
 """ ====================== Miscellaneous Objects ====================== """
 
 default_delegates = {
-    "entities" : Entity,
-    "tables" : Table,
-    "plots" : Plot,
-    "signals" : Signal,
-    "methods" : Method,
-    "materials" : Material,
-    "geometries" : Geometry,
-    "lights" : Light,
-    "images" : Image,
-    "textures" : Texture,
-    "samplers" : Sampler,
-    "buffers" : Buffer,
-    "bufferviews" : BufferView,
-    "document" : Document
+    "entities": Entity,
+    "tables": Table,
+    "plots": Plot,
+    "signals": Signal,
+    "methods": Method,
+    "materials": Material,
+    "geometries": Geometry,
+    "lights": Light,
+    "images": Image,
+    "textures": Texture,
+    "samplers": Sampler,
+    "buffers": Buffer,
+    "bufferviews": BufferView,
+    "document": Document
 }
 
 
@@ -834,6 +865,7 @@ id_map = {
     Document: None
 }
 
+
 class InjectedMethod(object):
     """Class for representing injected method in delegate
 
@@ -846,8 +878,8 @@ class InjectedMethod(object):
         self.method = method_obj
         self.injected = True
 
-    def __call__(self, *args, **kwds):
-        self.method(*args, **kwds)
+    def __call__(self, *args, **kwargs):
+        self.method(*args, **kwargs)
 
 
 class LinkedMethod(object):
@@ -857,12 +889,12 @@ class LinkedMethod(object):
     
     Attributes:
         _obj_delegate (delegate): 
-            delgate method is being linked to
+            delegate method is being linked to
         _method_delegate (MethodDelegate): 
             the method's delegate 
     """
 
-    def __init__(self, object_delegate: Delegate, method_delegate: Delegate):
+    def __init__(self, object_delegate: Delegate, method_delegate: Method):
         self._obj_delegate = object_delegate
         self._method_delegate = method_delegate
 
@@ -874,7 +906,7 @@ def inject_methods(delegate: Delegate, methods: List[MethodID]):
     """Inject methods into a delegate class
 
     Args:
-        delegate_name (str): 
+        delegate (Delegate):
             identifier for delegate to be modified
         methods (list): 
             list of method id's to inject
@@ -883,13 +915,13 @@ def inject_methods(delegate: Delegate, methods: List[MethodID]):
     # Clear out old injected methods
     for field, value in delegate:
         if hasattr(value, "injected"):
-            print(f"Deleting: {name} in inject methods")
-            delattr(delegate, name)
+            print(f"Deleting: {field} in inject methods")
+            delattr(delegate, field)
 
-    for id in methods:
+    for method_id in methods:
 
         # Get method delegate and manipulate name to exclude noo::
-        method = delegate.client.state[id]
+        method = delegate.client.state[method_id]
         name = method.name[5:]
 
         # Create injected by linking delegates, and creating call method
@@ -909,15 +941,8 @@ def inject_signals(delegate: Delegate, signals: List[SignalID]):
             list of signal id's to be injected
     """
 
-    # state_signals = delegate.client.state["signals"]
-    # injected_signals = {}
-    # for id in signals:
-    #     signal: Signal = state_signals[tuple(id)]
-    #     injected_signals[signal.name] = None # Check seems strange...
-    # delegate.signals = injected_signals
-
     for signal_id in signals:
-        signal = delegate.client.state[signal_id] # refactored state
+        signal = delegate.client.state[signal_id]  # refactored state
         delegate.signals[signal.name] = None
 
 

@@ -1,7 +1,7 @@
 """Module with Core Implementation of Client"""
 
 from __future__ import annotations
-from typing import Any, List
+from typing import Any, List, Type
 import asyncio
 from queue import Queue
 
@@ -42,9 +42,7 @@ class Client(object):
         _loop (event loop): 
             event loop used for network thread
         delegates (dict): 
-            map for delegate functions     
-        is_connected(threading.Event): 
-            signal when connection is ready
+            map for delegate functions
         thread (thread object): 
             network thread used by client
         _socket (WebSocketClientProtocol): 
@@ -56,25 +54,28 @@ class Client(object):
         client_message_map (dict): 
             mapping message type to corresponding id
         server_messages (dict):
-            mapping message id's to handling info
-        current_invoke (str):  
+            mapping message id's to handle info
+        _current_invoke (str):
             id for next method invoke
         callback_map (dict): 
             mapping invoke_id to callback function
     """
 
-    def __init__(self, url: str, loop, custom_delegate_hash: dict[str, delegates.Delegate], on_connected, callback_queue: Queue):
+    def __init__(self, url: str, loop, custom_delegate_hash: dict[str, Type[delegates.Delegate]],
+                 on_connected, callback_queue: Queue):
         """Constructor for the Client Class
 
         Args:
-            _url (string): 
+            url (string):
                 address used to connect to server
             loop (event loop): 
                 event loop used for network thread
             custom_delegate_hash (dict): 
                 map for new delegate methods
-            is_connected (threading Event):
-                event object signaling when connection is ready
+            on_connected (Callable):
+                callback function to run once client is set up
+            callback_queue (Queue):
+                queue to store callbacks
         """
 
         self._url = url
@@ -140,7 +141,6 @@ class Client(object):
             else:
                 self.delegates[key] = custom_delegate_hash[key]
 
-
     def object_from_name(self, name: str) -> List[int]:
         """Get a delegate's id from its name
 
@@ -148,33 +148,31 @@ class Client(object):
             name (str): name of method
 
         Returns:
-            Id group attached to the method
+            ID group attached to the method
 
         Raises:
             Couldn't find method exception
         """
-        objects: List[delegates.Method] = self.state.values()
-        for object in objects:
-            if object.name == name:
-                return object.id
+        state_delegates = self.state.values()
+        for delegate in state_delegates:
+            if delegate.name == name:
+                return delegate.id
         raise Exception(f"Couldn't find object '{name}' in state")
 
-
-    def get_component(self, specifier, id):
+    def get_component(self, component_id):
         """Getter to easily retrieve components from state
         
         Args:
-            specifier (str): type of component
-            id (list): id for the component
+            component_id (ID): id for the component
 
         Returns:
             Component delegate from state
         """
 
-        return self.state[specifier][id]
-            
+        return self.state[component_id]
 
-    def invoke_method(self, id, args: list, context: dict[str, tuple] = None, on_done = None):
+    def invoke_method(self, method: delegates.MethodID | str, args: list,
+                      context: dict[str, tuple] = None, on_done=None):
         """Invoke method on server
 
         Constructs a dictionary of arguments to use in send_message. The
@@ -188,19 +186,21 @@ class Client(object):
         it from the map and call the method if there is one
 
         Args:
-            id (list or str): 
+            method (list or str):
                 id or name for method
             args (list): 
                 arguments for method
             context (dict): 
                 optional, target context for method call
-            callback (function): 
+            on_done (function):
                 function to be called upon response
         """
         
         # Get proper ID
-        if isinstance(id, str):
-            id = self.object_from_name(id)
+        if isinstance(method, str):
+            method_id = self.object_from_name(method)
+        else:
+            method_id = method
 
         # Get invoke ID
         invoke_id = str(self._current_invoke)
@@ -211,29 +211,28 @@ class Client(object):
 
         # Construct message dict
         arg_dict = {
-            "method": id,
+            "method": method_id,
             "args": args,
             "invoke_id": invoke_id
         }
-        if context: arg_dict["context"] = context
+        if context:
+            arg_dict["context"] = context
         
         self.send_message(arg_dict, "invoke")
 
-
-    def send_message(self, message_dict: dict[str, Any], type: str):
+    def send_message(self, message_dict: dict[str, Any], kind: str):
         """Send message to server
 
         Args:
             message_dict (dict): dict mapping message attribute to value
-            type (str): either 'invoke' or 'intro' to indicate type of client message
+            kind (str): either 'invoke' or 'intro' to indicate type of client message
         """
 
         # Construct message with ID from map and converted message object
-        message = [self.client_message_map[type], message_dict]
+        message = [self.client_message_map[kind], message_dict]
         print(f"Sending Message: {message}")
         
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
-
 
     async def run(self):
         """Network thread for managing websocket connection"""  
@@ -242,7 +241,7 @@ class Client(object):
 
             # update class
             self._socket = websocket
-            self.name = (f"Python Client @ {self._url}")
+            self.name = f"Python Client @ {self._url}"
 
             # send intro message
             intro = {"client_name": self.name}
@@ -252,13 +251,12 @@ class Client(object):
             async for message in self._socket:
                 raw_message = loads(message, tag_hook=uri_tag_hook)
                 iterator = iter(raw_message)
-                for id in iterator:
+                for tag in iterator:
                     try:
-                        handlers.handle(self, id, next(iterator))
+                        handlers.handle(self, tag, next(iterator))
                     except Exception as e:
                         print(f"Exception: {e}")
 
-    
     def show_methods(self):
         """Displays Available Methods to the User"""
 
@@ -266,9 +264,8 @@ class Client(object):
         print("client.invoke_method(method_name, args, optional callback function)")
         print("-------------------------------------------------------------------")
         for method in self.state["methods"].values():
-            if not "noo::" in method.name:
+            if "noo::" not in method.name:
                 print(method)
-
 
     def shutdown(self):
         """Method for shutting down the client

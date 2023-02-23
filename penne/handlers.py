@@ -10,6 +10,7 @@ import weakref
 from penne.delegates import Delegate, id_map, default_delegates
 from penne.delegates import TableID, PlotID, EntityID, ID
 
+
 # Helper Methods
 def update_state(client, message: dict, component_id: ID):
     """Update a delegate in the current state
@@ -19,8 +20,8 @@ def update_state(client, message: dict, component_id: ID):
             client to be updated
         message (Message): 
             message containing updates
-        specifier (str): 
-            which part of state to update
+        component_id (ID):
+            ID of the component to be updated
     """
 
     current_state = client.state[component_id]
@@ -71,7 +72,7 @@ def handle(client: Client, message_id, message: dict[str, Any]):
 
     'Handle' uses the ID attached to message to get handling info, and uses this info 
     to take proper course of action with message. The function has 5 main sections 
-    handling create, delete, and update messages along with signalinvocation and reply
+    handling create, delete, and update messages along with signal invocation and reply
     messages. For now all other communication messages are simply printed.
 
     'Handle' is also responsible for managing the client's state and working with the
@@ -80,7 +81,8 @@ def handle(client: Client, message_id, message: dict[str, Any]):
 
     Args:
         client (Client): client receiving the message
-        encoded_message (CBOR array): array with id and message as dictionary
+        message_id (int): id mapping to handle info in client
+        message (dict): dict with the message's contents
     """
     
     # Process message using ID from dict
@@ -104,8 +106,8 @@ def handle(client: Client, message_id, message: dict[str, Any]):
     
     elif action == "delete":
         
-        id = id_type(*message["id"])
-        state_delegate: Delegate = client.state[id]
+        component_id = id_type(*message["id"])
+        state_delegate: Delegate = client.state[component_id]
 
         # Update delegate and state
         state_delegate.on_remove(message)
@@ -114,9 +116,9 @@ def handle(client: Client, message_id, message: dict[str, Any]):
     elif action == "update":
 
         if specifier != "document":
-            id = id_type(*message["id"])
-            update_state(client, message, id)
-            client.state[id].on_update(message)
+            component_id = id_type(*message["id"])
+            update_state(client, message, component_id)
+            client.state[component_id].on_update(message)
         else:
             client.state[specifier].on_update(message)
 
@@ -136,13 +138,12 @@ def handle(client: Client, message_id, message: dict[str, Any]):
                 callback_info = (callback, result)
                 client.callback_queue.put(callback_info)
 
-
     elif action == "invoke":
 
         # Handle invoke message from server
         signal_data = message["signal_data"]
-        id = id_type(*message["id"])
-        signal: Delegate = client.state[id]
+        signal_id = id_type(*message["id"])
+        signal: Delegate = client.state[signal_id]
 
         # Determine the delegate the signal is being invoked on
         context = message.get("context")

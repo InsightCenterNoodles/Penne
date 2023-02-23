@@ -16,6 +16,7 @@ import queue
 from penne.delegates import Delegate
 from penne.core import Client 
 
+
 def thread(loop: asyncio.AbstractEventLoop, client: Client):
     """Method for starting background thread
 
@@ -31,7 +32,7 @@ def thread(loop: asyncio.AbstractEventLoop, client: Client):
         print(f"Connection terminated: {e}")
 
 
-def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = {}, on_connected: Callable=None):
+def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None, on_connected: Callable = None):
     """Create a client object and start background thread
 
     Args:
@@ -51,11 +52,11 @@ def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = {}, 
     if address_parts.scheme not in ["ws", "wss"]:
         raise ValueError("Address given must be a websocket!")
 
-    loop = asyncio.new_event_loop()
-    
-
     # Create client instance and thread
+    loop = asyncio.new_event_loop()
     callback_queue = queue.Queue()
+    if not custom_delegate_hash:
+        custom_delegate_hash = {}
     client = Client(address, loop, custom_delegate_hash, on_connected, callback_queue)
     t = threading.Thread(target=thread, args=(loop, client))
  
