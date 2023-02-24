@@ -134,7 +134,7 @@ class Delegate(NoodleObject):
     methods: Optional[List] = []
 
     def __repr__(self):
-        return f"{type(self)} | {self.id}"
+        return f"{self.name} | {type(self)} | {self.id}"
 
     # For all except Document Delegate
     def on_new(self, message: dict):
