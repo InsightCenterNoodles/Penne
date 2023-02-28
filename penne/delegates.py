@@ -567,7 +567,7 @@ class Geometry(Delegate):
 
 class Table(Delegate):
     id: TableID
-    name: Optional[str] = "Unnamed Table Delegate"
+    name: Optional[str] = f"Unnamed Table Delegate"
 
     meta: Optional[str] = None
     methods_list: Optional[List[MethodID]] = None
@@ -944,6 +944,17 @@ def inject_signals(delegate: Delegate, signals: List[SignalID]):
     for signal_id in signals:
         signal = delegate.client.state[signal_id]  # refactored state
         delegate.signals[signal.name] = None
+
+
+def get_context(delegate):
+    """Helper to get context from delegate"""
+
+    if isinstance(delegate, Entity):
+        return {"entity": delegate.id}
+    elif isinstance(delegate, Table):
+        return {"table": delegate.id}
+    elif isinstance(delegate, Plot):
+        return {"plot": delegate.id}
 
 
 # Update forward refs where model -> client -> model ...
