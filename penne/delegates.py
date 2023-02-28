@@ -955,6 +955,8 @@ def get_context(delegate):
         return {"table": delegate.id}
     elif isinstance(delegate, Plot):
         return {"plot": delegate.id}
+    else:
+        return None
 
 
 # Update forward refs where model -> client -> model ...
