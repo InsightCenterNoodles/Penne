@@ -155,11 +155,10 @@ def handle(client: Client, message_id, message: dict[str, Any]):
 
     elif action == "initialized":
 
-        client.state["document"] = client.delegates["document"](client=client)
         if client.on_connected:
             client.callback_queue.put((client.on_connected, None))
 
     else:
         # Document reset messages
         client.state["document"].reset()
-        print(message)
+        print("Document Reset")

@@ -141,6 +141,9 @@ class Client(object):
             else:
                 self.delegates[key] = custom_delegate_hash[key]
 
+        # Add document delegate as starting element in state
+        self.state["document"] = self.delegates["document"](client=self)
+
     def object_from_name(self, name: str) -> List[int]:
         """Get a delegate's id from its name
 

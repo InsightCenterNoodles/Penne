@@ -801,8 +801,19 @@ class Table(Delegate):
 class Document(Delegate):
     name: str = "Document"
 
+    methods_list: list[MethodID] = []
+    signals_list: list[SignalID] = []
+
+    def on_update(self, message: dict):
+        if "methods_list" in message:
+            self.methods_list = message["methods_list"]
+        if "signals_list" in message:
+            self.signals_list = message["signals_list"]
+
     def reset(self):
-        pass
+        self.client.state = {}
+        self.methods_list = []
+        self.signals_list = []
 
 
 """ ====================== Communication Objects ====================== """
