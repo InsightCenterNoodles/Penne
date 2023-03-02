@@ -32,7 +32,8 @@ def thread(loop: asyncio.AbstractEventLoop, client: Client):
         print(f"Connection terminated: {e}")
 
 
-def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None, on_connected: Callable = None):
+def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None,
+                  on_connected: Callable = None, strict: bool = False):
     """Create a client object and start background thread
 
     Args:
@@ -42,6 +43,8 @@ def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None
             mapping specifiers to new delegate methods to override default
         on_connected (callable):
             function to be called once connection is established
+        strict (bool):
+            flag for throwing hard exceptions from data validation
 
     Raises:
         ValueError: Address given must be a websocket
@@ -57,7 +60,7 @@ def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None
     callback_queue = queue.Queue()
     if not custom_delegate_hash:
         custom_delegate_hash = {}
-    client = Client(address, loop, custom_delegate_hash, on_connected, callback_queue)
+    client = Client(address, loop, custom_delegate_hash, on_connected, callback_queue, strict=strict)
     t = threading.Thread(target=thread, args=(loop, client))
  
     client.thread = t

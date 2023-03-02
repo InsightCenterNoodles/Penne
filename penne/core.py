@@ -62,7 +62,7 @@ class Client(object):
     """
 
     def __init__(self, url: str, loop, custom_delegate_hash: dict[str, Type[delegates.Delegate]],
-                 on_connected, callback_queue: Queue):
+                 on_connected, callback_queue: Queue, strict=False):
         """Constructor for the Client Class
 
         Args:
@@ -76,12 +76,15 @@ class Client(object):
                 callback function to run once client is set up
             callback_queue (Queue):
                 queue to store callbacks
+            strict (bool):
+                flag for strict data validation and throwing hard exceptions
         """
 
         self._url = url
         self._loop = loop
         self.on_connected = on_connected
         self.delegates = {}
+        self.strict = strict
         self.thread = None
         self._socket = None
         self.name = "Python Client"
@@ -258,7 +261,10 @@ class Client(object):
                     try:
                         handlers.handle(self, tag, next(iterator))
                     except Exception as e:
-                        print(f"Exception: {e}")
+                        if self.strict:
+                            raise e
+                        else:
+                            print(f"Exception: {e}")
 
     def show_methods(self):
         """Displays Available Methods to the User"""

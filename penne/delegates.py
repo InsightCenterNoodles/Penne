@@ -9,8 +9,9 @@ from typing import Literal, Optional, Any, Union, Callable, List
 from collections import namedtuple
 from enum import Enum
 from math import pi
+import warnings
 
-from pydantic import BaseModel, root_validator, Extra
+from pydantic import BaseModel, root_validator, Extra, ValidationError, validator
 from pydantic.color import Color
 
 
@@ -103,9 +104,6 @@ class NoodleObject(BaseModel):
         arbitrary_types_allowed = True
         use_enum_values = True
         extra = Extra.allow  # Allow injected methods
-
-    def __repr__(self) -> str:
-        return f"{type(self)}"
 
 
 class Component(NoodleObject):
@@ -267,12 +265,19 @@ class TextureRef(NoodleObject):
 
 
 class PBRInfo(NoodleObject):
-    base_color: Color = Color('white')
+    base_color: Optional[Color] = Color('white')
     base_color_texture: Optional[TextureRef] = None  # assume SRGB, no premult alpha
 
     metallic: Optional[float] = 1.0
     roughness: Optional[float] = 1.0
     metal_rough_texture: Optional[TextureRef] = None  # assume linear, ONLY RG used
+
+    @validator("base_color", pre=True)
+    def check_color(cls, value):
+
+        # Raise warning if format is wrong
+        if len(value) != 4:
+            warnings.warn(f"Base Color is Wrong Color Format: {value}")
 
 
 class PointLight(NoodleObject):
@@ -478,6 +483,17 @@ class BufferView(Delegate):
     offset: int
     length: int
 
+    # @validator("type")
+    # def coerce_type(cls, value):
+    #     if "UNK" in value:
+    #         return "UNK"
+    #     elif "GEOMETRY" in value:
+    #         return "GEOMETRY"
+    #     elif "IMAGE" in value:
+    #         return "IMAGE"
+    #     else:
+    #         raise ValidationError
+
 
 class Material(Delegate):
     id: MaterialID
@@ -541,6 +557,13 @@ class Light(Delegate):
     point: PointLight = None
     spot: SpotLight = None
     directional: DirectionalLight = None
+
+    @validator("color", pre=True)
+    def check_color(cls, value):
+
+        # Raise warning if format is wrong
+        if len(value) != 3:
+            warnings.warn(f"Color is Wrong Color Format in Light: {value}")
 
     @root_validator
     def one_of(cls, values):

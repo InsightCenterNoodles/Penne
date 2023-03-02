@@ -6,6 +6,8 @@ if TYPE_CHECKING:
     from penne.core import Client
 
 import weakref
+import warnings
+from pydantic import ValidationError
 
 from penne.delegates import Delegate, id_map, default_delegates
 from penne.delegates import TableID, PlotID, EntityID, ID
@@ -98,11 +100,16 @@ def handle(client: Client, message_id, message: dict[str, Any]):
         # Create instance of delegate
         reference = weakref.ref(client)
         reference_obj = reference()
-        delegate: Delegate = client.delegates[specifier](client=reference_obj, **message)
+        try:
+            delegate: Delegate = client.delegates[specifier](client=reference_obj, **message)
+            client.state[delegate.id] = delegate
+            delegate.on_new(message)
+        except ValidationError as e:
 
-        # Update state and pass message info to the delegate's handler
-        client.state[delegate.id] = delegate
-        delegate.on_new(message)
+            warnings.warn(str(e))
+
+            if client.strict:
+                raise Exception(f"Could not Create Delegate of type {specifier}")
     
     elif action == "delete":
         
