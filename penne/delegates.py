@@ -11,6 +11,7 @@ from enum import Enum
 from math import pi
 
 from pydantic import BaseModel, root_validator, Extra
+from pydantic.color import Color
 
 
 """ =============================== ID's ============================= """
@@ -170,9 +171,6 @@ Mat4 = tuple[float, float, float, float,
              float, float, float, float,
              float, float, float, float]
 
-RGB = Vec3
-RGBA = Vec4
-
 
 class AttributeSemantic(Enum):
     position = "POSITION"
@@ -269,7 +267,7 @@ class TextureRef(NoodleObject):
 
 
 class PBRInfo(NoodleObject):
-    base_color: RGBA = [1.0, 1.0, 1.0, 1.0]
+    base_color: Color = Color('white')
     base_color_texture: Optional[TextureRef] = None  # assume SRGB, no premult alpha
 
     metallic: Optional[float] = 1.0
@@ -476,7 +474,7 @@ class BufferView(Delegate):
     name: Optional[str] = "Unnamed Buffer-View Delegate"
     source_buffer: BufferID
 
-    type: Literal["UNK", "GEOMETRY", "IMAGE"]
+    type: Literal["UNK", "GEOMETRY", "IMAGE"] = "UNK"
     offset: int
     length: int
 
@@ -537,7 +535,7 @@ class Light(Delegate):
     id: LightID
     name: Optional[str] = "Unnamed Light Delegate"
 
-    color: Optional[RGB] = [1.0, 1.0, 1.0]
+    color: Optional[Color] = Color('white')
     intensity: Optional[float] = 1.0
 
     point: PointLight = None
