@@ -123,15 +123,15 @@ class Delegate(NoodleObject):
     
     Attributes:
         client (Client): Client delegate is attached to
-        signals (dict): Signals that can be called on delegate
-        methods (list): Specify public methods, used in show_methods()
+        signals (dict): Signals that can be called on delegate, method name to callable
+        public_methods (list): Specify public methods, used in show_methods()
     """
 
     client: Client
     id: ID = None
     name: Optional[str] = "No-Name Delegate"
     signals: Optional[dict] = {}
-    methods: Optional[List] = []
+    public_methods: Optional[List] = []
 
     def __repr__(self):
         return f"{self.name} | {type(self)} | {self.id}"
@@ -153,7 +153,7 @@ class Delegate(NoodleObject):
 
         print(f"-- Methods on {self} --")
         print("--------------------------------------")
-        for name in self.methods:
+        for name in self.public_methods:
             method = getattr(self, name)
             print(f">> '{name}'\n{method.__doc__}")
 
@@ -806,9 +806,11 @@ class Document(Delegate):
 
     def on_update(self, message: dict):
         if "methods_list" in message:
-            self.methods_list = message["methods_list"]
+            self.methods_list = [MethodID(*element) for element in message["methods_list"]]
         if "signals_list" in message:
-            self.signals_list = message["signals_list"]
+            self.signals_list = [SignalID(*element) for element in message["signals_list"]]
+
+        self.public_methods = [self.client.get_component(id).name for id in self.methods_list]
 
     def reset(self):
         self.client.state = {}
