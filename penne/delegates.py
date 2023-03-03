@@ -565,6 +565,8 @@ class Light(Delegate):
         if len(value) != 3:
             warnings.warn(f"Color is Wrong Color Format in Light: {value}")
 
+        return value
+
     @root_validator
     def one_of(cls, values):
         already_found = False
