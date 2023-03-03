@@ -11,7 +11,7 @@ from enum import Enum
 from math import pi
 import warnings
 
-from pydantic import BaseModel, root_validator, Extra, ValidationError, validator
+from pydantic import BaseModel, root_validator, Extra, validator
 from pydantic.color import Color
 
 
@@ -278,6 +278,7 @@ class PBRInfo(NoodleObject):
         # Raise warning if format is wrong
         if len(value) != 4:
             warnings.warn(f"Base Color is Wrong Color Format: {value}")
+        return value
 
 
 class PointLight(NoodleObject):
@@ -483,16 +484,18 @@ class BufferView(Delegate):
     offset: int
     length: int
 
-    # @validator("type")
-    # def coerce_type(cls, value):
-    #     if "UNK" in value:
-    #         return "UNK"
-    #     elif "GEOMETRY" in value:
-    #         return "GEOMETRY"
-    #     elif "IMAGE" in value:
-    #         return "IMAGE"
-    #     else:
-    #         raise ValidationError
+    @validator("type", pre=True)
+    def coerce_type(cls, value):
+        if value in ["UNK", "GEOMETRY", "IMAGE"]:
+            return value
+
+        warnings.warn(f"Buffer View Type does not meet the specification: {value} coerced to 'UNK'")
+        if "GEOMETRY" in value:
+            return "GEOMETRY"
+        elif "IMAGE" in value:
+            return "IMAGE"
+        else:
+            return "UNK"
 
 
 class Material(Delegate):
