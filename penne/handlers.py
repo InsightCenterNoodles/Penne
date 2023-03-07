@@ -26,16 +26,11 @@ def update_state(client, message: dict, component_id: ID):
             ID of the component to be updated
     """
 
-    current_state = client.state[component_id]
-    for attribute, value in message.items():
-        current_attr = getattr(current_state, attribute)
-        attr_type = type(current_attr)
-        if isinstance(value, list):
-            setattr(current_state, attribute, attr_type(*value))
-        elif isinstance(value, dict):
-            setattr(current_state, attribute, attr_type(**value))
-        else:
-            setattr(current_state, attribute, value)
+    current_state = client.state[component_id].dict()
+    current_state.update(message)
+
+    delegate_type = type(current_state)
+    client.state[component_id] = delegate_type(**current_state)
 
 
 def delegate_from_context(client: Client, context: dict) -> Delegate:

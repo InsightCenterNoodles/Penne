@@ -4,7 +4,7 @@ Test the functionality of the client using a custom delegate and callback functi
 Designed to interact with PlottyN server to create a 3d scatter chart
 """
 
-from typing import Callable
+from typing import Callable, Any
 import unittest
 import multiprocessing
 import queue
@@ -87,7 +87,7 @@ class TestDelegate(Table):
 
     dataframe: pd.DataFrame = None
     plotting: multiprocessing.Process = None
-    sender = None
+    sender: Any = None
 
     def _on_table_init(self, init_info: dict, on_done=None):
         """Creates table from server response info

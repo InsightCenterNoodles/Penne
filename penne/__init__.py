@@ -12,7 +12,7 @@ Modules:
     messages.py
 """
 
-__version__ = "0.3.10"
+__version__ = "0.3.12"
 
 
 # Imports for easier user access
