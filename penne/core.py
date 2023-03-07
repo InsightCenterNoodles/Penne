@@ -264,7 +264,7 @@ class Client(object):
                         if self.strict:
                             raise e
                         else:
-                            print(f"Exception: {e}")
+                            print(f"Exception: {e} for message {raw_message}")
 
     def show_methods(self):
         """Displays Available Methods to the User"""
