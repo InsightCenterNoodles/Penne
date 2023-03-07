@@ -30,7 +30,9 @@ def update_state(client, message: dict, component_id: ID):
     current_state.update(message)
 
     delegate_type = type(client.state[component_id])
-    client.state[component_id] = delegate_type(**current_state)
+    new_component = delegate_type(**current_state)
+    new_component.update_forward_refs()
+    client.state[component_id] = new_component
 
 
 def delegate_from_context(client: Client, context: dict) -> Delegate:
