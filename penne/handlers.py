@@ -29,7 +29,7 @@ def update_state(client, message: dict, component_id: ID):
     current_state = client.state[component_id].dict()
     current_state.update(message)
 
-    delegate_type = type(current_state)
+    delegate_type = type(client.state[component_id])
     client.state[component_id] = delegate_type(**current_state)
 
 
