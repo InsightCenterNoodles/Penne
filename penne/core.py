@@ -3,21 +3,13 @@
 from __future__ import annotations
 from typing import Any, List, Type
 import asyncio
+import logging
 from queue import Queue
 
 import websockets
 from cbor2 import loads, dumps
 
 from . import handlers, delegates
-
-
-def uri_tag_hook(decoder, tag, shareable_index=None):
-    """Hook for URI CBOR Tag"""
-
-    if tag.tag != 32:
-        return tag
-    else:
-        return tag.value
 
 
 class HandleInfo(object):
@@ -236,7 +228,7 @@ class Client(object):
 
         # Construct message with ID from map and converted message object
         message = [self.client_message_map[kind], message_dict]
-        print(f"Sending Message: {message}")
+        logging.debug(f"Sending Message: {message}")
         
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
 
@@ -255,7 +247,7 @@ class Client(object):
 
             # decode, iterate over, and handle all incoming messages
             async for message in self._socket:
-                raw_message = loads(message, tag_hook=uri_tag_hook)
+                raw_message = loads(message)
                 iterator = iter(raw_message)
                 for tag in iterator:
                     try:
@@ -264,17 +256,11 @@ class Client(object):
                         if self.strict:
                             raise e
                         else:
-                            print(f"Exception: {e} for message {raw_message}")
+                            logging.error(f"Exception: {e} for message {raw_message}")
 
     def show_methods(self):
         """Displays Available Methods to the User"""
-
-        print("\n-- Available Methods to call --")
-        print("client.invoke_method(method_name, args, optional callback function)")
-        print("-------------------------------------------------------------------")
-        for method in self.state["methods"].values():
-            if "noo::" not in method.name:
-                print(method)
+        self.state["document"].show_methods()
 
     def shutdown(self):
         """Method for shutting down the client

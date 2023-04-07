@@ -5,11 +5,12 @@ implements strict validation
 """
 
 from __future__ import annotations
+
+import logging
 from typing import Literal, Optional, Any, Union, Callable, List
 from collections import namedtuple
 from enum import Enum
 from math import pi
-import warnings
 
 from pydantic import BaseModel, root_validator, Extra, validator
 from pydantic.color import Color
@@ -130,7 +131,6 @@ class Delegate(NoodleObject):
     id: ID = None
     name: Optional[str] = "No-Name Delegate"
     signals: Optional[dict] = {}
-    public_methods: Optional[List] = []
 
     def __repr__(self):
         return f"{self.name} | {type(self)} | {self.id}"
@@ -146,15 +146,6 @@ class Delegate(NoodleObject):
     # For all except Document Delegate
     def on_remove(self, message: dict):
         pass
-
-    def show_methods(self):
-        """Show methods available on this delegate"""
-
-        print(f"-- Methods on {self} --")
-        print("--------------------------------------")
-        for name in self.public_methods:
-            method = getattr(self, name)
-            print(f">> '{name}'\n{method.__doc__}")
 
 
 """ ====================== Common Definitions ====================== """
@@ -204,10 +195,6 @@ class SamplerMode(Enum):
     clamp_to_edge = "CLAMP_TO_EDGE"
     mirrored_repeat = "MIRRORED_REPEAT"
     repeat = "REPEAT"
-
-
-class URL(NoodleObject):
-    url: str
 
 
 class SelectionRange(NoodleObject):
@@ -277,7 +264,7 @@ class PBRInfo(NoodleObject):
 
         # Raise warning if format is wrong
         if len(value) != 4:
-            warnings.warn(f"Base Color is Wrong Color Format: {value}")
+            logging.warning(f"Base Color is Wrong Color Format: {value}")
         return value
 
 
@@ -438,6 +425,15 @@ class Entity(Delegate):
 
     influence: Optional[BoundingBox] = None
 
+    def show_methods(self):
+        """Show methods available on the entity"""
+
+        print(f"-- Methods on {self.name} --")
+        print("--------------------------------------")
+        for method_id in self.methods_list:
+            method = self.client.get_component(method_id)
+            print(f">> {method}")
+
 
 class Plot(Delegate):
     id: PlotID
@@ -457,6 +453,15 @@ class Plot(Delegate):
             return values
         else:
             raise ValueError("One plot type must be specified")
+
+    def show_methods(self):
+        """Show methods available on the entity"""
+
+        print(f"-- Methods on {self.name} --")
+        print("--------------------------------------")
+        for method_id in self.methods_list:
+            method = self.client.get_component(method_id)
+            print(f">> {method}")
 
 
 class Buffer(Delegate):
@@ -489,7 +494,7 @@ class BufferView(Delegate):
         if value in ["UNK", "GEOMETRY", "IMAGE"]:
             return value
 
-        warnings.warn(f"Buffer View Type does not meet the specification: {value} coerced to 'UNK'")
+        logging.warning(f"Buffer View Type does not meet the specification: {value} coerced to 'UNK'")
         if "GEOMETRY" in value:
             return "GEOMETRY"
         elif "IMAGE" in value:
@@ -566,7 +571,7 @@ class Light(Delegate):
 
         # Raise warning if format is wrong
         if len(value) != 3:
-            warnings.warn(f"Color is Wrong Color Format in Light: {value}")
+            logging.warning(f"Color is Wrong Color Format in Light: {value}")
 
         return value
 
@@ -638,7 +643,7 @@ class Table(Delegate):
         # Extract data from init info and transpose rows to cols
         row_data = init_info["data"]
         cols = init_info["columns"]
-        print(f"Table Initialized with cols: {cols} and row data: {row_data}")
+        logging.debug(f"Table Initialized with cols: {cols} and row data: {row_data}")
 
     def _reset_table(self):
         """Reset dataframe and selections to blank objects
@@ -657,7 +662,7 @@ class Table(Delegate):
             key_list (list): list of keys corresponding to rows to be removed
         """
 
-        print(f"Removed Rows: {key_list}...\n")
+        logging.debug(f"Removed Rows: {key_list}...\n")
 
     def _update_rows(self, keys: List[int], rows: list):
         """Update rows in table
@@ -671,7 +676,7 @@ class Table(Delegate):
                 list of rows containing the values for each new row
         """
 
-        print(f"Updated Rows...{keys}\n")
+        logging.debug(f"Updated Rows...{keys}\n")
 
     def _update_selection(self, selection_obj: Selection):
         """Change selection in delegate's state to new selection object
@@ -684,7 +689,7 @@ class Table(Delegate):
         """
 
         self.selections[selection_obj.name] = selection_obj
-        print(f"Made selection {selection_obj.name} = {selection_obj}")
+        logging.debug(f"Made selection {selection_obj.name} = {selection_obj}")
 
     def relink_signals(self):
         """Relink the signals for built-in methods
@@ -823,6 +828,15 @@ class Table(Delegate):
 
         self.tbl_update_selection(on_done, name, {"rows": keys})
 
+    def show_methods(self):
+        """Show methods available on the table"""
+
+        print(f"-- Methods on {self.name} --")
+        print("--------------------------------------")
+        for method_id in self.methods_list:
+            method = self.client.get_component(method_id)
+            print(f">> {method}")
+
 
 class Document(Delegate):
     name: str = "Document"
@@ -836,12 +850,19 @@ class Document(Delegate):
         if "signals_list" in message:
             self.signals_list = [SignalID(*element) for element in message["signals_list"]]
 
-        self.public_methods = [self.client.get_component(id).name for id in self.methods_list]
-
     def reset(self):
         self.client.state = {}
         self.methods_list = []
         self.signals_list = []
+
+    def show_methods(self):
+        """Show methods available on the document"""
+
+        print(f"-- Methods on Document --")
+        print("--------------------------------------")
+        for method_id in self.methods_list:
+            method = self.client.get_component(method_id)
+            print(f">> {method}")
 
 
 """ ====================== Communication Objects ====================== """
@@ -954,7 +975,7 @@ def inject_methods(delegate: Delegate, methods: List[MethodID]):
     # Clear out old injected methods
     for field, value in delegate:
         if hasattr(value, "injected"):
-            print(f"Deleting: {field} in inject methods")
+            logging.debug(f"Deleting: {field} in inject methods")
             delattr(delegate, field)
 
     for method_id in methods:

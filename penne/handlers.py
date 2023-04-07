@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
 import weakref
 import warnings
+import logging
 from pydantic import ValidationError
 
 from penne.delegates import Delegate, id_map, default_delegates
@@ -30,9 +31,7 @@ def update_state(client, message: dict, component_id: ID):
     current_state.update(message)
 
     delegate_type = type(client.state[component_id])
-    new_component = delegate_type(**current_state)
-    new_component.update_forward_refs()
-    client.state[component_id] = new_component
+    client.state[component_id] = delegate_type(**current_state)
 
 
 def delegate_from_context(client: Client, context: dict) -> Delegate:
@@ -72,7 +71,7 @@ def handle(client: Client, message_id, message: dict[str, Any]):
     'Handle' uses the ID attached to message to get handling info, and uses this info 
     to take proper course of action with message. The function has 5 main sections 
     handling create, delete, and update messages along with signal invocation and reply
-    messages. For now all other communication messages are simply printed.
+    messages.
 
     'Handle' is also responsible for managing the client's state and working with the
     delegates in a couple of key ways. This function creates, deletes, and updates
@@ -89,8 +88,8 @@ def handle(client: Client, message_id, message: dict[str, Any]):
     action = handle_info.action
     specifier = handle_info.specifier
     id_type = id_map[default_delegates[specifier]]
-    print(f"Message: {action} {specifier}")
-    
+    logging.debug(f"Received Message: {action} {specifier} {message}")
+
     # Update state based on map info
     if action == "create":
 
@@ -154,7 +153,7 @@ def handle(client: Client, message_id, message: dict[str, Any]):
         target_delegate = delegate_from_context(client, context)
 
         # Invoke signal attached to target delegate
-        print(f"Invoking {signal.name} w/ args: {signal_data}")
+        logging.debug(f"Invoking {signal.name} w/ args: {signal_data}")
         target_delegate.signals[signal.name](*signal_data)
 
     elif action == "initialized":
@@ -165,4 +164,4 @@ def handle(client: Client, message_id, message: dict[str, Any]):
     else:
         # Document reset messages
         client.state["document"].reset()
-        print("Document Reset")
+        logging.debug("Document Reset")

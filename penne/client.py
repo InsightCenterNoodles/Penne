@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import threading
+import logging
 from typing import Callable
 from urllib.parse import urlparse
 import queue
@@ -29,7 +30,7 @@ def thread(loop: asyncio.AbstractEventLoop, client: Client):
         asyncio.set_event_loop(loop)
         loop.run_until_complete(client.run())
     except Exception as e:
-        print(f"Connection terminated: {e}")
+        logging.warning(f"Connection terminated: {e}")
 
 
 def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None,

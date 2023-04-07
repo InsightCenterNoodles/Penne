@@ -1,19 +1,11 @@
-"""Client Test Script
 
-Test the functionality of the client using a custom delegate and callback functions.
-Designed to interact with PlottyN server to create a 3d scatter chart
-"""
+from typing import Any, Callable
 
-from typing import Callable, Any
-import unittest
 import multiprocessing
-import queue
-
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from penne.client import create_client
-from penne.delegates import Table, TableID
+from penne.delegates import Table
 
 
 def get_plot_data(df: pd.DataFrame):
@@ -39,7 +31,7 @@ def plot_process(df: pd.DataFrame, receiver):
     """Process for plotting the table as a 3d scatter plot
 
     Args:
-        df (DataFrame): 
+        df (DataFrame):
             the data to be plotted
         receiver (Pipe connection object):
             connection to receive updates from root process
@@ -82,7 +74,7 @@ def plot_process(df: pd.DataFrame, receiver):
             break
 
 
-class TestDelegate(Table):
+class TableDelegate(Table):
     """Override Table Delegate to Add Plotting Capabilities"""
 
     dataframe: pd.DataFrame = None
@@ -93,8 +85,8 @@ class TestDelegate(Table):
         """Creates table from server response info
 
         Args:
-            init_info (Message Obj): 
-                Server response to subscribe which has columns, keys, data, 
+            init_info (Message Obj):
+                Server response to subscribe which has columns, keys, data,
                 and possibly selections
         """
 
@@ -148,7 +140,7 @@ class TestDelegate(Table):
         Method is linked to 'tbl_updated' signal
 
         Args:
-            keys (list): 
+            keys (list):
                 list of keys to update
             rows (list):
                 list of rows containing the values for each new row,
@@ -211,65 +203,3 @@ class TestDelegate(Table):
         self.plotting.start()
         if on_done:
             on_done()
-
-
-class Tests(unittest.TestCase):
-
-    def test(self):
-
-        # Create callback functions
-        # Not sure about 'response' - cleaner way?
-        table = TableID(0, 0)
-        points = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5],
-                  [(0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1)]]
-
-        # Callbacks
-        def create_table():
-            client.invoke_method("new_point_plot", points, on_done=subscribe)
-
-        def subscribe(response):
-            client.state[table].subscribe(on_done=plot)
-
-        def plot():
-            client.state[table].plot(on_done=insert_points)
-
-        def insert_points():
-            client.state[table].request_insert(
-                row_list=[[8, 8, 8, .3, .2, 1, .05, .05, .05], [9, 9, 9, .1, .2, .5, .02, .02, .02, "Annotation"]],
-                on_done=update_rows
-            )
-
-        def update_rows():
-            client.state[table].request_update([3], [[4, 6, 3, 0, 1, 0, .1, .1, .1, "Updated this row"]],
-                                               on_done=get_selection)
-
-        def get_selection():
-            client.state[table].request_update_selection("Test Select", [1, 2, 3], on_done=remove_row)
-
-        def remove_row():
-            client.state[table].request_remove([2], on_done=shutdown)
-
-        def shutdown():
-            client.shutdown()
-
-        # Create client and start callback chain
-        del_hash = {"tables": TestDelegate}
-        client = create_client("ws://localhost:50000", del_hash, on_connected=create_table)
-
-        while True:
-            if client.is_shutdown:
-                break
-            try:
-                callback_info = client.callback_queue.get(block=False)
-            except queue.Empty:
-                continue
-            callback, args = callback_info
-            callback(args) if args else callback()
-
-        # Wait for client thread to finish
-        client.thread.join()
-        print(f"Finished Testing")
-
-
-if __name__ == "__main__":
-    unittest.main()
