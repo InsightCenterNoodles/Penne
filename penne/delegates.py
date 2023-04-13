@@ -927,7 +927,7 @@ id_map = {
 
 
 class InjectedMethod(object):
-    """Class for representing injected method in delegate
+    """Class for representing injected method in delegate, context automatically set
 
     Attributes:
         method (method): method to be called
@@ -945,8 +945,9 @@ class InjectedMethod(object):
 class LinkedMethod(object):
     """Class linking target delegate and method's delegate 
         
-    make a cleaner function call in injected method
-    
+    make a cleaner function call in injected method, its like setting the context automatically
+    This is what actually gets called for the injected method
+
     Attributes:
         _obj_delegate (delegate): 
             delegate method is being linked to
@@ -964,6 +965,10 @@ class LinkedMethod(object):
 
 def inject_methods(delegate: Delegate, methods: List[MethodID]):
     """Inject methods into a delegate class
+
+    Idea is to inject a method that is from the server to put int into a delegate.
+    Now it looks like the delegate has an instance method that actually calls what
+    is on the server. Context, is automatically taken care of by the linked method
 
     Args:
         delegate (Delegate):

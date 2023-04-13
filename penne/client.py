@@ -66,5 +66,6 @@ def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None
  
     client.thread = t
     client.thread.start()
- 
+
+    logging.debug(f"Client created at {address}")
     return client

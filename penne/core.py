@@ -267,7 +267,7 @@ class Client(object):
         
         Closes websocket connection then blocks to finish all callbacks
         """
-        
-        asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
+        if self._socket:
+            asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
         self.is_shutdown = True
     
