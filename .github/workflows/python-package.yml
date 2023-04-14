@@ -38,3 +38,11 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+    - name: Check Coverage
+      run: |
+        pip install coverage
+        pip install coverage-badge
+        coverage run -m pytest 
+        coverage-badge -o coverage.svg
+        
+        

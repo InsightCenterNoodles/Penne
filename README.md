@@ -1,4 +1,9 @@
 # PENNE
+
+![Build Status](https://github.com/InsightCenterNoodles/penne/actions/workflows/<WORKFLOW_FILE>/badge.svg)
+![PyPI](https://img.shields.io/pypi/v/Penne)
+![Coverage](tests/coverage/coverage.svg)
+
 Python Client for NOODLES protocol  
 (Python Encoded Native NOODLES Endpoint)
 

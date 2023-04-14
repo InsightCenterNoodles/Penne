@@ -1,3 +1,6 @@
+
+tests/coverage/.coverage
+
 # Standard from Github
 .DS_Store
 .idea
@@ -44,7 +47,7 @@ pip-delete-this-directory.txt
 htmlcov/
 .tox/
 .nox/
-.coverage
+tests/coverage/.coverage
 .coverage.*
 .cache
 nosetests.xml
