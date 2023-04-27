@@ -76,7 +76,10 @@ pip install penne
 ```
 2. Create a client using `create_client(address, delegate_hash)`
 ```python
-client: penne.Client = penne.create_client("ws://localhost:50000")
+from penne import Client
+
+with Client(address, delegate_hash) as client:
+    # do stuff
 ```
 - (Optional) use delegate hash to map custom delegates
 - Note: make sure to close client thread at some point - `client.thread.join()`

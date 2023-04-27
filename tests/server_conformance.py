@@ -1,39 +1,48 @@
 """Client Test Script
 
-Test the functionality of the client using a custom delegate and callback functions.
-Designed to interact with PlottyN server to create a 3d scatter chart
+Test that the current state on the server and the message format conforms to standards.
 """
 
 import unittest
-import queue
+import logging
 
-from penne.client import create_client
+from penne import Client
 
 
 class Tests(unittest.TestCase):
 
     def test(self):
 
-        def shutdown():
-            client.shutdown()
+        # def shutdown():
+        #     client.shutdown()
+        #
+        # # Create client and start callback chain
+        # client = create_client("ws://localhost:50000", on_connected=shutdown, strict=False)
+        #
+        # while True:
+        #     if client.is_shutdown:
+        #         break
+        #     try:
+        #         callback_info = client.callback_queue.get(block=False)
+        #     except queue.Empty:
+        #         continue
+        #     callback, args = callback_info
+        #     callback(args) if args else callback()
+        #
+        # # Wait for client thread to finish
+        # client.thread.join()
+        # print(f"Finished Testing")
 
-        # Create client and start callback chain
-        client = create_client("ws://localhost:50000", on_connected=shutdown, strict=False)
+        with Client("ws://localhost:50000", strict=False) as client:
+            print("Finished checking state on server / their messages")
 
-        while True:
-            if client.is_shutdown:
-                break
-            try:
-                callback_info = client.callback_queue.get(block=False)
-            except queue.Empty:
-                continue
-            callback, args = callback_info
-            callback(args) if args else callback()
 
-        # Wait for client thread to finish
-        client.thread.join()
-        print(f"Finished Testing")
-
+logging.basicConfig(
+    format="%(message)s",
+    level=logging.DEBUG
+)
 
 if __name__ == "__main__":
-    unittest.main()
+
+    with Client("ws://localhost:50000", strict=False) as client:
+        print("Finished checking state on server / their messages")

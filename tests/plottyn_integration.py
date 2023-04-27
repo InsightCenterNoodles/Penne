@@ -60,7 +60,7 @@ del_hash = {"tables": TableDelegate}
 client = create_client("ws://localhost:50000", del_hash, on_connected=create_table)
 
 while True:
-    if client.is_shutdown:
+    if not client.is_active:
         break
     try:
         callback_info = client.callback_queue.get(block=False)

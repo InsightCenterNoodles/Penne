@@ -38,7 +38,7 @@ def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None
     """Create a client object and start background thread
 
     Args:
-        address (str): 
+        address (str):
             url for connecting to server
         custom_delegate_hash (dict):
             mapping specifiers to new delegate methods to override default
@@ -57,8 +57,6 @@ def create_client(address: str, custom_delegate_hash: dict[str, Delegate] = None
         raise ValueError("Address given must be a websocket!")
 
     # Create client instance and thread
-    loop = asyncio.new_event_loop()
-    callback_queue = queue.Queue()
     if not custom_delegate_hash:
         custom_delegate_hash = {}
     client = Client(address, loop, custom_delegate_hash, on_connected, callback_queue, strict=strict)

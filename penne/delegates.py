@@ -127,7 +127,7 @@ class Delegate(NoodleObject):
         public_methods (list): Specify public methods, used in show_methods()
     """
 
-    client: Client
+    client: object = None
     id: ID = None
     name: Optional[str] = "No-Name Delegate"
     signals: Optional[dict] = {}
@@ -1024,7 +1024,7 @@ def get_context(delegate):
         return None
 
 
-# Update forward refs where model -> client -> model ...
-from penne.core import Client
-for component in id_map:
-    component.update_forward_refs()
+# # Update forward refs where model -> client -> model ...
+# from penne.core import Client
+# for component in id_map:
+#     component.update_forward_refs()

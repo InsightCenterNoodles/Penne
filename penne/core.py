@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 from typing import Any, List, Type
+
+import queue
 import asyncio
 import logging
-from queue import Queue
+import threading
 
 import websockets
 from cbor2 import loads, dumps
@@ -29,55 +31,55 @@ class Client(object):
     """Client for communicating with server
 
     Attributes:
-        _url (string): 
+        _url (string):
             address used to connect to server
-        _loop (event loop): 
+        _loop (event loop):
             event loop used for network thread
-        delegates (dict): 
+        delegates (dict):
             map for delegate functions
-        thread (thread object): 
+        thread (thread object):
             network thread used by client
-        _socket (WebSocketClientProtocol): 
+        _socket (WebSocketClientProtocol):
             socket to connect to server
-        name (str): 
+        name (str):
             name of the client
-        state (dict): 
+        state (dict):
             dict keeping track of created objects
-        client_message_map (dict): 
+        client_message_map (dict):
             mapping message type to corresponding id
         server_messages (dict):
             mapping message id's to handle info
         _current_invoke (str):
             id for next method invoke
-        callback_map (dict): 
+        callback_map (dict):
             mapping invoke_id to callback function
     """
 
-    def __init__(self, url: str, loop, custom_delegate_hash: dict[str, Type[delegates.Delegate]],
-                 on_connected, callback_queue: Queue, strict=False):
+    def __init__(self, url: str, custom_delegate_hash: dict[str, Type[delegates.Delegate]] = None,
+                 on_connected=None, strict=False):
         """Constructor for the Client Class
 
         Args:
             url (string):
                 address used to connect to server
-            loop (event loop): 
-                event loop used for network thread
-            custom_delegate_hash (dict): 
+            custom_delegate_hash (dict):
                 map for new delegate methods
             on_connected (Callable):
                 callback function to run once client is set up
-            callback_queue (Queue):
-                queue to store callbacks
             strict (bool):
                 flag for strict data validation and throwing hard exceptions
         """
 
+        if not custom_delegate_hash:
+            custom_delegate_hash = {}
+
         self._url = url
-        self._loop = loop
+        self._loop = asyncio.new_event_loop()
         self.on_connected = on_connected
         self.delegates = {}
         self.strict = strict
-        self.thread = None
+        self.thread = threading.Thread(target=self.start_communication_thread)
+        self.connection_established = threading.Event()
         self._socket = None
         self.name = "Python Client"
         self.state = {}
@@ -125,8 +127,8 @@ class Client(object):
         ]
         self._current_invoke = 0
         self.callback_map = {}
-        self.callback_queue = callback_queue
-        self.is_shutdown = False
+        self.callback_queue = queue.Queue()
+        self.is_active = False
 
         # Hook up delegate map to default or custom based on input hash
         defaults = delegates.default_delegates
@@ -138,6 +140,27 @@ class Client(object):
 
         # Add document delegate as starting element in state
         self.state["document"] = self.delegates["document"](client=self)
+
+    def __enter__(self):
+        """Enter method for context manager"""
+        self.thread.start()
+        self.connection_established.wait()
+        self.is_active = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit method for context manager"""
+        self.shutdown()
+        self.is_active = False
+        self.thread.join()
+
+    def start_communication_thread(self):
+        """Starts the communication thread for the client"""
+        try:
+            asyncio.set_event_loop(self._loop)
+            self._loop.run_until_complete(self.run())
+        except Exception as e:
+            logging.warning(f"Connection terminated in communication thread: {e}")
 
     def object_from_name(self, name: str) -> List[int]:
         """Get a delegate's id from its name
@@ -159,7 +182,7 @@ class Client(object):
 
     def get_component(self, component_id):
         """Getter to easily retrieve components from state
-        
+
         Args:
             component_id (ID): id for the component
 
@@ -240,6 +263,7 @@ class Client(object):
             # update class
             self._socket = websocket
             self.name = f"Python Client @ {self._url}"
+            self.connection_established.set()
 
             # send intro message
             intro = {"client_name": self.name}
@@ -267,7 +291,4 @@ class Client(object):
         
         Closes websocket connection then blocks to finish all callbacks
         """
-        if self._socket:
-            asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
-        self.is_shutdown = True
-    
+        asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)

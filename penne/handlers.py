@@ -98,6 +98,7 @@ def handle(client: Client, message_id, message: dict[str, Any]):
         reference_obj = reference()
         try:
             delegate: Delegate = client.delegates[specifier](client=reference_obj, **message)
+            delegate.client = client
             client.state[delegate.id] = delegate
             delegate.on_new(message)
         except ValidationError as e:

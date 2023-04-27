@@ -1,6 +1,8 @@
 
-import multiprocessing
+import threading
+import asyncio
 import logging
+import time
 
 import pytest
 from xprocess import ProcessStarter
@@ -19,21 +21,21 @@ logging.basicConfig(
 )
 
 
-@pytest.fixture
-def rig_base_server(xprocess):
-
-    class Starter(ProcessStarter):
-        pattern = "Starting up Server..."
-        args = ["python3", "/Users/aracape/development/penne/tests/base_server.py"]
-
-    logfile = xprocess.ensure("rig_base_server", Starter)
-
-    #conn = multiprocessing.Process(target=run_test_server)
-    conn = 50000
-    yield conn
-
-    x = xprocess.getinfo("rig_base_server")
-    x.terminate()
+# @pytest.fixture
+# def rig_base_server(xprocess):
+#
+#     class Starter(ProcessStarter):
+#         pattern = "Starting up Server..."
+#         args = ["python3", "/Users/aracape/development/penne/tests/base_server.py"]
+#
+#     logfile = xprocess.ensure("rig_base_server", Starter)
+#
+#     #conn = multiprocessing.Process(target=run_test_server)
+#     conn = 50000
+#     yield conn
+#
+#     x = xprocess.getinfo("rig_base_server")
+#     x.terminate()
 
 
 def print_method():
@@ -45,30 +47,42 @@ starting_components = [
 ]
 
 
-# def run_test_server():
-#     asyncio.run(rigatoni.start_server(50000, starting_state=starting_components))
+def run_test_server():
+    asyncio.run(rigatoni.start_server(50000, starting_state=starting_components))
 
 
-# @pytest.fixture
-# def rig_base_server():
-#     p = multiprocessing.Process(target=run_test_server)
-#     p.start()
-#     yield p
-#     #p.terminate()
+def shutdown_server():
+    asyncio.run(rigatoni.shutdown_server())
+
+
+@pytest.fixture
+def rig_base_server():
+    t = threading.Thread(target=run_test_server)
+    t.start()
+    asyncio.run(asyncio.sleep(1))  # Pause to let server set up
+    yield t
+    shutdown_server()
+    t.join()
+    asyncio.run(asyncio.sleep(.5))  # Pause to let server shut down
 
 
 @pytest.fixture
 def base_client(rig_base_server):
     client = create_client("ws://localhost:50000", strict=True)
+    asyncio.run(asyncio.sleep(1))  # Pause to let the client connect
     yield client
+    print(f"Socket: {client._socket}")
     client.shutdown()
+    client.thread.join(timeout=5)
 
 
 @pytest.fixture
 def delegate_client(rig_base_server):
     client = create_client("ws://localhost:50000", {"tables": TableDelegate}, strict=True)
+    asyncio.run(asyncio.sleep(1))  # Pause to let the client connect
     yield client
     client.shutdown()
+    client.thread.join(timeout=5)
 
 
 def test_create_client(base_client):
