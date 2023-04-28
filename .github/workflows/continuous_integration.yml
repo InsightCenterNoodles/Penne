@@ -43,6 +43,7 @@ jobs:
         pip install coverage
         pip install coverage-badge
         coverage run -m pytest 
+        mkdir -p tests/coverage/
         coverage-badge -o tests/coverage/coverage.svg
         
         
