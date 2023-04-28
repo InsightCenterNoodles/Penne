@@ -7,7 +7,7 @@ Designed to interact with PlottyN server to create a 3d scatter chart
 import unittest
 import queue
 
-from penne.client import create_client
+from penne import Client
 from penne.delegates import TableID
 from delegates import TableDelegate
 
@@ -55,20 +55,14 @@ def shutdown():
     client.shutdown()
 
 
-# Create client and start callback chain
 del_hash = {"tables": TableDelegate}
-client = create_client("ws://localhost:50000", del_hash, on_connected=create_table)
+with Client("ws://localhost:50000", del_hash, strict=True) as client:
+    while client.is_active:
+        try:
+            callback_info = client.callback_queue.get(block=False)
+        except queue.Empty:
+            continue
+        callback, args = callback_info
+        callback(args) if args else callback()
 
-while True:
-    if not client.is_active:
-        break
-    try:
-        callback_info = client.callback_queue.get(block=False)
-    except queue.Empty:
-        continue
-    callback, args = callback_info
-    callback(args) if args else callback()
-
-# Wait for client thread to finish
-client.thread.join()
 print(f"Finished Testing")

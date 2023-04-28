@@ -82,7 +82,18 @@ with Client(address, delegate_hash) as client:
     # do stuff
 ```
 - (Optional) use delegate hash to map custom delegates
-- Note: make sure to close client thread at some point - `client.thread.join()`
+- This is the recommended way to create a client as it will automatically close the connection when the client goes out of scope
+- It also manages an 'is_active' flag to signify whether the connection is open and the client is still running
+  - This can be used to poll for callbacks
+- However, you can also instantiate the client and manage the communication thread manually
+```python
+client = Client(address, delegate_hash)
+client.thread.start()  # Starts websocket connection in new thread
+client.connection_established.wait() 
+# do stuff
+client.shutdown()  # Close websocket connection
+client.thread.join()
+```
 3. Explore and manipulate data on the server using client or delegate methods
 - call `show_methods()` on the client to see a list of available methods with documentation
 - call `show_methods()` on a delegate to see a list of available methods for that instance

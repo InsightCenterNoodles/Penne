@@ -264,6 +264,7 @@ class Client(object):
             self._socket = websocket
             self.name = f"Python Client @ {self._url}"
             self.connection_established.set()
+            self.is_active = True
 
             # send intro message
             intro = {"client_name": self.name}
@@ -292,3 +293,4 @@ class Client(object):
         Closes websocket connection then blocks to finish all callbacks
         """
         asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
+        self.is_active = False
