@@ -1,5 +1,6 @@
 
-tests/coverage/.coverage
+# tests/coverage/.coverage
+venv/
 
 # Standard from Github
 .DS_Store

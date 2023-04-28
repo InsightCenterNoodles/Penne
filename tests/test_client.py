@@ -4,10 +4,10 @@ import logging
 import pytest
 
 from rigatoni import Server, StartingComponent, Method
-from penne import Client
+from penne.core import Client
 from penne.handlers import handle
 
-from delegates import TableDelegate
+from .test_delegates import TableDelegate
 
 
 logging.basicConfig(

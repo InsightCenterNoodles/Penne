@@ -7,9 +7,9 @@ Designed to interact with PlottyN server to create a 3d scatter chart
 import unittest
 import queue
 
-from penne import Client
+from penne import Client, TableID
 from penne.delegates import TableID
-from delegates import TableDelegate
+from .test_delegates import TableDelegate
 
 # Create callback functions
 # Not sure about 'response' - cleaner way?

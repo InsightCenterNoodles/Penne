@@ -24,5 +24,13 @@ dependencies = [
     "pydantic"
 ]
 
+[project.optional-dependencies]
+testing = [
+    "pytest",
+    "rigatoni",
+    "pandas",
+    "matplotlib"
+]
+
 [project.urls]
 Source = "https://github.com/InsightCenterNoodles/penne"

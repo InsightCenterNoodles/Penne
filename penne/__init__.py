@@ -6,7 +6,7 @@ library offers hooks in the form of delegates classes which can be extended and 
 
 Modules:
     core.py
-    delegates.py
+    test_delegates.py
     handlers.py
     messages.py
 """

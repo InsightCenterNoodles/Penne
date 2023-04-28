@@ -5,7 +5,7 @@ import multiprocessing
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from penne.delegates import Table
+from penne import Table
 
 
 def get_plot_data(df: pd.DataFrame):
