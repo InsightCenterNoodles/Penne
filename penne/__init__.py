@@ -5,7 +5,6 @@ applications. The client uses a websocket connection to send CBOR encoded messag
 library offers hooks in the form of delegates classes which can be extended and overwritten.
 
 Modules:
-    client.py
     core.py
     delegates.py
     handlers.py
