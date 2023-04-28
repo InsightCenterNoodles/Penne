@@ -1,6 +1,6 @@
 # PENNE
 
-![Build Status](https://github.com/InsightCenterNoodles/penne/actions/workflows/<WORKFLOW_FILE>/badge.svg)
+![Build Status](https://github.com/InsightCenterNoodles/penne/actions/workflows/python-package.yml/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/Penne)
 ![Coverage](tests/coverage/coverage.svg)
 
