@@ -7,7 +7,7 @@ implements strict validation
 from __future__ import annotations
 
 import logging
-from typing import Literal, Optional, Any, Union, Callable, List
+from typing import Literal, Optional, Any, Union, Callable, List, Tuple
 from collections import namedtuple
 from enum import Enum
 from math import pi
@@ -124,7 +124,6 @@ class Delegate(NoodleObject):
     Attributes:
         client (Client): Client delegate is attached to
         signals (dict): Signals that can be called on delegate, method name to callable
-        public_methods (list): Specify public methods, used in show_methods()
     """
 
     client: object = None
@@ -150,12 +149,12 @@ class Delegate(NoodleObject):
 
 """ ====================== Common Definitions ====================== """
 
-Vec3 = tuple[float, float, float]
-Vec4 = tuple[float, float, float, float]
-Mat3 = tuple[float, float, float,
+Vec3 = Tuple[float, float, float]
+Vec4 = Tuple[float, float, float, float]
+Mat3 = Tuple[float, float, float,
              float, float, float,
              float, float, float]
-Mat4 = tuple[float, float, float, float,
+Mat4 = Tuple[float, float, float, float,
              float, float, float, float,
              float, float, float, float,
              float, float, float, float]
