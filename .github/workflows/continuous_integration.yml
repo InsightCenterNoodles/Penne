@@ -47,6 +47,8 @@ jobs:
         cd tests/coverage
         rm coverage.svg
         coverage-badge -o coverage.svg
+        git config --global user.email "alex.racape@gmail.com"
+        git config --global user.name "alexracape"
         git add . 
         git commit -m "Update Coverage"
         git push
