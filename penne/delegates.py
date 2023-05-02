@@ -840,8 +840,8 @@ class Table(Delegate):
 class Document(Delegate):
     name: str = "Document"
 
-    methods_list: list[MethodID] = []
-    signals_list: list[SignalID] = []
+    methods_list: List[MethodID] = []
+    signals_list: List[SignalID] = []
 
     def on_update(self, message: dict):
         if "methods_list" in message:
