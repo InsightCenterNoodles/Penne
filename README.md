@@ -1,8 +1,8 @@
 # PENNE
 
-![Build Status](https://github.com/InsightCenterNoodles/Penne/actions/workflows/continuous-integration.yml/badge.svg)
+![Build Status](https://github.com/InsightCenterNoodles/Penne/workflows/CI/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/Penne)
-![Coverage](https://raw.githubusercontent.com/InsightCenterNoodles/Penne/main/tests)
+![Coverage](tests/coverage/coverage.svg)
 
 
 Python Client for NOODLES protocol  

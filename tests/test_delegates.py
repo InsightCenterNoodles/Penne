@@ -1,5 +1,5 @@
 
-from typing import Any, Callable
+from typing import Any, Callable, List
 
 import multiprocessing
 import pandas as pd
@@ -119,7 +119,7 @@ class TableDelegate(Table):
         if self.plotting:
             self._update_plot()
 
-    def _remove_rows(self, key_list: list[int]):
+    def _remove_rows(self, key_list: List[int]):
         """Removes rows from table
 
         Method is linked to 'tbl_rows_removed' signal
@@ -134,7 +134,7 @@ class TableDelegate(Table):
         if self.plotting:
             self._update_plot()
 
-    def _update_rows(self, keys: list[int], rows: list):
+    def _update_rows(self, keys: List[int], rows: list):
         """Update rows in table
 
         Method is linked to 'tbl_updated' signal

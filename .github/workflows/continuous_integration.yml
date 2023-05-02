@@ -20,6 +20,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
@@ -42,12 +43,11 @@ jobs:
       run: |
         pip install coverage
         pip install coverage-badge
-        coverage run -m pytest 
-        mkdir -p tests/coverage/
-        coverage-badge -o tests/coverage/coverage.svg
-        curl -X PUT \
-        -H "Content-Type: image/svg+xml" \
-        --data-binary "@tests/coverage/coverage.svg" \
-        "https://raw.githubusercontent.com/InsightCenterNoodles/Penne/main/tests/coverage/coverage.svg"
+        coverage run -m --data-file=tests/coverage/.coverage pytest 
+        cd tests/coverage
+        coverage-badge -o coverage.svg
+        git add . 
+        git commit -m "Update Coverage"
+        git push
         
         
