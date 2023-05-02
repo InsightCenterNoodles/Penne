@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
     - uses: actions/checkout@v3
@@ -45,6 +45,7 @@ jobs:
         pip install coverage-badge
         coverage run -m --data-file=tests/coverage/.coverage pytest 
         cd tests/coverage
+        rm coverage.svg
         coverage-badge -o coverage.svg
         git add . 
         git commit -m "Update Coverage"
