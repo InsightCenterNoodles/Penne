@@ -43,7 +43,10 @@ jobs:
         pip install coverage
         pip install coverage-badge
         coverage run -m pytest 
-        mkdir -p tests/coverage/
-        coverage-badge -o tests/coverage/coverage.svg
+        coverage-badge -o ../tests/coverage/coverage.svg
+        curl -X PUT \
+        -H "Content-Type: application/octet-stream" \
+        --data-binary "../tests/coverage/coverage.svg" \
+        "https://raw.githubusercontent.com/alexracape/penne/main/tests/coverage"
         
         

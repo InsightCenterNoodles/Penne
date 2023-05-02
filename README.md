@@ -2,7 +2,8 @@
 
 ![Build Status](https://github.com/InsightCenterNoodles/penne/actions/workflows/continuous-integration.yml/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/Penne)
-![Coverage](tests/coverage/coverage.svg)
+![Coverage](https://raw.githubusercontent.com/alexracape/penne/main/tests/coverage)
+
 
 Python Client for NOODLES protocol  
 (Python Encoded Native NOODLES Endpoint)
