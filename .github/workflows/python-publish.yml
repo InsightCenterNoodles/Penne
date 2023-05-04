@@ -6,11 +6,11 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: Update Package and Release
 
 on:
-  release:
-    types: [published]
+  pull_request:
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -37,3 +37,17 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+            Changes in this Release:
+            - Update Coverage
+
+        draft: false
+        prerelease: false
