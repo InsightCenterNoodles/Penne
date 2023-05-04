@@ -2,7 +2,9 @@
 name: Test
 
 on:
-  workflow_call
+  workflow_call:
+  push:
+    branches: [ "develop" ]
 
 jobs:
   build:
