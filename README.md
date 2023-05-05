@@ -2,7 +2,6 @@
 
 ![Build Status](https://github.com/InsightCenterNoodles/Penne/workflows/CI/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/Penne)
-![Coverage](tests/coverage/coverage.svg)
 ![Coverage](https://github.com/InsightCenterNoodles/Penne/raw/aebac0f/coverage-badge/coverage.svg)
 
 
