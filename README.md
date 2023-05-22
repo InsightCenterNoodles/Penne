@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/InsightCenterNoodles/Penne/workflows/CI/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/Penne)
-![Coverage](https://github.com/InsightCenterNoodles/Penne/raw/aebac0f/coverage-badge/coverage.svg)
+[![Coverage badge](https://raw.githubusercontent.com/InsightCenterNoodles/Penne/python-coverage-comment-action-data/badge.svg)](https://htmlpreview.github.io/?https://github.com/InsightCenterNoodles/Penne/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
 
 Python Client for NOODLES protocol  
