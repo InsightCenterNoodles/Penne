@@ -944,7 +944,7 @@ class InjectedMethod(object):
 class LinkedMethod(object):
     """Class linking target delegate and method's delegate 
         
-    make a cleaner function call in injected method, its like setting the context automatically
+    make a cleaner function call in injected method, it's like setting the context automatically
     This is what actually gets called for the injected method
 
     Attributes:
@@ -1021,4 +1021,3 @@ def get_context(delegate):
         return {"plot": delegate.id}
     else:
         return None
-

@@ -159,6 +159,10 @@ def handle(client: Client, message_id, message: dict[str, Any]):
 
     elif action == "initialized":
 
+        # Set flag that lets context manager start up
+        client.connection_established.set()
+
+        # Start callback if it exists
         if client.on_connected:
             client.callback_queue.put((client.on_connected, None))
 

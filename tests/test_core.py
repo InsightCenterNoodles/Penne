@@ -1,11 +1,10 @@
 
 import logging
-
 import pytest
 
-from rigatoni import Server, StartingComponent, Method
+from rigatoni import Server, StartingComponent, Method, Entity, Material
 from penne.core import Client
-from penne.handlers import handle
+import penne.delegates as nooobs
 
 from .test_delegates import TableDelegate
 
@@ -18,10 +17,13 @@ logging.basicConfig(
 
 def print_method():
     print("Method on server called!")
+    return "Method on server called!"
 
 
 starting_components = [
-    StartingComponent(Method, {"name": "print", "arg_doc": []}, print_method)
+    StartingComponent(Method, {"name": "test_method"}, print_method),
+    StartingComponent(Entity, {}),
+    StartingComponent(Material, {"name": "test_material"})
 ]
 
 
@@ -31,14 +33,6 @@ def rig_base_server():
     with Server(50000, starting_components) as server:
         yield server
 
-    # t = threading.Thread(target=run_test_server)
-    # t.start()
-    # asyncio.run(asyncio.sleep(1))  # Pause to let server set up
-    # yield t
-    # shutdown_server()
-    # t.join()
-    # asyncio.run(asyncio.sleep(.5))  # Pause to let server shut down
-
 
 @pytest.fixture
 def base_client(rig_base_server):
@@ -46,24 +40,11 @@ def base_client(rig_base_server):
     with Client("ws://localhost:50000", strict=True) as client:
         yield client
 
-    # client = create_client("ws://localhost:50000", strict=True)
-    # asyncio.run(asyncio.sleep(1))  # Pause to let the client connect
-    # yield client
-    # print(f"Socket: {client._socket}")
-    # client.shutdown()
-    # client.thread.join(timeout=5)
-
 
 @pytest.fixture
 def delegate_client(rig_base_server):
     with Client("ws://localhost:50000", custom_delegate_hash={"tables": TableDelegate}, strict=True) as client:
         yield client
-
-    # client = create_client("ws://localhost:50000", {"tables": TableDelegate}, strict=True)
-    # asyncio.run(asyncio.sleep(1))  # Pause to let the client connect
-    # yield client
-    # client.shutdown()
-    # client.thread.join(timeout=5)
 
 
 def test_create_client(base_client):
@@ -74,6 +55,11 @@ def test_create_client(base_client):
     assert len(base_client.delegates) == 14
     assert len(base_client.server_messages) == 36
 
+    # Test connection when there is no server to connect to, note: will cause 5 second delay
+    with pytest.raises(ConnectionError):
+        with Client("ws://localhost:50001", strict=True) as client:
+            pass
+
 
 def test_create_delegate_client(delegate_client):
     assert isinstance(delegate_client, Client)
@@ -83,3 +69,27 @@ def test_create_delegate_client(delegate_client):
     assert len(delegate_client.delegates) == 14
     assert len(delegate_client.server_messages) == 36
     assert delegate_client.delegates["tables"] == TableDelegate
+
+
+def test_object_from_name(base_client):
+    method_id = base_client.object_from_name("test_method")
+    assert isinstance(method_id, nooobs.MethodID)
+    with pytest.raises(KeyError):
+        base_client.object_from_name("not_a_method")
+
+
+def test_get_component(base_client):
+    method_id = base_client.object_from_name("test_method")
+    method = base_client.get_component(method_id)
+    check = base_client.state[method_id]
+    assert isinstance(method, nooobs.Method)
+    assert method == check
+    with pytest.raises(KeyError):
+        base_client.get_component("not_a_method")
+
+
+def test_invoke_method(base_client):
+    method_id = base_client.object_from_name("test_method")
+    base_client.invoke_method(method_id)
+    base_client.invoke_method("test_method", [])
+
