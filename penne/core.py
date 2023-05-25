@@ -142,9 +142,15 @@ class Client(object):
         self.state["document"] = self.delegates["document"](client=self)
 
     def __enter__(self):
-        """Enter method for context manager"""
+        """Enter method for context manager
+
+        Waits for 5 seconds for connection to be established, otherwise throws exception
+        """
         self.thread.start()
-        self.connection_established.wait()
+        flag = self.connection_established.wait(timeout=1)
+        if not flag:
+            raise ConnectionError("Couldn't connect to server")
+
         self.is_active = True
         return self
 
@@ -152,7 +158,6 @@ class Client(object):
         """Exit method for context manager"""
         self.shutdown()
         self.is_active = False
-        self.thread.join()
 
     def start_communication_thread(self):
         """Starts the communication thread for the client"""
@@ -162,14 +167,14 @@ class Client(object):
         except Exception as e:
             logging.warning(f"Connection terminated in communication thread: {e}")
 
-    def object_from_name(self, name: str) -> List[int]:
+    def object_from_name(self, name: str) -> Type[delegates.ID]:
         """Get a delegate's id from its name
 
         Args:
             name (str): name of method
 
         Returns:
-            ID group attached to the method
+            ID group attached to the method, note this is just the first match if names are not unique
 
         Raises:
             Couldn't find method exception
@@ -178,9 +183,9 @@ class Client(object):
         for delegate in state_delegates:
             if delegate.name == name:
                 return delegate.id
-        raise Exception(f"Couldn't find object '{name}' in state")
+        raise KeyError(f"Couldn't find object '{name}' in state")
 
-    def get_component(self, component_id):
+    def get_component(self, component_id) -> Type[delegates.Delegate]:
         """Getter to easily retrieve components from state
 
         Args:
@@ -192,7 +197,7 @@ class Client(object):
 
         return self.state[component_id]
 
-    def invoke_method(self, method: delegates.MethodID | str, args: list,
+    def invoke_method(self, method: delegates.MethodID | str, args: list = None,
                       context: dict[str, tuple] = None, on_done=None):
         """Invoke method on server
 
@@ -216,6 +221,10 @@ class Client(object):
             on_done (function):
                 function to be called upon response
         """
+
+        # Handle default args
+        if not args:
+            args = []
         
         # Get proper ID
         if isinstance(method, str):
@@ -263,7 +272,6 @@ class Client(object):
             # update class
             self._socket = websocket
             self.name = f"Python Client @ {self._url}"
-            self.connection_established.set()
             self.is_active = True
 
             # send intro message
@@ -294,3 +302,4 @@ class Client(object):
         """
         asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
         self.is_active = False
+        self.thread.join()

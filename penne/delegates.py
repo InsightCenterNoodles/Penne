@@ -7,7 +7,7 @@ implements strict validation
 from __future__ import annotations
 
 import logging
-from typing import Literal, Optional, Any, Union, Callable, List, Tuple
+from typing import Optional, Any, Union, Callable, List, Tuple
 from collections import namedtuple
 from enum import Enum
 from math import pi
@@ -181,6 +181,12 @@ class Format(Enum):
     mat4 = "MAT4"
 
 
+class IndexFormat(str, Enum):
+    u8 = "U8"
+    u16 = "U16"
+    u32 = "U32"
+
+
 class PrimitiveType(Enum):
     points = "POINTS"
     lines = "LINES"
@@ -190,10 +196,33 @@ class PrimitiveType(Enum):
     triangle_strip = "TRIANGLE_STRIP"
 
 
+class ColumnType(str, Enum):
+    text = "TEXT"
+    real = "REAL"
+    integer = "INTEGER"
+
+
+class BufferType(str, Enum):
+    unknown = "UNK"
+    geometry = "GEOMETRY"
+    image = "IMAGE"
+
+
 class SamplerMode(Enum):
     clamp_to_edge = "CLAMP_TO_EDGE"
     mirrored_repeat = "MIRRORED_REPEAT"
     repeat = "REPEAT"
+
+
+class MagFilterTypes(Enum):
+    nearest = "NEAREST"
+    linear = "LINEAR"
+
+
+class MinFilterTypes(Enum):
+    nearest = "NEAREST"
+    linear = "LINEAR"
+    linear_mipmap_linear = "LINEAR_MIPMAP_LINEAR"
 
 
 class SelectionRange(NoodleObject):
@@ -258,8 +287,8 @@ class PBRInfo(NoodleObject):
     roughness: Optional[float] = 1.0
     metal_rough_texture: Optional[TextureRef] = None  # assume linear, ONLY RG used
 
-    @validator("base_color", pre=True)
-    def check_color(cls, value):
+    @validator("base_color", pre=True, allow_reuse=True)
+    def check_color_rgba(cls, value):
 
         # Raise warning if format is wrong
         if len(value) != 4:
@@ -298,7 +327,7 @@ class Index(NoodleObject):
     count: int
     offset: Optional[int] = 0
     stride: Optional[int] = 0
-    format: Literal["U8", "U16", "U32"]
+    format: IndexFormat
 
 
 class GeometryPatch(NoodleObject):
@@ -331,7 +360,7 @@ class InvokeIDType(NoodleObject):
 
 class TableColumnInfo(NoodleObject):
     name: str
-    type: Literal["TEXT", "REAL", "INTEGER"]
+    type: ColumnType
 
 
 class TableInitData(NoodleObject):
@@ -484,7 +513,7 @@ class BufferView(Delegate):
     name: Optional[str] = "Unnamed Buffer-View Delegate"
     source_buffer: BufferID
 
-    type: Literal["UNK", "GEOMETRY", "IMAGE"] = "UNK"
+    type: BufferType = BufferType.unknown
     offset: int
     length: int
 
@@ -547,8 +576,8 @@ class Sampler(Delegate):
     id: SamplerID
     name: Optional[str] = "Unnamed Sampler Delegate"
 
-    mag_filter: Optional[Literal["NEAREST", "LINEAR"]] = "LINEAR"
-    min_filter: Optional[Literal["NEAREST", "LINEAR", "LINEAR_MIPMAP_LINEAR"]] = "LINEAR_MIPMAP_LINEAR"
+    mag_filter: Optional[MagFilterTypes] = MagFilterTypes.linear
+    min_filter: Optional[MinFilterTypes] = MinFilterTypes.linear
 
     wrap_s: Optional[SamplerMode] = "REPEAT"
     wrap_t: Optional[SamplerMode] = "REPEAT"
@@ -565,8 +594,8 @@ class Light(Delegate):
     spot: SpotLight = None
     directional: DirectionalLight = None
 
-    @validator("color", pre=True)
-    def check_color(cls, value):
+    @validator("color", pre=True, allow_reuse=True)
+    def check_color_rgb(cls, value):
 
         # Raise warning if format is wrong
         if len(value) != 3:
@@ -944,7 +973,7 @@ class InjectedMethod(object):
 class LinkedMethod(object):
     """Class linking target delegate and method's delegate 
         
-    make a cleaner function call in injected method, its like setting the context automatically
+    make a cleaner function call in injected method, it's like setting the context automatically
     This is what actually gets called for the injected method
 
     Attributes:
@@ -1021,4 +1050,3 @@ def get_context(delegate):
         return {"plot": delegate.id}
     else:
         return None
-
