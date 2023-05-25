@@ -158,7 +158,6 @@ class Client(object):
         """Exit method for context manager"""
         self.shutdown()
         self.is_active = False
-        self.thread.join()
 
     def start_communication_thread(self):
         """Starts the communication thread for the client"""
@@ -303,3 +302,4 @@ class Client(object):
         """
         asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
         self.is_active = False
+        self.thread.join()
