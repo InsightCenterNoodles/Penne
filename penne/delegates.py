@@ -258,8 +258,8 @@ class PBRInfo(NoodleObject):
     roughness: Optional[float] = 1.0
     metal_rough_texture: Optional[TextureRef] = None  # assume linear, ONLY RG used
 
-    @validator("base_color", pre=True)
-    def check_color(cls, value):
+    @validator("base_color", pre=True, allow_reuse=True)
+    def check_color_rgba(cls, value):
 
         # Raise warning if format is wrong
         if len(value) != 4:
@@ -565,8 +565,8 @@ class Light(Delegate):
     spot: SpotLight = None
     directional: DirectionalLight = None
 
-    @validator("color", pre=True)
-    def check_color(cls, value):
+    @validator("color", pre=True, allow_reuse=True)
+    def check_color_rgb(cls, value):
 
         # Raise warning if format is wrong
         if len(value) != 3:

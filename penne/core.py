@@ -147,7 +147,7 @@ class Client(object):
         Waits for 5 seconds for connection to be established, otherwise throws exception
         """
         self.thread.start()
-        flag = self.connection_established.wait(timeout=5)
+        flag = self.connection_established.wait(timeout=1)
         if not flag:
             raise ConnectionError("Couldn't connect to server")
 
