@@ -2,16 +2,19 @@
 
 [Full report](https://htmlpreview.github.io/?https://github.com/InsightCenterNoodles/Penne/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
-| Name                     |    Stmts |     Miss |  Cover |   Missing |
-|------------------------- | -------: | -------: | -----: | --------: |
-| penne/\_\_init\_\_.py    |        3 |        3 |     0% |     14-19 |
-| penne/core.py            |      100 |      100 |     0% |     3-296 |
-| penne/delegates.py       |      507 |      507 |     0% |    7-1023 |
-| penne/handlers.py        |       82 |       82 |     0% |     3-168 |
-| tests/\_\_init\_\_.py    |        0 |        0 |   100% |           |
-| tests/test\_client.py    |       37 |       37 |     0% |      2-85 |
-| tests/test\_delegates.py |       90 |       90 |     0% |     2-205 |
-|                **TOTAL** |  **819** |  **819** | **0%** |           |
+| Name                       |    Stmts |     Miss |  Cover |   Missing |
+|--------------------------- | -------: | -------: | -----: | --------: |
+| penne/\_\_init\_\_.py      |        3 |        3 |     0% |     14-19 |
+| penne/core.py              |      103 |      103 |     0% |     3-305 |
+| penne/delegates.py         |      526 |      526 |     0% |    7-1052 |
+| penne/handlers.py          |       83 |       83 |     0% |     3-172 |
+| tests/\_\_init\_\_.py      |        0 |        0 |   100% |           |
+| tests/fixtures.py          |       23 |       23 |     0% |      2-41 |
+| tests/test\_core.py        |       59 |       59 |     0% |     2-105 |
+| tests/test\_delegates.py   |       90 |       90 |     0% |     2-205 |
+| tests/test\_handlers.py    |        0 |        0 |   100% |           |
+| tests/test\_integration.py |        0 |        0 |   100% |           |
+|                  **TOTAL** |  **887** |  **887** | **0%** |           |
 
 
 ## Setup coverage badge
