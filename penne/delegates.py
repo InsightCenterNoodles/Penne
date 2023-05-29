@@ -577,7 +577,7 @@ class Sampler(Delegate):
     name: Optional[str] = "Unnamed Sampler Delegate"
 
     mag_filter: Optional[MagFilterTypes] = MagFilterTypes.linear
-    min_filter: Optional[MinFilterTypes] = MinFilterTypes.linear
+    min_filter: Optional[MinFilterTypes] = MinFilterTypes.linear_mipmap_linear
 
     wrap_s: Optional[SamplerMode] = "REPEAT"
     wrap_t: Optional[SamplerMode] = "REPEAT"
