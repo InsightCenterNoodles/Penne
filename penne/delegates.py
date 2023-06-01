@@ -7,35 +7,39 @@ implements strict validation
 from __future__ import annotations
 
 import logging
-from typing import Optional, Any, Union, Callable, List, Tuple
+from typing import Optional, Any, Union, Callable, List, Tuple, NamedTuple
 from collections import namedtuple
 from enum import Enum
 from math import pi
 
-from pydantic import BaseModel, root_validator, Extra, validator
+from pydantic import BaseModel, root_validator, Extra, validator, Field
 from pydantic.color import Color
 
 
 """ =============================== ID's ============================= """
 
-IDGroup = namedtuple("IDGroup", ["slot", "gen"])
 
+class ID(NamedTuple):
+    slot: int
+    gen: int
 
-class ID(IDGroup):
+    def compact_str(self):
+        return f"|{self.slot}/{self.gen}|"
 
-    __slots__ = ()
-
-    def __repr__(self):
-        return f"{self.__class__}|{self.slot}/{self.gen}|"
+    def __str__(self):
+        return f"{type(self).__name__}{self.compact_str()}"
 
     def __key(self):
         return type(self), self.slot, self.gen
 
-    def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, ID):
-            return self.__key() == __o.__key()
+    def __eq__(self, other: object) -> bool:
+        if type(other) is type(self):
+            return self.__key() == other.__key()
         else:
             return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __hash__(self):
         return hash(self.__key())
@@ -107,15 +111,6 @@ class NoodleObject(BaseModel):
         extra = Extra.allow  # Allow injected methods
 
 
-class Component(NoodleObject):
-    """Parent class for all components"""
-
-    id: ID = None
-
-    def __repr__(self):
-        return f"{type(self)} | {self.id}"
-
-
 class Delegate(NoodleObject):
     """Parent class for all delegates
     
@@ -123,16 +118,18 @@ class Delegate(NoodleObject):
     
     Attributes:
         client (Client): Client delegate is attached to
+        id: (ID): Unique identifier for delegate
+        name (str): Name of delegate
         signals (dict): Signals that can be called on delegate, method name to callable
     """
 
     client: object = None
     id: ID = None
-    name: Optional[str] = "No-Name Delegate"
+    name: Optional[str] = "No-Name"
     signals: Optional[dict] = {}
 
-    def __repr__(self):
-        return f"{self.name} | {type(self)} | {self.id}"
+    def __str__(self):
+        return f"{self.name} - {type(self).__name__} - {self.id.compact_str()}"
 
     # For all except Document Delegate
     def on_new(self, message: dict):
@@ -290,7 +287,7 @@ class PBRInfo(NoodleObject):
     @validator("base_color", pre=True, allow_reuse=True)
     def check_color_rgba(cls, value):
 
-        # Raise warning if format is wrong
+        # Raise warning if format is wrong from server
         if len(value) != 4:
             logging.warning(f"Base Color is Wrong Color Format: {value}")
         return value
@@ -366,7 +363,7 @@ class TableColumnInfo(NoodleObject):
 class TableInitData(NoodleObject):
     columns: List[TableColumnInfo]
     keys: List[int]
-    data: List[List[Union[float, int, str]]]
+    data: List[List[Any]]  # Originally tried union, but currently order is used to coerce by pydantic
     selections: Optional[List[Selection]] = None
 
     # too much overhead? - strict mode
@@ -412,12 +409,12 @@ class Method(Delegate):
         elif isinstance(on_delegate, Entity):
             kind = "entity"
         else:
-            raise Exception("Invalid delegate context")
+            raise ValueError("Invalid delegate context")
 
         context = {kind: on_delegate.id}
         self.client.invoke_method(self.id, args, context=context, on_done=callback)
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         """Custom string representation for methods"""
 
         rep = f"{self.name}:\n\t{self.doc}\n\tReturns: {self.return_doc}\n\tArgs:"
@@ -456,11 +453,16 @@ class Entity(Delegate):
     def show_methods(self):
         """Show methods available on the entity"""
 
-        print(f"-- Methods on {self.name} --")
-        print("--------------------------------------")
-        for method_id in self.methods_list:
-            method = self.client.get_component(method_id)
-            print(f">> {method}")
+        if self.methods_list is None:
+            message = "No methods available"
+        else:
+            message = f"-- Methods on {self.name} --\n--------------------------------------\n"
+            for method_id in self.methods_list:
+                method = self.client.get_component(method_id)
+                message += f">> {method}"
+
+        print(message)
+        return message
 
 
 class Plot(Delegate):
