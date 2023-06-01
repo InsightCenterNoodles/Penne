@@ -167,7 +167,7 @@ class Client(object):
         except Exception as e:
             logging.warning(f"Connection terminated in communication thread: {e}")
 
-    def object_from_name(self, name: str) -> Type[delegates.ID]:
+    def id_from_name(self, name: str) -> Type[delegates.ID]:
         """Get a delegate's id from its name
 
         Args:
@@ -185,17 +185,21 @@ class Client(object):
                 return delegate.id
         raise KeyError(f"Couldn't find object '{name}' in state")
 
-    def get_component(self, component_id) -> Type[delegates.Delegate]:
+    def get_component(self, identifier) -> Type[delegates.Delegate]:
         """Getter to easily retrieve components from state
 
         Args:
-            component_id (ID): id for the component
+            identifier (ID | Str): id or name for the component
 
         Returns:
             Component delegate from state
         """
-
-        return self.state[component_id]
+        if isinstance(identifier, delegates.ID):
+            return self.state[identifier]
+        elif isinstance(identifier, str):
+            return self.state[self.id_from_name(identifier)]
+        else:
+            raise TypeError(f"Invalid type for identifier: {type(identifier)}")
 
     def invoke_method(self, method: delegates.MethodID | str, args: list = None,
                       context: dict[str, tuple] = None, on_done=None):
@@ -228,7 +232,7 @@ class Client(object):
         
         # Get proper ID
         if isinstance(method, str):
-            method_id = self.object_from_name(method)
+            method_id = self.id_from_name(method)
         else:
             method_id = method
 

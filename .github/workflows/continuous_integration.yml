@@ -9,7 +9,6 @@ on:
     branches:
       - 'main'
 
-
 jobs:
   build:
     strategy:
@@ -31,7 +30,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest rigatoni pandas matplotlib pytest-cov
+        python -m pip install flake8 pytest rigatoni pandas matplotlib pytest-cov coverage
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
       run: |
@@ -42,13 +41,14 @@ jobs:
     - name: Test with pytest
       run: |
         echo -e "[run]\nrelative_files = True" > .coveragerc
-        pytest --cov
+        pytest --cov penne
       env:
         COVERAGE_FILE: ".coverage.${{ matrix.python_version }}"
     - name: Verify Coverage File
       run: |
         ls -la
         cat .coverage.${{ matrix.python_version }}
+        coverage report --data-file=".coverage.${{ matrix.python_version }}"
     - name: Store coverage file
       uses: actions/upload-artifact@v3
       with:
@@ -70,6 +70,10 @@ jobs:
         id: download
         with:
           name: 'coverage'
+
+      - name: Set up .coveragerc with relative files
+        run: |
+          echo -e "[run]\nrelative_files = True" > .coveragerc
 
       - name: Coverage comment
         id: coverage_comment
