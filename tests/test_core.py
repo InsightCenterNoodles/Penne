@@ -6,7 +6,7 @@ from cbor2 import dumps
 from penne.core import Client
 import penne.delegates as nooobs
 
-from .fixtures import *
+from .clients import *
 
 
 logging.basicConfig(

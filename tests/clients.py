@@ -8,9 +8,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import pytest
 
-from rigatoni import Server, StartingComponent, Method, MethodArg, Entity, Material, Plot, Table
 from penne.core import Client
-from penne import Table as PenneTable
+from penne import Table
+from tests.servers import rig_base_server
 
 
 def get_plot_data(df: pd.DataFrame):
@@ -79,7 +79,7 @@ def plot_process(df: pd.DataFrame, receiver):
             break
 
 
-class TableDelegate(PenneTable):
+class TableDelegate(Table):
     """Override Table Delegate to Add Plotting Capabilities"""
 
     dataframe: pd.DataFrame = None
@@ -124,7 +124,7 @@ class TableDelegate(PenneTable):
         if self.plotting:
             self._update_plot()
 
-    def _remove_rows(self, key_list: List[int]):
+    def _remove_rows(self, keys: List[int]):
         """Removes rows from table
 
         Method is linked to 'tbl_rows_removed' signal
@@ -133,8 +133,8 @@ class TableDelegate(PenneTable):
             key_list (list): list of keys corresponding to rows to be removed
         """
 
-        self.dataframe.drop(index=key_list, inplace=True)
-        print(f"Removed Rows: {key_list}...\n", self.dataframe)
+        self.dataframe.drop(index=keys, inplace=True)
+        print(f"Removed Rows: {keys}...\n", self.dataframe)
 
         if self.plotting:
             self._update_plot()
@@ -208,39 +208,6 @@ class TableDelegate(PenneTable):
         self.plotting.start()
         if on_done:
             on_done()
-
-
-def simple_method(server: Server, context, *args):
-    return "Method on server called!"
-
-
-def move_method(server: Server, context, x, y, z):
-    print(f"Moving {x}, {y}, {z}")
-    return "Moved!"
-
-
-test_args = [
-    MethodArg(name="x", doc="How far to move in x", editor_hint="noo::real"),
-    MethodArg(name="y", doc="How far to move in y", editor_hint="noo::real"),
-    MethodArg(name="z", doc="How far to move in z", editor_hint="noo::real")
-]
-
-
-starting_components = [
-    StartingComponent(Method, {"name": "test_method"}, simple_method),
-    StartingComponent(Method, {"name": "test_arg_method", "arg_doc": [*test_args]}, move_method),
-    StartingComponent(Entity, {"name": "test_entity"}),
-    StartingComponent(Entity, {"name": "test_method_entity", "methods_list": [[0, 0]]}),
-    StartingComponent(Material, {"name": "test_material"}),
-    StartingComponent(Table, {"name": "test_table"}),
-    StartingComponent(Plot, {"name": "test_plot", "simple_plot": "True"}),
-]
-
-
-@pytest.fixture
-def rig_base_server():
-    with Server(50000, starting_components) as server:
-        yield server
 
 
 @pytest.fixture

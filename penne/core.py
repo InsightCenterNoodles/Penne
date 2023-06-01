@@ -165,6 +165,7 @@ class Client(object):
             asyncio.set_event_loop(self._loop)
             self._loop.run_until_complete(self.run())
         except Exception as e:
+            self.is_active = False
             logging.warning(f"Connection terminated in communication thread: {e}")
 
     def id_from_name(self, name: str) -> Type[delegates.ID]:

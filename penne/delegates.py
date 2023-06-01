@@ -487,11 +487,16 @@ class Plot(Delegate):
     def show_methods(self):
         """Show methods available on the entity"""
 
-        print(f"-- Methods on {self.name} --")
-        print("--------------------------------------")
-        for method_id in self.methods_list:
-            method = self.client.get_component(method_id)
-            print(f">> {method}")
+        if self.methods_list is None:
+            message = "No methods available"
+        else:
+            message = f"-- Methods on {self.name} --\n--------------------------------------\n"
+            for method_id in self.methods_list:
+                method = self.client.get_component(method_id)
+                message += f">> {method}"
+
+        print(message)
+        return message
 
 
 class Buffer(Delegate):
@@ -525,9 +530,9 @@ class BufferView(Delegate):
             return value
 
         logging.warning(f"Buffer View Type does not meet the specification: {value} coerced to 'UNK'")
-        if "GEOMETRY" in value:
+        if "GEOMETRY" in value.upper():
             return "GEOMETRY"
-        elif "IMAGE" in value:
+        elif "IMAGE" in value.upper():
             return "IMAGE"
         else:
             return "UNK"
@@ -601,7 +606,7 @@ class Light(Delegate):
 
         # Raise warning if format is wrong
         if len(value) != 3:
-            logging.warning(f"Color is Wrong Color Format in Light: {value}")
+            logging.warning(f"Color is not RGB in Light: {value}")
 
         return value
 
@@ -670,10 +675,10 @@ class Table(Delegate):
                 and possibly selections
         """
 
-        # Extract data from init info and transpose rows to cols
-        row_data = init_info["data"]
-        cols = init_info["columns"]
-        logging.debug(f"Table Initialized with cols: {cols} and row data: {row_data}")
+        init = TableInitData(**init_info)
+        logging.debug(f"Table Initialized with cols: {init.columns} and row data: {init.data}")
+        if on_done:
+            on_done()
 
     def _reset_table(self):
         """Reset dataframe and selections to blank objects
@@ -683,16 +688,16 @@ class Table(Delegate):
 
         self.selections = {}
 
-    def _remove_rows(self, key_list: List[int]):
+    def _remove_rows(self, keys: List[int]):
         """Removes rows from table
 
         Method is linked to 'tbl_rows_removed' signal
 
         Args:
-            key_list (list): list of keys corresponding to rows to be removed
+            keys (list): list of keys corresponding to rows to be removed
         """
 
-        logging.debug(f"Removed Rows: {key_list}...\n")
+        logging.debug(f"Removed Rows: {keys}...\n")
 
     def _update_rows(self, keys: List[int], rows: list):
         """Update rows in table
@@ -778,8 +783,8 @@ class Table(Delegate):
         try:
             # Allow for callback after table init
             self.tbl_subscribe(on_done=lambda data: self._on_table_init(data, on_done))
-        except Exception:
-            raise Exception("Could not subscribe to table")
+        except Exception as e:
+            raise Exception(f"Could not subscribe to table {self.id}...{e}")
 
     def request_insert(self, row_list: List[List[int]], on_done=None):
         """Add rows to end of table
@@ -855,8 +860,8 @@ class Table(Delegate):
             on_done (function, optional): 
                 callback function called when complete
         """
-
-        self.tbl_update_selection(on_done, name, {"rows": keys})
+        selection = Selection(name=name, rows=keys)
+        self.tbl_update_selection(on_done, selection)
 
     def show_methods(self):
         """Show methods available on the table"""
