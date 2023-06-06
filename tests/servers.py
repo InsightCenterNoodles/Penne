@@ -24,7 +24,11 @@ def new_point_plot(server: Server, context: dict, xs, ys, zs, colors=None, sizes
         meta="Table for testing",
         methods_list=[
             server.get_component_id(Method, "noo::tbl_subscribe"),
-            server.get_component_id(Method, "noo::tbl_insert")
+            server.get_component_id(Method, "noo::tbl_insert"),
+            server.get_component_id(Method, "noo::tbl_update"),
+            server.get_component_id(Method, "noo::tbl_remove"),
+            server.get_component_id(Method, "noo::tbl_clear"),
+            server.get_component_id(Method, "noo::tbl_update_selection"),
         ],
         signals_list=[
             server.get_component_id(Signal, "noo::tbl_reset"),
@@ -65,10 +69,10 @@ def new_point_plot(server: Server, context: dict, xs, ys, zs, colors=None, sizes
 def subscribe(server: Server, context: dict):
     # Try to get delegate from context
     try:
-        tbl_id = TableID(*context["table"])
-        delegate: CustomTableDelegate = server.delegates[tbl_id]
-    except Exception:
-        raise Exception(MethodException(code=-32600, message="Invalid Request - Invalid Context for Subscribe"))
+        table_id = TableID(*context["table"])
+        delegate: CustomTableDelegate = server.delegates[table_id]
+    except ValueError:
+        raise MethodException(code=-32600, message="Invalid Request - Invalid Context for Subscribe")
 
     tbl: pd.DataFrame = delegate.dataframe
     types = ["REAL", "REAL", "REAL", "REAL", "REAL", "REAL", "REAL", "REAL", "REAL", "TEXT"]
@@ -85,9 +89,9 @@ def subscribe(server: Server, context: dict):
 
 def insert(server: Server, context: dict, rows: list[list]):
     try:
-        tbl_id = TableID(*context["table"])
-        delegate: CustomTableDelegate = server.delegates[tbl_id]
-    except Exception:
+        table_id = TableID(*context["table"])
+        delegate: CustomTableDelegate = server.delegates[table_id]
+    except ValueError:
         raise MethodException(-32600, "Invalid Request - Invalid Context for insert")
 
     # Allow for rows without annotations
@@ -105,11 +109,76 @@ def insert(server: Server, context: dict, rows: list[list]):
     return keys
 
 
+def update(server: Server, context: dict, keys: list[int], rows: list[list]):
+    try:
+        table_id = TableID(*context["table"])
+        delegate: CustomTableDelegate = server.delegates[table_id]
+    except ValueError:
+        raise MethodException(code=-32600, message="Invalid Request - Invalid Context for update")
+
+    # Update state in delegate
+    keys = delegate.handle_update(keys, rows)
+    print(f"Updated @ {keys}, \n{delegate.dataframe}")
+
+    # Send signal to update client
+    delegate.table_updated(keys, rows)
+
+    return keys
+
+
+def remove(server: Server, context: dict, keys: list[int]):
+    try:
+        table_id = TableID(*context["table"])
+        delegate: CustomTableDelegate = server.delegates[table_id]
+    except Exception:
+        raise MethodException(-32600, "Invalid Request - Invalid Context for delete")
+
+    # Update state in delegate
+    keys = delegate.handle_delete(keys)
+    print(f"Deleted @ {keys}, \n{delegate.dataframe}")
+
+    # Send signal to update client
+    delegate.table_updated(keys, [])
+
+    return keys
+
+
+def clear(server: Server, context: dict):
+    try:
+        table_id = TableID(*context["table"])
+        delegate: CustomTableDelegate = server.delegates[table_id]
+    except Exception:
+        raise MethodException(-32600, "Invalid Request - Invalid Context for clear")
+
+    # Update state in delegate
+    delegate.handle_clear()
+
+    # Send signal to update client
+    init_info = TableInitData(columns=[], keys=[], data=[])
+    delegate.table_reset(init_info)
+
+
+def update_selection(server: Server, context: dict, selection: dict):
+    try:
+        table_id = TableID(*context["table"])
+        delegate: CustomTableDelegate = server.delegates[table_id]
+    except Exception:
+        raise MethodException(-32600, "Invalid Request - Invalid Context for selection")
+
+    # Update state in delegate
+    selection = Selection(**selection)
+    delegate.handle_set_selection(selection)
+
+    # Send signal to update client
+    delegate.table_selection_updated(selection)
+
+
 class CustomTableDelegate(ServerTableDelegate):
 
     def __init__(self, server: Server, component: weakref.ReferenceType):
         super().__init__(server, component)
         self.dataframe = pd.DataFrame()
+        self.selections = {}
 
     def handle_insert(self, rows: list[list[int]]):
         next_index = self.dataframe.index[-1] + 1
@@ -184,6 +253,10 @@ starting_components = [
     StartingComponent(Method, {"name": "new_point_plot", "arg_doc": []}, new_point_plot),
     StartingComponent(Method, {"name": "noo::tbl_subscribe", "arg_doc": []}, subscribe),
     StartingComponent(Method, {"name": "noo::tbl_insert", "arg_doc": []}, insert),
+    StartingComponent(Method, {"name": "noo::tbl_update", "arg_doc": []}, update),
+    StartingComponent(Method, {"name": "noo::tbl_remove", "arg_doc": []}, remove),
+    StartingComponent(Method, {"name": "noo::tbl_clear", "arg_doc": []}, clear),
+    StartingComponent(Method, {"name": "noo::tbl_update_selection", "arg_doc": []}, update_selection),
     StartingComponent(Method, {"name": "Test Method 4", "arg_doc": []}, print),
 
     StartingComponent(Signal, {"name": "noo::tbl_reset", "arg_doc": []}),

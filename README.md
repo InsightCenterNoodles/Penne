@@ -23,23 +23,29 @@ To send a message, the user calls a method on a delegate. This method wraps an i
 A diagram representing the simplified relationships between the client, server, and delegates is depicted below. 
 
 ```mermaid
-flowchart LR;
-    User-- Request to Invoke Method -->Delegate;
-    User-- Create Custom Delegates --> Client;
-    User-- Create New Plot --> Client;
-    Delegate-- Call Injected Method -->Client;
-    Client-- Send Invoke Method Message -->Server;
-    Server-- Message -->Client;
-    Client-- Create w/ Injection -->Delegate;
-    Client-- Update -->Delegate;
-    Client-- Invoke Signal -->Delegate;
-    Delegate-- Show current state -->User;
+sequenceDiagram
+    participant User
+    participant Delegate
+    participant Client
+    participant Server
+    User->>Delegate: Create Custom Delegates
+    User->>Client: Starts Server with Custom Delegates
+    Client->>Server: Sends Intro Message
+    Server->>Client: Updates the Client with Current State
+    loop until end of session
+        User->>Delegate: Invoke Injected or Custom Method on Delegate or...
+        User->>Client: Invoke Method on Client Directly
+        Client->>Server: Request to Invoke Method
+        Server->>Client: Responds to Update State
+        Client->>Delegate: Invokes Signals, Creates, Updates, and Deletes Delegates
+        Client->>User: Show Current State
+    end
 ```
 
 ## Working with delegates
 >What are delegates? 
 
-NOODLES messages deal with many different objects ranging from tables and plots to lights and materials. To help with 
+NOODLES messages deal with many objects ranging from tables and plots to lights and materials. To help with 
 using these objects, each type has its own delegate class. Each object in a scene corresponds with an instance of a delegate
 which is stored in the client's state. Delegates provide methods specific to each type of object.
 
