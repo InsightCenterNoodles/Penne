@@ -27,14 +27,15 @@ def update_state(client, message: dict, component_id: ID):
             ID of the component to be updated
     """
 
-    current_state = client.state[component_id].dict()
+    delegate = client.get_component(component_id)
+    current_state = delegate.dict()
     current_state.update(message)
 
-    delegate_type = type(client.state[component_id])
+    delegate_type = type(delegate)
     client.state[component_id] = delegate_type(**current_state)
 
 
-def delegate_from_context(client: Client, context: dict) -> Delegate:
+def delegate_from_context(client: Client, context: dict=None) -> Delegate:
     """Get delegate object from a context message object
     
     Args:
@@ -55,9 +56,9 @@ def delegate_from_context(client: Client, context: dict) -> Delegate:
 
     if table:
         target_delegate = client.state[TableID(*table)]
-    elif hasattr(context, "entity"):
+    elif entity:
         target_delegate = client.state[EntityID(*entity)]
-    elif hasattr(context, "plot"):
+    elif plot:
         target_delegate = client.state[PlotID(*plot)]
     else:
         raise Exception("Couldn't get delegate from context")
@@ -109,13 +110,11 @@ def handle(client: Client, message_id, message: dict[str, Any]):
                 raise Exception(f"Could not Create Delegate of type {specifier}")
     
     elif action == "delete":
-        
-        component_id = id_type(*message["id"])
-        state_delegate: Delegate = client.state[component_id]
 
         # Update delegate and state
-        state_delegate.on_remove(message)
-        del state_delegate
+        component_id = id_type(*message["id"])
+        client.state[component_id].on_remove(message)
+        del client.state[component_id]
 
     elif action == "update":
 

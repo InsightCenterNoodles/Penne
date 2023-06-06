@@ -1,9 +1,12 @@
 
 import logging
+import time
+import queue
 
 import penne.delegates as nooobs
 
 from .clients import *
+from tests.servers import bad_server
 
 
 logging.basicConfig(
@@ -113,6 +116,22 @@ def test_send_message(base_client):
         code = 0 if kind == "intro" else 1
         expected = [code, content]
         assert message == expected
+
+
+def test_exception_handling(bad_server):
+
+    def invoke_bad():
+        client.invoke_method(nooobs.MethodID(0, 0), [])
+
+    with Client("ws://localhost:50001", on_connected=invoke_bad, strict=True) as client:
+        while client.is_active:
+            try:
+                callback_info = client.callback_queue.get(block=False)
+            except queue.Empty:
+                continue
+            print(f"Callback: {callback_info}")
+            callback, args = callback_info
+            callback(args) if args else callback()
 
 
 def test_show_methods(base_client):

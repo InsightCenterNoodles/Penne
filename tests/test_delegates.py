@@ -172,19 +172,32 @@ def test_light(caplog):
 def test_basic_table_methods(base_client, caplog):
 
     table = base_client.get_component("test_table")
+    basic = nooobs.Table(id=nooobs.TableID(0, 0))
     cols = [nooobs.TableColumnInfo(name="test", type="TEXT")]
     init_data = {"columns": cols, "keys": [0, 1, 2], "data": [["test"], ["test"], ["test"]]}
+    assert hasattr(table, "test_method")
 
     # Most of these are logging debug messages by default, so just running through them here
     table._on_table_init(init_data, on_done=print)
+    table._reset_table()
+    table._reset_table(init_data)
     table._remove_rows(keys=[0, 1, 2])
     table._update_rows(keys=[0, 1, 2], rows=[["test"], ["test"], ["test"]])
     table._update_selection({"name": "Test Selection"})
     table.on_update({"blank": "message"})
     table.on_remove({"blank": "message"})
 
+    assert table.show_methods() == "-- Methods on test_table --\n--------------------------------------\n" \
+                               ">> test_method:\n\tNone\n\tReturns: None\n\tArgs:"
+    assert basic.show_methods() == "No methods available"
+
     with pytest.raises(Exception):
         table.subscribe()  # Doesn't have the injected method so will call None-type as method
+
+    assert table.methods_list == [nooobs.MethodID(slot=0, gen=0)]
+    nooobs.inject_methods(table, [nooobs.MethodID(slot=1, gen=0)])
+    assert not hasattr(table, "test_method")
+    assert hasattr(table, "test_arg_method")
 
 
 def test_table_integration(rig_base_server):
@@ -192,3 +205,43 @@ def test_table_integration(rig_base_server):
     # Run through plotty-n table methods
     run_basic_operations(nooobs.TableID(1, 0), plotting=False)  # need to add assertions
     # Small problem: exceptions in client thread cause shutdown / is_active -> false, but it is caught so test looks ok
+
+
+def test_document(base_client):
+
+    # Test document with data in it
+    doc = base_client.state["document"]
+    assert doc.methods_list == [nooobs.MethodID(slot=0, gen=0),
+                                nooobs.MethodID(slot=1, gen=0),
+                                nooobs.MethodID(slot=2, gen=0),
+                                nooobs.MethodID(slot=3, gen=0),
+                                nooobs.MethodID(slot=4, gen=0),
+                                nooobs.MethodID(slot=5, gen=0),
+                                nooobs.MethodID(slot=6, gen=0),
+                                nooobs.MethodID(slot=7, gen=0),
+                                nooobs.MethodID(slot=8, gen=0),
+                                nooobs.MethodID(slot=9, gen=0)]
+    assert doc.signals_list == [nooobs.SignalID(slot=0, gen=0),
+                                nooobs.SignalID(slot=1, gen=0),
+                                nooobs.SignalID(slot=2, gen=0),
+                                nooobs.SignalID(slot=3, gen=0),
+                                nooobs.SignalID(slot=4, gen=0)]
+
+    # Test document post reset
+    doc.reset()
+    assert base_client.state == {"document": doc}
+    assert doc.methods_list == []
+    assert doc.signals_list == []
+    assert doc.show_methods() == "No methods available"
+
+
+def test_get_context(base_client):
+    entity = base_client.get_component("test_entity")
+    table = base_client.get_component("test_table")
+    plot = base_client.get_component("test_plot")
+    method = base_client.get_component("test_method")
+
+    assert nooobs.get_context(entity) == {"entity": entity.id}
+    assert nooobs.get_context(table) == {"table": table.id}
+    assert nooobs.get_context(plot) == {"plot": plot.id}
+    assert nooobs.get_context(method) == None

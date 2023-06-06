@@ -180,6 +180,9 @@ class Client(object):
         Raises:
             Couldn't find method exception
         """
+        if name == "document":
+            return name
+
         state_delegates = self.state.values()
         for delegate in state_delegates:
             if delegate.name == name:

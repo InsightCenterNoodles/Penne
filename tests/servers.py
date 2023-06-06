@@ -277,3 +277,18 @@ starting_components = [
 def rig_base_server():
     with Server(50000, starting_components, server_delegates) as server:
         yield server
+
+
+def throw_error(server: Server, context: dict, args: list):
+    raise MethodException(-32603, "Internal Error")
+
+
+bad_starting_components = [
+    StartingComponent(Method, {"name": "bad_method"}, throw_error),
+]
+
+
+@pytest.fixture
+def bad_server():
+    with Server(50001, bad_starting_components, server_delegates) as server:
+        yield server
