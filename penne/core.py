@@ -1,7 +1,7 @@
 """Module with Core Implementation of Client"""
 
 from __future__ import annotations
-from typing import Any, List, Type
+from typing import Any, Type
 
 import queue
 import asyncio
@@ -253,7 +253,7 @@ class Client(object):
         if context:
             arg_dict["context"] = context
         
-        self.send_message(arg_dict, "invoke")
+        return self.send_message(arg_dict, "invoke")
 
     def send_message(self, message_dict: dict[str, Any], kind: str):
         """Send message to server
@@ -268,6 +268,7 @@ class Client(object):
         logging.debug(f"Sending Message: {message}")
         
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
+        return message
 
     async def run(self):
         """Network thread for managing websocket connection"""  

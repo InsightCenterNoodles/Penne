@@ -1,9 +1,6 @@
 
 import logging
-import pytest
-from cbor2 import dumps
 
-from penne.core import Client
 import penne.delegates as nooobs
 
 from .clients import *
@@ -81,7 +78,8 @@ def test_invoke_method(base_client):
 
     # Try basic call from ID
     method_id = base_client.id_from_name("test_method")
-    base_client.invoke_method(method_id)
+    message = base_client.invoke_method(method_id)
+    assert message == [1, {"method": method_id, "args": [], "invoke_id": "0"}]
 
     # Try with callback and other input format
     def callback():
@@ -94,7 +92,8 @@ def test_invoke_method(base_client):
     entity_id = base_client.id_from_name("test_entity")
     entity_del = base_client.get_component(entity_id)
     context = nooobs.get_context(entity_del)
-    base_client.invoke_method("test_method", [], context=context)
+    message = base_client.invoke_method("test_method", [], context=context)
+    assert message == [1, {"method": method_id, "args": [], "invoke_id": "2", "context": context}]
 
 
 def test_send_message(base_client):
@@ -109,11 +108,11 @@ def test_send_message(base_client):
         {"method_id": (0, 0), "args": [1, 2, 3], "invoke_id": 2},
     ]
 
-    # can either add return statement (binary or dict?) or mock the socket (how to run async?)
-    # for kind, content in zip(test_codes, test_messages):
-    #     base_client.send_message(content, kind)
-    #     code = 0 if kind == "intro" else 1
-    #     expected = [code, content]
+    for kind, content in zip(test_codes, test_messages):
+        message = base_client.send_message(content, kind)
+        code = 0 if kind == "intro" else 1
+        expected = [code, content]
+        assert message == expected
 
 
 def test_show_methods(base_client):

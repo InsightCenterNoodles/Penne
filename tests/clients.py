@@ -112,14 +112,17 @@ class TableDelegate(Table):
         if on_done:
             on_done()
 
-    def _reset_table(self):
+    def _reset_table(self, init_info: dict = None):
         """Reset dataframe and selections to blank objects
 
         Method is linked to 'tbl_reset' signal
         """
 
-        self.dataframe = pd.DataFrame()
-        self.selections = {}
+        if init_info:
+            self._on_table_init(init_info)
+        else:
+            self.dataframe = pd.DataFrame()
+            self.selections = {}
 
         if self.plotting:
             self._update_plot()
@@ -130,7 +133,7 @@ class TableDelegate(Table):
         Method is linked to 'tbl_rows_removed' signal
 
         Args:
-            key_list (list): list of keys corresponding to rows to be removed
+            keys (list): list of keys corresponding to rows to be removed
         """
 
         self.dataframe.drop(index=keys, inplace=True)

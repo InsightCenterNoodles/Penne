@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import logging
 from typing import Optional, Any, Union, Callable, List, Tuple, NamedTuple
-from collections import namedtuple
 from enum import Enum
 from math import pi
 
@@ -660,10 +659,10 @@ class Table(Delegate):
         """Override init to link default values with methods"""
         super().__init__(**kwargs)
         self.signals = {
-            "tbl_reset": self._reset_table,
-            "tbl_rows_removed": self._remove_rows,
-            "tbl_updated": self._update_rows,
-            "tbl_selection_updated": self._update_selection
+            "noo::tbl_reset": self._reset_table,
+            "noo::tbl_rows_removed": self._remove_rows,
+            "noo::tbl_updated": self._update_rows,
+            "noo::tbl_selection_updated": self._update_selection
         }
 
     def _on_table_init(self, init_info: dict, on_done=None):
@@ -680,13 +679,16 @@ class Table(Delegate):
         if on_done:
             on_done()
 
-    def _reset_table(self):
+    def _reset_table(self, init_info: dict = None):
         """Reset dataframe and selections to blank objects
 
         Method is linked to 'tbl_reset' signal
         """
 
         self.selections = {}
+        if init_info:
+            init = TableInitData(**init_info)
+            logging.debug(f"Table Reset and Initialized with cols: {init.columns} and row data: {init.data}")
 
     def _remove_rows(self, keys: List[int]):
         """Removes rows from table
@@ -713,7 +715,7 @@ class Table(Delegate):
 
         logging.debug(f"Updated Rows...{keys}\n")
 
-    def _update_selection(self, selection_obj: Selection):
+    def _update_selection(self, selection_obj: dict):
         """Change selection in delegate's state to new selection object
 
         Method is linked to 'tbl_selection_updated' signal
@@ -723,8 +725,8 @@ class Table(Delegate):
                 obj with new selections to replace obj with same name
         """
 
-        self.selections[selection_obj.name] = selection_obj
-        logging.debug(f"Made selection {selection_obj.name} = {selection_obj}")
+        self.selections.setdefault(selection_obj["name"], selection_obj)
+        logging.debug(f"Made selection {selection_obj['name']} = {selection_obj}")
 
     def relink_signals(self):
         """Relink the signals for built-in methods
@@ -861,7 +863,7 @@ class Table(Delegate):
                 callback function called when complete
         """
         selection = Selection(name=name, rows=keys)
-        self.tbl_update_selection(on_done, selection)
+        self.tbl_update_selection(on_done, selection.dict())
 
     def show_methods(self):
         """Show methods available on the table"""
@@ -995,7 +997,7 @@ class LinkedMethod(object):
         self._method_delegate = method_delegate
 
     def __call__(self, on_done=None, *arguments):
-        self._method_delegate.invoke(self._obj_delegate, arguments, callback=on_done)
+        self._method_delegate.invoke(self._obj_delegate, list(arguments), callback=on_done)
 
 
 def inject_methods(delegate: Delegate, methods: List[MethodID]):

@@ -119,7 +119,7 @@ def test_plot(base_client):
     x = base_client.get_component("test_plot")
     y = nooobs.Plot(id=nooobs.PlotID(0, 0), simple_plot="True")
     assert x.show_methods() == "-- Methods on test_plot --\n--------------------------------------\n" \
-                                  ">> test_method:\n\tNone\n\tReturns: None\n\tArgs:"
+                               ">> test_method:\n\tNone\n\tReturns: None\n\tArgs:"
     assert y.show_methods() == "No methods available"
     with pytest.raises(ValueError):
         nooobs.Plot(id=nooobs.PlotID(0, 0))
@@ -179,15 +179,16 @@ def test_basic_table_methods(base_client, caplog):
     table._on_table_init(init_data, on_done=print)
     table._remove_rows(keys=[0, 1, 2])
     table._update_rows(keys=[0, 1, 2], rows=[["test"], ["test"], ["test"]])
-    table._update_selection(nooobs.Selection(name="Test Selection"))
+    table._update_selection({"name": "Test Selection"})
     table.on_update({"blank": "message"})
     table.on_remove({"blank": "message"})
+
+    with pytest.raises(Exception):
+        table.subscribe()  # Doesn't have the injected method so will call None-type as method
 
 
 def test_table_integration(rig_base_server):
 
     # Run through plotty-n table methods
-    # run_basic_operations(nooobs.TableID(1, 0))
-    # Do I maybe adapt a new version more specific to testing? add assertions to existing?
-    # Something isn't working with the server's subscribe method i think, or something in subscribe
-    pass
+    run_basic_operations(nooobs.TableID(1, 0), plotting=False)  # need to add assertions
+    # Small problem: exceptions in client thread cause shutdown / is_active -> false, but it is caught so test looks ok
