@@ -180,6 +180,9 @@ class Client(object):
         Raises:
             Couldn't find method exception
         """
+        if name == "document":
+            return name
+
         state_delegates = self.state.values()
         for delegate in state_delegates:
             if delegate.name == name:
@@ -201,6 +204,35 @@ class Client(object):
             return self.state[self.id_from_name(identifier)]
         else:
             raise TypeError(f"Invalid type for identifier: {type(identifier)}")
+
+    def delegate_from_context(self, context: dict = None) -> delegates.Delegate:
+        """Get delegate object from a context message object
+
+        Args:
+            context (Message): object containing context
+
+        Raises:
+            Exception: Couldn't get delegate from context
+        """
+
+        if not context:
+            target_delegate = self.state["document"]
+            return target_delegate
+
+        table = context.get("table")
+        entity = context.get("entity")
+        plot = context.get("plot")
+
+        if table:
+            target_delegate = self.state[delegates.TableID(*table)]
+        elif entity:
+            target_delegate = self.state[delegates.EntityID(*entity)]
+        elif plot:
+            target_delegate = self.state[delegates.PlotID(*plot)]
+        else:
+            raise Exception("Couldn't get delegate from context")
+
+        return target_delegate
 
     def invoke_method(self, method: delegates.MethodID | str, args: list = None,
                       context: dict[str, tuple] = None, on_done=None):
@@ -270,6 +302,22 @@ class Client(object):
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
         return message
 
+    def process_message(self, message):
+        """Prep message for handling
+
+        Messages here are of form: [tag, {content}, tag, {content}, ...]
+        """
+
+        content = iter(message)
+        for tag in content:
+            try:
+                handlers.handle(self, tag, next(content))
+            except Exception as e:
+                if self.strict:
+                    raise e
+                else:
+                    logging.error(f"Exception: {e} for message {message}")
+
     async def run(self):
         """Network thread for managing websocket connection"""  
 
@@ -284,18 +332,10 @@ class Client(object):
             intro = {"client_name": self.name}
             self.send_message(intro, "intro")
 
-            # decode, iterate over, and handle all incoming messages
+            # decode and handle all incoming messages
             async for message in self._socket:
-                raw_message = loads(message)
-                iterator = iter(raw_message)
-                for tag in iterator:
-                    try:
-                        handlers.handle(self, tag, next(iterator))
-                    except Exception as e:
-                        if self.strict:
-                            raise e
-                        else:
-                            logging.error(f"Exception: {e} for message {raw_message}")
+                message = loads(message)
+                self.process_message(message)
 
     def show_methods(self):
         """Displays Available Methods to the User"""

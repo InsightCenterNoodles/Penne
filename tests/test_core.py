@@ -4,6 +4,7 @@ import logging
 import penne.delegates as nooobs
 
 from .clients import *
+from tests.servers import bad_server
 
 
 logging.basicConfig(
@@ -74,6 +75,24 @@ def test_get_component(base_client):
         base_client.get_component(1)
 
 
+def test_delegate_from_context(base_client):
+
+    c1 = {"table": nooobs.TableID(0, 0)}
+    c2 = {"table": nooobs.TableID(0, 1)}
+    c3 = {"entity": nooobs.EntityID(0, 0)}
+    c4 = {"plot": nooobs.PlotID(0, 0)}
+    c5 = {"method": nooobs.MethodID(0, 0)}
+
+    assert base_client.delegate_from_context(c1) == base_client.get_component(c1["table"])
+    assert base_client.delegate_from_context(c3) == base_client.get_component(c3["entity"])
+    assert base_client.delegate_from_context(c4) == base_client.get_component(c4["plot"])
+    with pytest.raises(Exception):
+        base_client.delegate_from_context(c2)
+    with pytest.raises(Exception):
+        base_client.delegate_from_context(c5)
+    assert base_client.delegate_from_context() == base_client.get_component("document")
+
+
 def test_invoke_method(base_client):
 
     # Try basic call from ID
@@ -113,6 +132,16 @@ def test_send_message(base_client):
         code = 0 if kind == "intro" else 1
         expected = [code, content]
         assert message == expected
+
+
+def test_process_message(base_client, lenient_client, caplog):
+    exception_message = [34, {"invoke_id": "0", "method_exception": {"code": -32603, "message": "Internal Error"}}]
+    with pytest.raises(Exception):
+        base_client.process_message(exception_message)
+
+    # Test with lenient client
+    lenient_client.process_message(exception_message)
+    assert "Exception" in caplog.text
 
 
 def test_show_methods(base_client):

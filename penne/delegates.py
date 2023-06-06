@@ -15,6 +15,111 @@ from pydantic import BaseModel, root_validator, Extra, validator, Field
 from pydantic.color import Color
 
 
+
+class InjectedMethod(object):
+    """Class for representing injected method in delegate, context automatically set
+
+    Attributes:
+        method (method): method to be called
+        injected (bool): attribute marking method as injected
+    """
+
+    def __init__(self, method_obj) -> None:
+        self.method = method_obj
+        self.injected = True
+
+    def __call__(self, *args, **kwargs):
+        self.method(*args, **kwargs)
+
+
+class LinkedMethod(object):
+    """Class linking target delegate and method's delegate
+
+    make a cleaner function call in injected method, it's like setting the context automatically
+    This is what actually gets called for the injected method
+
+    Attributes:
+        _obj_delegate (delegate):
+            delegate method is being linked to
+        _method_delegate (MethodDelegate):
+            the method's delegate
+    """
+
+    def __init__(self, object_delegate: Delegate, method_delegate: Method):
+        self._obj_delegate = object_delegate
+        self._method_delegate = method_delegate
+
+    def __call__(self, on_done=None, *arguments):
+        self._method_delegate.invoke(self._obj_delegate, list(arguments), callback=on_done)
+
+
+def inject_methods(delegate: Delegate, methods: List[MethodID]):
+    """Inject methods into a delegate class
+
+    Idea is to inject a method that is from the server to put int into a delegate.
+    Now it looks like the delegate has an instance method that actually calls what
+    is on the server. Context, is automatically taken care of by the linked method
+
+    Args:
+        delegate (Delegate):
+            identifier for delegate to be modified
+        methods (list):
+            list of method id's to inject
+    """
+
+    # Clear out old injected methods
+    to_remove = []
+    for field, value in delegate:
+        if hasattr(value, "injected"):
+            logging.debug(f"Deleting: {field} in inject methods")
+            to_remove.append(field)
+    for field in to_remove:
+        delattr(delegate, field)
+
+    for method_id in methods:
+
+        # Get method delegate and manipulate name to exclude noo::
+        method = delegate.client.get_component(method_id)
+        if "noo::" in method.name:
+            name = method.name[5:]
+        else:
+            name = method.name
+
+        # Create injected by linking delegates, and creating call method
+        linked = LinkedMethod(delegate, method)
+        injected = InjectedMethod(linked.__call__)
+
+        setattr(delegate, name, injected)
+
+
+def inject_signals(delegate: Delegate, signals: List[SignalID]):
+    """Method to inject signals into delegate
+
+    Args:
+        delegate (delegate):
+            delegate object to be injected
+        signals (list):
+            list of signal id's to be injected
+    """
+
+    for signal_id in signals:
+        signal = delegate.client.state[signal_id]  # refactored state
+        delegate.signals[signal.name] = None
+
+
+def get_context(delegate):
+    """Helper to get context from delegate"""
+
+    if isinstance(delegate, Entity):
+        return {"entity": delegate.id}
+    elif isinstance(delegate, Table):
+        return {"table": delegate.id}
+    elif isinstance(delegate, Plot):
+        return {"plot": delegate.id}
+    else:
+        return None
+
+
 """ =============================== ID's ============================= """
 
 
@@ -436,6 +541,7 @@ class Entity(Delegate):
     parent: Optional[EntityID] = None
     transform: Optional[Mat4] = None
 
+    null_rep: Optional[Any] = None
     text_rep: Optional[TextRepresentation] = None
     web_rep: Optional[WebRepresentation] = None
     render_rep: Optional[RenderRepresentation] = None
@@ -868,17 +974,22 @@ class Table(Delegate):
     def show_methods(self):
         """Show methods available on the table"""
 
-        print(f"-- Methods on {self.name} --")
-        print("--------------------------------------")
-        for method_id in self.methods_list:
-            method = self.client.get_component(method_id)
-            print(f">> {method}")
+        if self.methods_list is None:
+            message = "No methods available"
+        else:
+            message = f"-- Methods on {self.name} --\n--------------------------------------\n"
+            for method_id in self.methods_list:
+                method = self.client.get_component(method_id)
+                message += f">> {method}"
+
+        print(message)
+        return message
 
 
 class Document(Delegate):
     name: str = "Document"
 
-    methods_list: List[MethodID] = []
+    methods_list: List[MethodID] = []  # Server usually sends as an update
     signals_list: List[SignalID] = []
 
     def on_update(self, message: dict):
@@ -888,18 +999,23 @@ class Document(Delegate):
             self.signals_list = [SignalID(*element) for element in message["signals_list"]]
 
     def reset(self):
-        self.client.state = {}
+        self.client.state = {"document": self}
         self.methods_list = []
         self.signals_list = []
 
     def show_methods(self):
         """Show methods available on the document"""
 
-        print(f"-- Methods on Document --")
-        print("--------------------------------------")
-        for method_id in self.methods_list:
-            method = self.client.get_component(method_id)
-            print(f">> {method}")
+        if not self.methods_list:
+            message = "No methods available"
+        else:
+            message = f"-- Methods on Document --\n--------------------------------------\n"
+            for method_id in self.methods_list:
+                method = self.client.get_component(method_id)
+                message += f">> {method}"
+
+        print(message)
+        return message
 
 
 """ ====================== Communication Objects ====================== """
@@ -924,7 +1040,6 @@ class Reply(NoodleObject):
     result: Optional[Any] = None
     method_exception: Optional[MethodException] = None
 
-
 """ ====================== Miscellaneous Objects ====================== """
 
 default_delegates = {
@@ -944,7 +1059,6 @@ default_delegates = {
     "document": Document
 }
 
-
 id_map = {
     Method: MethodID,
     Signal: SignalID,
@@ -962,100 +1076,3 @@ id_map = {
     Document: None
 }
 
-
-class InjectedMethod(object):
-    """Class for representing injected method in delegate, context automatically set
-
-    Attributes:
-        method (method): method to be called
-        injected (bool): attribute marking method as injected
-    """
-
-    def __init__(self, method_obj) -> None:
-        self.method = method_obj
-        self.injected = True
-
-    def __call__(self, *args, **kwargs):
-        self.method(*args, **kwargs)
-
-
-class LinkedMethod(object):
-    """Class linking target delegate and method's delegate 
-        
-    make a cleaner function call in injected method, it's like setting the context automatically
-    This is what actually gets called for the injected method
-
-    Attributes:
-        _obj_delegate (delegate): 
-            delegate method is being linked to
-        _method_delegate (MethodDelegate): 
-            the method's delegate 
-    """
-
-    def __init__(self, object_delegate: Delegate, method_delegate: Method):
-        self._obj_delegate = object_delegate
-        self._method_delegate = method_delegate
-
-    def __call__(self, on_done=None, *arguments):
-        self._method_delegate.invoke(self._obj_delegate, list(arguments), callback=on_done)
-
-
-def inject_methods(delegate: Delegate, methods: List[MethodID]):
-    """Inject methods into a delegate class
-
-    Idea is to inject a method that is from the server to put int into a delegate.
-    Now it looks like the delegate has an instance method that actually calls what
-    is on the server. Context, is automatically taken care of by the linked method
-
-    Args:
-        delegate (Delegate):
-            identifier for delegate to be modified
-        methods (list): 
-            list of method id's to inject
-    """
-
-    # Clear out old injected methods
-    for field, value in delegate:
-        if hasattr(value, "injected"):
-            logging.debug(f"Deleting: {field} in inject methods")
-            delattr(delegate, field)
-
-    for method_id in methods:
-
-        # Get method delegate and manipulate name to exclude noo::
-        method = delegate.client.state[method_id]
-        name = method.name[5:]
-
-        # Create injected by linking delegates, and creating call method
-        linked = LinkedMethod(delegate, method)
-        injected = InjectedMethod(linked.__call__)
-
-        setattr(delegate, name, injected)
-
-
-def inject_signals(delegate: Delegate, signals: List[SignalID]):
-    """Method to inject signals into delegate
-
-    Args:
-        delegate (delegate): 
-            delegate object to be injected 
-        signals (list): 
-            list of signal id's to be injected
-    """
-
-    for signal_id in signals:
-        signal = delegate.client.state[signal_id]  # refactored state
-        delegate.signals[signal.name] = None
-
-
-def get_context(delegate):
-    """Helper to get context from delegate"""
-
-    if isinstance(delegate, Entity):
-        return {"entity": delegate.id}
-    elif isinstance(delegate, Table):
-        return {"table": delegate.id}
-    elif isinstance(delegate, Plot):
-        return {"plot": delegate.id}
-    else:
-        return None
