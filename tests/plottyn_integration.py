@@ -19,14 +19,17 @@ points = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5],
           [(0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1)]]
 
 
-def run_basic_operations(table: TableID):
+def run_basic_operations(table: TableID, plotting: bool = True):
 
     # Callbacks
     def create_table():
         client.invoke_method("new_point_plot", points, on_done=subscribe)
 
     def subscribe(*args):
-        client.state[table].subscribe(on_done=plot)
+        if plotting:
+            client.state[table].subscribe(on_done=plot)
+        else:
+            client.state[table].subscribe(on_done=insert_points)
 
     def plot(*args):
         client.state[table].plot(on_done=insert_points)

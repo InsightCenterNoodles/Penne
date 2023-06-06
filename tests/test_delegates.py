@@ -190,5 +190,5 @@ def test_basic_table_methods(base_client, caplog):
 def test_table_integration(rig_base_server):
 
     # Run through plotty-n table methods
-    run_basic_operations(nooobs.TableID(1, 0))  # need to add assertions
+    run_basic_operations(nooobs.TableID(1, 0), plotting=False)  # need to add assertions
     # Small problem: exceptions in client thread cause shutdown / is_active -> false, but it is caught so test looks ok
