@@ -2,13 +2,13 @@
 
 [Full report](https://htmlpreview.github.io/?https://github.com/InsightCenterNoodles/Penne/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
-| Name                  |    Stmts |     Miss |   Cover |   Missing |
-|---------------------- | -------: | -------: | ------: | --------: |
-| penne/\_\_init\_\_.py |        3 |        0 |    100% |           |
-| penne/core.py         |      109 |        3 |     97% |   294-296 |
-| penne/delegates.py    |      536 |       17 |     97% |690-691, 871-875, 891-893, 1020-1021, 1056-1061 |
-| penne/handlers.py     |       83 |       26 |     69% |6, 30-34, 49-50, 58-63, 104-109, 113-118, 123-125, 137, 171-172 |
-|             **TOTAL** |  **731** |   **46** | **94%** |           |
+| Name                  |    Stmts |     Miss |    Cover |   Missing |
+|---------------------- | -------: | -------: | -------: | --------: |
+| penne/\_\_init\_\_.py |        3 |        0 |     100% |           |
+| penne/core.py         |      128 |        0 |     100% |           |
+| penne/delegates.py    |      548 |        0 |     100% |           |
+| penne/handlers.py     |       66 |        0 |     100% |           |
+|             **TOTAL** |  **745** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge
