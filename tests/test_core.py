@@ -1,7 +1,5 @@
 
 import logging
-import time
-import queue
 
 import penne.delegates as nooobs
 
@@ -77,6 +75,24 @@ def test_get_component(base_client):
         base_client.get_component(1)
 
 
+def test_delegate_from_context(base_client):
+
+    c1 = {"table": nooobs.TableID(0, 0)}
+    c2 = {"table": nooobs.TableID(0, 1)}
+    c3 = {"entity": nooobs.EntityID(0, 0)}
+    c4 = {"plot": nooobs.PlotID(0, 0)}
+    c5 = {"method": nooobs.MethodID(0, 0)}
+
+    assert base_client.delegate_from_context(c1) == base_client.get_component(c1["table"])
+    assert base_client.delegate_from_context(c3) == base_client.get_component(c3["entity"])
+    assert base_client.delegate_from_context(c4) == base_client.get_component(c4["plot"])
+    with pytest.raises(Exception):
+        base_client.delegate_from_context(c2)
+    with pytest.raises(Exception):
+        base_client.delegate_from_context(c5)
+    assert base_client.delegate_from_context() == base_client.get_component("document")
+
+
 def test_invoke_method(base_client):
 
     # Try basic call from ID
@@ -118,20 +134,14 @@ def test_send_message(base_client):
         assert message == expected
 
 
-def test_exception_handling(bad_server):
+def test_process_message(base_client, lenient_client, caplog):
+    exception_message = [34, {"invoke_id": "0", "method_exception": {"code": -32603, "message": "Internal Error"}}]
+    with pytest.raises(Exception):
+        base_client.process_message(exception_message)
 
-    def invoke_bad():
-        client.invoke_method(nooobs.MethodID(0, 0), [])
-
-    with Client("ws://localhost:50001", on_connected=invoke_bad, strict=True) as client:
-        while client.is_active:
-            try:
-                callback_info = client.callback_queue.get(block=False)
-            except queue.Empty:
-                continue
-            print(f"Callback: {callback_info}")
-            callback, args = callback_info
-            callback(args) if args else callback()
+    # Test with lenient client
+    lenient_client.process_message(exception_message)
+    assert "Exception" in caplog.text
 
 
 def test_show_methods(base_client):

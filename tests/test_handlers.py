@@ -29,24 +29,6 @@ def test_update_state(base_client):
     assert table.meta == "Description"
 
 
-def test_delegate_from_context(base_client):
-
-    c1 = {"table": nooobs.TableID(0, 0)}
-    c2 = {"table": nooobs.TableID(0, 1)}
-    c3 = {"entity": nooobs.EntityID(0, 0)}
-    c4 = {"plot": nooobs.PlotID(0, 0)}
-    c5 = {"method": nooobs.MethodID(0, 0)}
-
-    assert handlers.delegate_from_context(base_client, c1) == base_client.get_component(c1["table"])
-    assert handlers.delegate_from_context(base_client, c3) == base_client.get_component(c3["entity"])
-    assert handlers.delegate_from_context(base_client, c4) == base_client.get_component(c4["plot"])
-    with pytest.raises(Exception):
-        handlers.delegate_from_context(base_client, c2)
-    with pytest.raises(Exception):
-        handlers.delegate_from_context(base_client, c5)
-    assert handlers.delegate_from_context(base_client) == base_client.get_component("document")
-
-
 def test_handle(base_client):
 
     # Hit creation exception

@@ -1,9 +1,7 @@
 """Module for Handling Raw Messages from the Server"""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any
-if TYPE_CHECKING:
-    from penne.core import Client
+from typing import Any
 
 import weakref
 import warnings
@@ -11,7 +9,7 @@ import logging
 from pydantic import ValidationError
 
 from penne.delegates import Delegate, id_map, default_delegates
-from penne.delegates import TableID, PlotID, EntityID, ID
+from penne.delegates import ID
 
 
 # Helper Methods
@@ -35,38 +33,7 @@ def update_state(client, message: dict, component_id: ID):
     client.state[component_id] = delegate_type(**current_state)
 
 
-def delegate_from_context(client: Client, context: dict=None) -> Delegate:
-    """Get delegate object from a context message object
-    
-    Args:
-        client (Client): client to get delegate from
-        context (Message): object containing context
-    
-    Raises:
-        Exception: Couldn't get delegate from context
-    """
-
-    if not context:
-        target_delegate = client.state["document"]
-        return target_delegate
-
-    table = context.get("table")
-    entity = context.get("entity")
-    plot = context.get("plot")
-
-    if table:
-        target_delegate = client.state[TableID(*table)]
-    elif entity:
-        target_delegate = client.state[EntityID(*entity)]
-    elif plot:
-        target_delegate = client.state[PlotID(*plot)]
-    else:
-        raise Exception("Couldn't get delegate from context")
-    
-    return target_delegate
-
-
-def handle(client: Client, message_id, message: dict[str, Any]):
+def handle(client, message_id, message: dict[str, Any]):
     """Handle message from server
 
     'Handle' uses the ID attached to message to get handling info, and uses this info 
@@ -150,7 +117,7 @@ def handle(client: Client, message_id, message: dict[str, Any]):
 
         # Determine the delegate the signal is being invoked on
         context = message.get("context")
-        target_delegate = delegate_from_context(client, context)
+        target_delegate = client.delegate_from_context(context)
 
         # Invoke signal attached to target delegate
         logging.debug(f"Invoking {signal.name} w/ args: {signal_data}")
