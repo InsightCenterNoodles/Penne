@@ -8,7 +8,7 @@ import warnings
 import logging
 from pydantic import ValidationError
 
-from penne.delegates import Delegate, id_map, default_delegates
+from penne.delegates import Delegate, Document, id_map
 from penne.delegates import ID
 
 
@@ -25,7 +25,7 @@ def update_state(client, message: dict, component_id: ID):
             ID of the component to be updated
     """
 
-    delegate = client.get_component(component_id)
+    delegate = client.get_delegate(component_id)
     current_state = delegate.dict()
     current_state.update(message)
 
@@ -54,9 +54,9 @@ def handle(client, message_id, message: dict[str, Any]):
     # Process message using ID from dict
     handle_info = client.server_messages[message_id]
     action = handle_info.action
-    specifier = handle_info.specifier
-    id_type = id_map[default_delegates[specifier]]
-    logging.debug(f"Received Message: {action} {specifier} {message}")
+    delegate_type = handle_info.delegate
+    id_type = id_map[delegate_type]
+    logging.debug(f"Received Message: {action} {delegate_type} {message}")
 
     # Update state based on map info
     if action == "create":
@@ -65,7 +65,7 @@ def handle(client, message_id, message: dict[str, Any]):
         reference = weakref.ref(client)
         reference_obj = reference()
         try:
-            delegate: Delegate = client.delegates[specifier](client=reference_obj, **message)
+            delegate: Delegate = client.delegates[delegate_type](client=reference_obj, **message)
             delegate.client = client
             client.state[delegate.id] = delegate
             delegate.on_new(message)
@@ -74,7 +74,7 @@ def handle(client, message_id, message: dict[str, Any]):
             warnings.warn(str(e))
 
             if client.strict:
-                raise Exception(f"Could not Create Delegate of type {specifier}")
+                raise Exception(f"Could not Create Delegate of type {delegate_type}")
     
     elif action == "delete":
 
@@ -85,12 +85,12 @@ def handle(client, message_id, message: dict[str, Any]):
 
     elif action == "update":
 
-        if specifier != "document":
+        if delegate_type != Document:
             component_id = id_type(*message["id"])
             update_state(client, message, component_id)
             client.state[component_id].on_update(message)
         else:
-            client.state[specifier].on_update(message)
+            client.state["document"].on_update(message)
 
     elif action == "reply":
 

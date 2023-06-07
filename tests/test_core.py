@@ -50,7 +50,7 @@ def test_create_delegate_client(delegate_client):
     assert delegate_client.callback_queue.empty()
     assert len(delegate_client.delegates) == 14
     assert len(delegate_client.server_messages) == 36
-    assert delegate_client.delegates["tables"] == TableDelegate
+    assert delegate_client.delegates[Table] == TableDelegate
 
 
 def test_id_from_name(base_client):
@@ -60,19 +60,19 @@ def test_id_from_name(base_client):
         base_client.id_from_name("not_a_method")
 
 
-def test_get_component(base_client):
+def test_get_delegate(base_client):
     method_id = base_client.id_from_name("test_method")
-    method = base_client.get_component(method_id)
+    method = base_client.get_delegate(method_id)
     check = base_client.state[method_id]
-    other_way = base_client.get_component("test_method")
+    other_way = base_client.get_delegate("test_method")
     assert isinstance(method, nooobs.Method)
     assert isinstance(other_way, nooobs.Method)
     assert method == check
     assert other_way == check
     with pytest.raises(KeyError):
-        base_client.get_component("not_a_method")
+        base_client.get_delegate("not_a_method")
     with pytest.raises(TypeError):
-        base_client.get_component(1)
+        base_client.get_delegate(1)
 
 
 def test_delegate_from_context(base_client):
@@ -83,14 +83,14 @@ def test_delegate_from_context(base_client):
     c4 = {"plot": nooobs.PlotID(0, 0)}
     c5 = {"method": nooobs.MethodID(0, 0)}
 
-    assert base_client.delegate_from_context(c1) == base_client.get_component(c1["table"])
-    assert base_client.delegate_from_context(c3) == base_client.get_component(c3["entity"])
-    assert base_client.delegate_from_context(c4) == base_client.get_component(c4["plot"])
+    assert base_client.delegate_from_context(c1) == base_client.get_delegate(c1["table"])
+    assert base_client.delegate_from_context(c3) == base_client.get_delegate(c3["entity"])
+    assert base_client.delegate_from_context(c4) == base_client.get_delegate(c4["plot"])
     with pytest.raises(Exception):
         base_client.delegate_from_context(c2)
     with pytest.raises(Exception):
         base_client.delegate_from_context(c5)
-    assert base_client.delegate_from_context() == base_client.get_component("document")
+    assert base_client.delegate_from_context() == base_client.get_delegate("document")
 
 
 def test_invoke_method(base_client):
@@ -109,7 +109,7 @@ def test_invoke_method(base_client):
 
     # Try with context
     entity_id = base_client.id_from_name("test_entity")
-    entity_del = base_client.get_component(entity_id)
+    entity_del = base_client.get_delegate(entity_id)
     context = nooobs.get_context(entity_del)
     message = base_client.invoke_method("test_method", [], context=context)
     assert message == [1, {"method": method_id, "args": [], "invoke_id": "2", "context": context}]
