@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="index.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-06-07 18:51 +0000
+            created at 2023-06-07 21:24 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -199,7 +199,7 @@
     <p class="pln"><span class="n"><a id="t117" href="#t117">117</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t118" href="#t118">118</a></span><span class="t">        <span class="com"># Determine the delegate the signal is being invoked on</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t119" href="#t119">119</a></span><span class="t">        <span class="nam">context</span> <span class="op">=</span> <span class="nam">message</span><span class="op">.</span><span class="nam">get</span><span class="op">(</span><span class="str">"context"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t120" href="#t120">120</a></span><span class="t">        <span class="nam">target_delegate</span> <span class="op">=</span> <span class="nam">client</span><span class="op">.</span><span class="nam">delegate_from_context</span><span class="op">(</span><span class="nam">context</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t120" href="#t120">120</a></span><span class="t">        <span class="nam">target_delegate</span> <span class="op">=</span> <span class="nam">client</span><span class="op">.</span><span class="nam">get_delegate_by_context</span><span class="op">(</span><span class="nam">context</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t121" href="#t121">121</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t122" href="#t122">122</a></span><span class="t">        <span class="com"># Invoke signal attached to target delegate</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t123" href="#t123">123</a></span><span class="t">        <span class="nam">logging</span><span class="op">.</span><span class="nam">debug</span><span class="op">(</span><span class="str">f"Invoking {signal.name} w/ args: {signal_data}"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -227,7 +227,7 @@
             <a id="nextFileLink" class="nav" href="index.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-06-07 18:51 +0000
+            created at 2023-06-07 21:24 +0000
         </p>
     </div>
 </footer>

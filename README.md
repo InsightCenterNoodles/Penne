@@ -5,10 +5,10 @@
 | Name                  |    Stmts |     Miss |    Cover |   Missing |
 |---------------------- | -------: | -------: | -------: | --------: |
 | penne/\_\_init\_\_.py |        3 |        0 |     100% |           |
-| penne/core.py         |      125 |        0 |     100% |           |
+| penne/core.py         |      127 |        0 |     100% |           |
 | penne/delegates.py    |      548 |        0 |     100% |           |
 | penne/handlers.py     |       66 |        0 |     100% |           |
-|             **TOTAL** |  **742** |    **0** | **100%** |           |
+|             **TOTAL** |  **744** |    **0** | **100%** |           |
 
 
 ## Setup coverage badge
