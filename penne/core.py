@@ -1,7 +1,7 @@
 """Module with Core Implementation of Client"""
 
 from __future__ import annotations
-from typing import Any, Type
+from typing import Any, Type, Union
 
 import queue
 import asyncio
@@ -18,12 +18,12 @@ class HandleInfo(object):
     """Class to organize useful info for processing each type of message
 
     Attributes:
-        specifier (str) : keyword for delegate and state maps
+        delegate (delegate) : keyword for delegate and state maps
         action (str)    : action performed by message
     """
 
     def __init__(self, specifier, action):
-        self.specifier = specifier
+        self.delegate = specifier
         self.action = action
 
 
@@ -55,19 +55,21 @@ class Client(object):
             mapping invoke_id to callback function
     """
 
-    def __init__(self, url: str, custom_delegate_hash: dict[str, Type[delegates.Delegate]] = None,
-                 on_connected=None, strict=False):
+    def __init__(self, url: str, custom_delegate_hash: dict[Type[delegates.Delegate], Type[delegates.Delegate]] = None,
+                 on_connected=None, strict=False, json=False):
         """Constructor for the Client Class
 
         Args:
             url (string):
                 address used to connect to server
             custom_delegate_hash (dict):
-                map for new delegate methods
+                map for new delegates to be used on client
             on_connected (Callable):
                 callback function to run once client is set up
             strict (bool):
                 flag for strict data validation and throwing hard exceptions
+            json (bool):
+                flag for outputting json log of messages
         """
 
         if not custom_delegate_hash:
@@ -76,8 +78,9 @@ class Client(object):
         self._url = url
         self._loop = asyncio.new_event_loop()
         self.on_connected = on_connected
-        self.delegates = {}
+        self.delegates = delegates.default_delegates.copy()
         self.strict = strict
+        self.json = json
         self.thread = threading.Thread(target=self.start_communication_thread)
         self.connection_established = threading.Event()
         self._socket = None
@@ -88,58 +91,53 @@ class Client(object):
             "invoke": 1
         }
         self.server_messages = [
-            HandleInfo("methods", "create"),
-            HandleInfo("methods", "delete"),
-            HandleInfo("signals", "create"),
-            HandleInfo("signals", "delete"),
-            HandleInfo("entities", "create"),
-            HandleInfo("entities", "update"),
-            HandleInfo("entities", "delete"),
-            HandleInfo("plots", "create"),
-            HandleInfo("plots", "update"),
-            HandleInfo("plots", "delete"),
-            HandleInfo("buffers", "create"),
-            HandleInfo("buffers", "delete"),
-            HandleInfo("bufferviews", "create"),
-            HandleInfo("bufferviews", "delete"),
-            HandleInfo("materials", "create"),
-            HandleInfo("materials", "update"),
-            HandleInfo("materials", "delete"),
-            HandleInfo("images", "create"),
-            HandleInfo("images", "delete"),
-            HandleInfo("textures", "create"), 
-            HandleInfo("textures", "delete"),
-            HandleInfo("samplers", "create"),
-            HandleInfo("samplers", "delete"),
-            HandleInfo("lights", "create"),
-            HandleInfo("lights", "update"),
-            HandleInfo("lights", "delete"),
-            HandleInfo("geometries", "create"),
-            HandleInfo("geometries", "delete"),
-            HandleInfo("tables", "create"),
-            HandleInfo("tables", "update"),
-            HandleInfo("tables", "delete"),
-            HandleInfo("document", "update"),
-            HandleInfo("document", "reset"),  
-            HandleInfo("signals", "invoke"),  
-            HandleInfo("methods", "reply"),
-            HandleInfo("document", "initialized")
+            HandleInfo(delegates.Method, "create"),
+            HandleInfo(delegates.Method, "delete"),
+            HandleInfo(delegates.Signal, "create"),
+            HandleInfo(delegates.Signal, "delete"),
+            HandleInfo(delegates.Entity, "create"),
+            HandleInfo(delegates.Entity, "update"),
+            HandleInfo(delegates.Entity, "delete"),
+            HandleInfo(delegates.Plot, "create"),
+            HandleInfo(delegates.Plot, "update"),
+            HandleInfo(delegates.Plot, "delete"),
+            HandleInfo(delegates.Buffer, "create"),
+            HandleInfo(delegates.Buffer, "delete"),
+            HandleInfo(delegates.BufferView, "create"),
+            HandleInfo(delegates.BufferView, "delete"),
+            HandleInfo(delegates.Material, "create"),
+            HandleInfo(delegates.Material, "update"),
+            HandleInfo(delegates.Material, "delete"),
+            HandleInfo(delegates.Image, "create"),
+            HandleInfo(delegates.Image, "delete"),
+            HandleInfo(delegates.Texture, "create"),
+            HandleInfo(delegates.Texture, "delete"),
+            HandleInfo(delegates.Sampler, "create"),
+            HandleInfo(delegates.Sampler, "delete"),
+            HandleInfo(delegates.Light, "create"),
+            HandleInfo(delegates.Light, "update"),
+            HandleInfo(delegates.Light, "delete"),
+            HandleInfo(delegates.Geometry, "create"),
+            HandleInfo(delegates.Geometry, "delete"),
+            HandleInfo(delegates.Table, "create"),
+            HandleInfo(delegates.Table, "update"),
+            HandleInfo(delegates.Table, "delete"),
+            HandleInfo(delegates.Document, "update"),
+            HandleInfo(delegates.Document, "reset"),
+            HandleInfo(delegates.Signal, "invoke"),
+            HandleInfo(delegates.Method, "reply"),
+            HandleInfo(delegates.Document, "initialized")
         ]
         self._current_invoke = 0
         self.callback_map = {}
         self.callback_queue = queue.Queue()
         self.is_active = False
 
-        # Hook up delegate map to default or custom based on input hash
-        defaults = delegates.default_delegates
-        for key in defaults:
-            if key not in custom_delegate_hash:
-                self.delegates[key] = defaults[key]
-            else:
-                self.delegates[key] = custom_delegate_hash[key]
+        # Hook up delegate map to customs
+        self.delegates.update(custom_delegate_hash)
 
         # Add document delegate as starting element in state
-        self.state["document"] = self.delegates["document"](client=self)
+        self.state["document"] = self.delegates[delegates.Document](client=self)
 
     def __enter__(self):
         """Enter method for context manager
@@ -189,7 +187,7 @@ class Client(object):
                 return delegate.id
         raise KeyError(f"Couldn't find object '{name}' in state")
 
-    def get_component(self, identifier) -> Type[delegates.Delegate]:
+    def get_delegate(self, identifier: Union[delegates.ID, str]) -> Type[delegates.Delegate]:
         """Getter to easily retrieve components from state
 
         Args:

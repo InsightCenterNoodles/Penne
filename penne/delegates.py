@@ -15,7 +15,6 @@ from pydantic import BaseModel, root_validator, Extra, validator, Field
 from pydantic.color import Color
 
 
-
 class InjectedMethod(object):
     """Class for representing injected method in delegate, context automatically set
 
@@ -79,7 +78,7 @@ def inject_methods(delegate: Delegate, methods: List[MethodID]):
     for method_id in methods:
 
         # Get method delegate and manipulate name to exclude noo::
-        method = delegate.client.get_component(method_id)
+        method = delegate.client.get_delegate(method_id)
         if "noo::" in method.name:
             name = method.name[5:]
         else:
@@ -563,7 +562,7 @@ class Entity(Delegate):
         else:
             message = f"-- Methods on {self.name} --\n--------------------------------------\n"
             for method_id in self.methods_list:
-                method = self.client.get_component(method_id)
+                method = self.client.get_delegate(method_id)
                 message += f">> {method}"
 
         print(message)
@@ -597,7 +596,7 @@ class Plot(Delegate):
         else:
             message = f"-- Methods on {self.name} --\n--------------------------------------\n"
             for method_id in self.methods_list:
-                method = self.client.get_component(method_id)
+                method = self.client.get_delegate(method_id)
                 message += f">> {method}"
 
         print(message)
@@ -781,7 +780,7 @@ class Table(Delegate):
         """
 
         init = TableInitData(**init_info)
-        logging.debug(f"Table Initialized with cols: {init.columns} and row data: {init.data}")
+        logging.info(f"Table Initialized with cols: {init.columns} and row data: {init.data}")
         if on_done:
             on_done()
 
@@ -794,7 +793,7 @@ class Table(Delegate):
         self.selections = {}
         if init_info:
             init = TableInitData(**init_info)
-            logging.debug(f"Table Reset and Initialized with cols: {init.columns} and row data: {init.data}")
+            logging.info(f"Table Reset and Initialized with cols: {init.columns} and row data: {init.data}")
 
     def _remove_rows(self, keys: List[int]):
         """Removes rows from table
@@ -805,7 +804,7 @@ class Table(Delegate):
             keys (list): list of keys corresponding to rows to be removed
         """
 
-        logging.debug(f"Removed Rows: {keys}...\n")
+        logging.info(f"Removed Rows: {keys}...\n")
 
     def _update_rows(self, keys: List[int], rows: list):
         """Update rows in table
@@ -819,20 +818,20 @@ class Table(Delegate):
                 list of rows containing the values for each new row
         """
 
-        logging.debug(f"Updated Rows...{keys}\n")
+        logging.info(f"Updated Rows...{keys}\n")
 
-    def _update_selection(self, selection_obj: dict):
+    def _update_selection(self, selection: dict):
         """Change selection in delegate's state to new selection object
 
         Method is linked to 'tbl_selection_updated' signal
 
         Args:
-            selection_obj (Selection): 
+            selection (Selection): 
                 obj with new selections to replace obj with same name
         """
 
-        self.selections.setdefault(selection_obj["name"], selection_obj)
-        logging.debug(f"Made selection {selection_obj['name']} = {selection_obj}")
+        self.selections.setdefault(selection["name"], selection)
+        logging.info(f"Made selection {selection['name']} = {selection}")
 
     def relink_signals(self):
         """Relink the signals for built-in methods
@@ -979,7 +978,7 @@ class Table(Delegate):
         else:
             message = f"-- Methods on {self.name} --\n--------------------------------------\n"
             for method_id in self.methods_list:
-                method = self.client.get_component(method_id)
+                method = self.client.get_delegate(method_id)
                 message += f">> {method}"
 
         print(message)
@@ -1011,7 +1010,7 @@ class Document(Delegate):
         else:
             message = f"-- Methods on Document --\n--------------------------------------\n"
             for method_id in self.methods_list:
-                method = self.client.get_component(method_id)
+                method = self.client.get_delegate(method_id)
                 message += f">> {method}"
 
         print(message)
@@ -1040,23 +1039,24 @@ class Reply(NoodleObject):
     result: Optional[Any] = None
     method_exception: Optional[MethodException] = None
 
+
 """ ====================== Miscellaneous Objects ====================== """
 
 default_delegates = {
-    "entities": Entity,
-    "tables": Table,
-    "plots": Plot,
-    "signals": Signal,
-    "methods": Method,
-    "materials": Material,
-    "geometries": Geometry,
-    "lights": Light,
-    "images": Image,
-    "textures": Texture,
-    "samplers": Sampler,
-    "buffers": Buffer,
-    "bufferviews": BufferView,
-    "document": Document
+    Entity: Entity,
+    Table: Table,
+    Plot: Plot,
+    Signal: Signal,
+    Method: Method,
+    Material: Material,
+    Geometry: Geometry,
+    Light: Light,
+    Image: Image,
+    Texture: Texture,
+    Sampler: Sampler,
+    Buffer: Buffer,
+    BufferView: BufferView,
+    Document: Document
 }
 
 id_map = {
@@ -1075,4 +1075,3 @@ id_map = {
     BufferView: BufferViewID,
     Document: None
 }
-

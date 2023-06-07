@@ -4,7 +4,7 @@ import logging
 import pytest
 
 import penne.delegates as nooobs
-from tests.clients import base_client, delegate_client, mock_socket, rig_base_server, TableDelegate
+from tests.clients import base_client, delegate_client, mock_socket, rig_base_server
 from tests.plottyn_integration import run_basic_operations
 
 logging.basicConfig(
@@ -91,11 +91,11 @@ def test_table_init():
 
 
 def test_method(base_client):
-    method = base_client.get_component("test_method")
-    arg_method = base_client.get_component("test_arg_method")
-    plot = base_client.get_component("test_plot")
-    table = base_client.get_component("test_table")
-    entity = base_client.get_component("test_entity")
+    method = base_client.get_delegate("test_method")
+    arg_method = base_client.get_delegate("test_arg_method")
+    plot = base_client.get_delegate("test_plot")
+    table = base_client.get_delegate("test_table")
+    entity = base_client.get_delegate("test_entity")
     method.invoke(plot)
     method.invoke(table)
     method.invoke(entity)
@@ -107,16 +107,16 @@ def test_method(base_client):
 
 
 def test_entity(base_client):
-    entity = base_client.get_component("test_entity")
+    entity = base_client.get_delegate("test_entity")
     assert entity.show_methods() == "No methods available"
-    entity = base_client.get_component("test_method_entity")
+    entity = base_client.get_delegate("test_method_entity")
     assert entity.show_methods() == "-- Methods on test_method_entity --\n--------------------------------------\n" \
                                     ">> test_method:\n\tNone\n\tReturns: None\n\tArgs:"
 
 
 # noinspection PyTypeChecker
 def test_plot(base_client):
-    x = base_client.get_component("test_plot")
+    x = base_client.get_delegate("test_plot")
     y = nooobs.Plot(id=nooobs.PlotID(0, 0), simple_plot="True")
     assert x.show_methods() == "-- Methods on test_plot --\n--------------------------------------\n" \
                                ">> test_method:\n\tNone\n\tReturns: None\n\tArgs:"
@@ -169,17 +169,20 @@ def test_light(caplog):
         nooobs.Light(id=nooobs.LightID(0, 0), color=[0, 0, 0, 1], point=nooobs.PointLight(), spot=nooobs.SpotLight())
 
 
-def test_basic_table_methods(base_client, caplog):
+def test_basic_table_methods(base_client):
 
-    table = base_client.get_component("test_table")
+    import penne.handlers as handlers
+
+    table = base_client.get_delegate("test_table")
     basic = nooobs.Table(id=nooobs.TableID(0, 0))
-    cols = [nooobs.TableColumnInfo(name="test", type="TEXT")]
+    cols = [{"name": "test", "type": "TEXT"}]
     init_data = {"columns": cols, "keys": [0, 1, 2], "data": [["test"], ["test"], ["test"]]}
     assert hasattr(table, "test_method")
 
-    # Most of these are logging debug messages by default, so just running through them here
+    # Invoke Signals to hit Table methods
+    id = base_client.id_from_name("noo::tbl_reset")
+    handlers.handle(base_client, 33, {"id": id, "context": {"table": table.id}, "signal_data": [init_data]})
     table._on_table_init(init_data, on_done=print)
-    table._reset_table()
     table._reset_table(init_data)
     table._remove_rows(keys=[0, 1, 2])
     table._update_rows(keys=[0, 1, 2], rows=[["test"], ["test"], ["test"]])
@@ -188,7 +191,7 @@ def test_basic_table_methods(base_client, caplog):
     table.on_remove({"blank": "message"})
 
     assert table.show_methods() == "-- Methods on test_table --\n--------------------------------------\n" \
-                               ">> test_method:\n\tNone\n\tReturns: None\n\tArgs:"
+                                   ">> test_method:\n\tNone\n\tReturns: None\n\tArgs:"
     assert basic.show_methods() == "No methods available"
 
     with pytest.raises(Exception):
@@ -236,12 +239,12 @@ def test_document(base_client):
 
 
 def test_get_context(base_client):
-    entity = base_client.get_component("test_entity")
-    table = base_client.get_component("test_table")
-    plot = base_client.get_component("test_plot")
-    method = base_client.get_component("test_method")
+    entity = base_client.get_delegate("test_entity")
+    table = base_client.get_delegate("test_table")
+    plot = base_client.get_delegate("test_plot")
+    method = base_client.get_delegate("test_method")
 
     assert nooobs.get_context(entity) == {"entity": entity.id}
     assert nooobs.get_context(table) == {"table": table.id}
     assert nooobs.get_context(plot) == {"plot": plot.id}
-    assert nooobs.get_context(method) == None
+    assert nooobs.get_context(method) is None

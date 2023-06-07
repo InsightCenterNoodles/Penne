@@ -10,8 +10,8 @@ import queue
 import matplotlib.pyplot as plt
 
 from penne import Client
-from penne.delegates import TableID
-from tests.test_delegates import TableDelegate
+from penne.delegates import TableID, Table
+from tests.clients import TableDelegate
 
 # Create callback functions
 # Not sure about 'response' - cleaner way?
@@ -65,7 +65,7 @@ def run_basic_operations(table: TableID, plotting: bool = True):
     )
 
     # Main execution loop
-    del_hash = {"tables": TableDelegate}
+    del_hash = {Table: TableDelegate}
     with Client("ws://localhost:50000", del_hash, on_connected=create_table, strict=True) as client:
         while client.is_active:
             try:
