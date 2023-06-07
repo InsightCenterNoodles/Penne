@@ -180,7 +180,7 @@ def test_basic_table_methods(base_client):
     assert hasattr(table, "test_method")
 
     # Invoke Signals to hit Table methods
-    id = base_client.id_from_name("noo::tbl_reset")
+    id = base_client.get_delegate_id("noo::tbl_reset")
     handlers.handle(base_client, 33, {"id": id, "context": {"table": table.id}, "signal_data": [init_data]})
     table._on_table_init(init_data, on_done=print)
     table._reset_table(init_data)
