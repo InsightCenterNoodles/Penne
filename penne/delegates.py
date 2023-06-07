@@ -821,18 +821,18 @@ class Table(Delegate):
 
         logging.debug(f"Updated Rows...{keys}\n")
 
-    def _update_selection(self, selection_obj: dict):
+    def _update_selection(self, selection: dict):
         """Change selection in delegate's state to new selection object
 
         Method is linked to 'tbl_selection_updated' signal
 
         Args:
-            selection_obj (Selection): 
+            selection (Selection): 
                 obj with new selections to replace obj with same name
         """
 
-        self.selections.setdefault(selection_obj["name"], selection_obj)
-        logging.debug(f"Made selection {selection_obj['name']} = {selection_obj}")
+        self.selections.setdefault(selection["name"], selection)
+        logging.debug(f"Made selection {selection['name']} = {selection}")
 
     def relink_signals(self):
         """Relink the signals for built-in methods
