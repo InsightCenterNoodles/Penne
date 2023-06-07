@@ -117,7 +117,7 @@ def handle(client, message_id, message: dict[str, Any]):
 
         # Determine the delegate the signal is being invoked on
         context = message.get("context")
-        target_delegate = client.delegate_from_context(context)
+        target_delegate = client.get_delegate_by_context(context)
 
         # Invoke signal attached to target delegate
         logging.debug(f"Invoking {signal.name} w/ args: {signal_data}")

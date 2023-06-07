@@ -1,7 +1,7 @@
 """Module with Core Implementation of Client"""
 
 from __future__ import annotations
-from typing import Any, Type, Union
+from typing import Any, Type, Union, Dict
 
 import queue
 import asyncio
@@ -166,7 +166,7 @@ class Client(object):
             self.is_active = False
             logging.warning(f"Connection terminated in communication thread: {e}")
 
-    def id_from_name(self, name: str) -> Type[delegates.ID]:
+    def get_delegate_id(self, name: str) -> Type[delegates.ID]:
         """Get a delegate's id from its name
 
         Args:
@@ -187,11 +187,11 @@ class Client(object):
                 return delegate.id
         raise KeyError(f"Couldn't find object '{name}' in state")
 
-    def get_delegate(self, identifier: Union[delegates.ID, str]) -> Type[delegates.Delegate]:
+    def get_delegate(self, identifier: Union[delegates.ID, str, Dict[str, delegates.ID]]) -> Type[delegates.Delegate]:
         """Getter to easily retrieve components from state
 
         Args:
-            identifier (ID | Str): id or name for the component
+            identifier (ID | Name | Context): id, name, or context for the component
 
         Returns:
             Component delegate from state
@@ -199,11 +199,13 @@ class Client(object):
         if isinstance(identifier, delegates.ID):
             return self.state[identifier]
         elif isinstance(identifier, str):
-            return self.state[self.id_from_name(identifier)]
+            return self.state[self.get_delegate_id(identifier)]
+        elif isinstance(identifier, dict):
+            return self.get_delegate_by_context(identifier)
         else:
             raise TypeError(f"Invalid type for identifier: {type(identifier)}")
 
-    def delegate_from_context(self, context: dict = None) -> delegates.Delegate:
+    def get_delegate_by_context(self, context: dict = None) -> delegates.Delegate:
         """Get delegate object from a context message object
 
         Args:
@@ -263,7 +265,7 @@ class Client(object):
         
         # Get proper ID
         if isinstance(method, str):
-            method_id = self.id_from_name(method)
+            method_id = self.get_delegate_id(method)
         else:
             method_id = method
 

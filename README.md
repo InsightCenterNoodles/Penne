@@ -62,7 +62,7 @@ which are called automatically when the server sends a message to create, update
 >How can I use custom delegates?
 
 To work with your own delegates, simply create a class that inherits from the base delegate. Then, pass a dictionary as
-an argument to `create_client()` that maps the delegate's type to the new class. In `tests/clients.py` there is a more
+an argument to the constructor that maps the delegate's type to the new class. In `tests/clients.py` there is a more
 involved example that extends the table delegate. Here, the delegate class 
 inherits from `Table` and uses pandas and matplotlib to add plotting functionality. Below is an even more basic example
 that prints a message whenever a new method is created.
