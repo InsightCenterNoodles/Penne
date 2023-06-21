@@ -1,12 +1,10 @@
-# PENNE
+# Penne
 
 ![Build Status](https://github.com/InsightCenterNoodles/Penne/workflows/CI/badge.svg)
 ![PyPI](https://img.shields.io/pypi/v/Penne)
-[![Coverage badge](https://raw.githubusercontent.com/InsightCenterNoodles/Penne/python-coverage-comment-action-data/badge.svg)](https://htmlpreview.github.io/?https://github.com/InsightCenterNoodles/Penne/blob/python-coverage-comment-action-data/htmlcov/index.html)
+[![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/InsightCenterNoodles/Penne/python-coverage-comment-action-data/endpoint.json&color=brightgreen)](https://htmlpreview.github.io/?https://github.com/InsightCenterNoodles/Penne/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
-
-Python Client for NOODLES protocol  
-(Python Encoded Native NOODLES Endpoint)
+Python Client Library for NOODLES Protocol
 
 ## Description
 The client library is based on the NOODLES messaging protocol for communicating with serverside data visualisation applications. The client uses a websocket connection to send CBOR encoded messages. To customize its implementation, the
