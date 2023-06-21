@@ -119,14 +119,11 @@ def test_invoke_method(base_client):
 def test_send_message(base_client):
 
     # Test variations on intro and invoke messages
-    test_codes = ["intro", "intro",
-                  "invoke", "invoke", "invoke", "invoke", "invoke", "invoke"]
+    test_codes = ["intro", "invoke", "invoke"]
     test_messages = [
-        {"client_name": "test_client"},
-        {"client_name": base_client.name},
-        {"method_id": (0, 0), "args": [], "invoke_id": 1},
-        {"method_id": (0, 0), "args": [1, 2, 3], "invoke_id": 2},
-    ]
+        {"method": [0, 0], "args": [], "invoke_id": "1"},
+        {"method": [1, 0], "args": [1, 2, 3], "invoke_id": "2"},
+    ]  # Intro message already sent when client created
 
     for kind, content in zip(test_codes, test_messages):
         message = base_client.send_message(content, kind)
@@ -136,12 +133,12 @@ def test_send_message(base_client):
 
 
 def test_process_message(base_client, lenient_client, caplog):
-    exception_message = [34, {"invoke_id": "0", "method_exception": {"code": -32603, "message": "Internal Error"}}]
+    exception_message = [34, {"invoke_id": "0", "method_exception": {"code": -32603, "message": "Testing to make sure this raises an exception"}}]
     with pytest.raises(Exception):
-        base_client.process_message(exception_message)
+        base_client._process_message(exception_message)
 
     # Test with lenient client
-    lenient_client.process_message(exception_message)
+    lenient_client._process_message(exception_message)
     assert "Exception" in caplog.text
 
 

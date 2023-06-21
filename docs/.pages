@@ -1,0 +1,6 @@
+nav:
+    - index.md
+    - install.md
+    - basic_usage.md
+    - api_reference
+    - noodles.md

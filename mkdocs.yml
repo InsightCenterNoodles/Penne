@@ -1,0 +1,55 @@
+site_name: Penne
+site_description: "Documentation for Penne."
+site_url: "https://insightcenternoodles.github.io/Penne/"
+repo_url: "https://github.com/InsightCenterNoodles/Penne"
+edit_uri: "edit/main/docs/"
+repo_name: "InsightCenterNoodles/Penne"
+# watch: [mkdocs.yml, README.md, CONTRIBUTING.md, CHANGELOG.md, src/mkdocstrings]
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [ . ]
+          options:
+            show_root_heading: true
+            separate_signature: true
+            filters: [ "!^_" ]
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+  - awesome-pages
+
+theme:
+  name: material
+  palette:
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
+    primary: light blue
+    accent: light blue
+    toggle:
+      icon: material/lightbulb-outline
+      name: "Switch to dark mode"
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: light blue
+    accent: light blue
+    toggle:
+      icon: material/lightbulb
+      name: "Switch to light mode"
+  features:
+    - content.tabs.link
+  logo: 'assets/logo.svg'
+  favicon: 'assets/favicon.png'
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - tables
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences

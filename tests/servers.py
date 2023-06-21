@@ -1,6 +1,4 @@
 
-import weakref
-
 import pytest
 import pandas as pd
 
@@ -23,18 +21,18 @@ def new_point_plot(server: Server, context: dict, xs, ys, zs, colors=None, sizes
         name="Custom Table",
         meta="Table for testing",
         methods_list=[
-            server.get_component_id(Method, "noo::tbl_subscribe"),
-            server.get_component_id(Method, "noo::tbl_insert"),
-            server.get_component_id(Method, "noo::tbl_update"),
-            server.get_component_id(Method, "noo::tbl_remove"),
-            server.get_component_id(Method, "noo::tbl_clear"),
-            server.get_component_id(Method, "noo::tbl_update_selection"),
+            server.get_delegate_id("noo::tbl_subscribe"),
+            server.get_delegate_id("noo::tbl_insert"),
+            server.get_delegate_id("noo::tbl_update"),
+            server.get_delegate_id("noo::tbl_remove"),
+            server.get_delegate_id("noo::tbl_clear"),
+            server.get_delegate_id("noo::tbl_update_selection"),
         ],
         signals_list=[
-            server.get_component_id(Signal, "noo::tbl_reset"),
-            server.get_component_id(Signal, "noo::tbl_updated"),
-            server.get_component_id(Signal, "noo::tbl_rows_removed"),
-            server.get_component_id(Signal, "noo::tbl_selection_updated")
+            server.get_delegate_id("noo::tbl_reset"),
+            server.get_delegate_id("noo::tbl_updated"),
+            server.get_delegate_id("noo::tbl_rows_removed"),
+            server.get_delegate_id("noo::tbl_selection_updated")
         ]
     )
 
@@ -48,12 +46,12 @@ def new_point_plot(server: Server, context: dict, xs, ys, zs, colors=None, sizes
     size_cols = list(zip(*sizes))
 
     data = {
-        "x": xs,
-        "y": ys,
-        "z": zs,
-        "r": color_cols[0],
-        "g": color_cols[1],
-        "b": color_cols[2],
+        "x": [float(x) for x in xs],
+        "y": [float(y) for y in ys],
+        "z": [float(z) for z in zs],
+        "r": [float(r) for r in color_cols[0]],
+        "g": [float(g) for g in color_cols[1]],
+        "b": [float(b) for b in color_cols[2]],
         "sx": size_cols[0],
         "sy": size_cols[1],
         "sz": size_cols[2],
@@ -69,8 +67,7 @@ def new_point_plot(server: Server, context: dict, xs, ys, zs, colors=None, sizes
 def subscribe(server: Server, context: dict):
     # Try to get delegate from context
     try:
-        table_id = TableID(*context["table"])
-        delegate: CustomTableDelegate = server.delegates[table_id]
+        delegate: CustomTableDelegate = server.get_delegate_by_context(context)
     except ValueError:
         raise MethodException(code=-32600, message="Invalid Request - Invalid Context for Subscribe")
 
@@ -89,8 +86,7 @@ def subscribe(server: Server, context: dict):
 
 def insert(server: Server, context: dict, rows: list[list]):
     try:
-        table_id = TableID(*context["table"])
-        delegate: CustomTableDelegate = server.delegates[table_id]
+        delegate: CustomTableDelegate = server.get_delegate_by_context(context)
     except ValueError:
         raise MethodException(-32600, "Invalid Request - Invalid Context for insert")
 
@@ -111,8 +107,7 @@ def insert(server: Server, context: dict, rows: list[list]):
 
 def update(server: Server, context: dict, keys: list[int], rows: list[list]):
     try:
-        table_id = TableID(*context["table"])
-        delegate: CustomTableDelegate = server.delegates[table_id]
+        delegate: CustomTableDelegate = server.get_delegate_by_context(context)
     except ValueError:
         raise MethodException(code=-32600, message="Invalid Request - Invalid Context for update")
 
@@ -128,8 +123,7 @@ def update(server: Server, context: dict, keys: list[int], rows: list[list]):
 
 def remove(server: Server, context: dict, keys: list[int]):
     try:
-        table_id = TableID(*context["table"])
-        delegate: CustomTableDelegate = server.delegates[table_id]
+        delegate: CustomTableDelegate = server.get_delegate_by_context(context)
     except Exception:
         raise MethodException(-32600, "Invalid Request - Invalid Context for delete")
 
@@ -145,8 +139,7 @@ def remove(server: Server, context: dict, keys: list[int]):
 
 def clear(server: Server, context: dict):
     try:
-        table_id = TableID(*context["table"])
-        delegate: CustomTableDelegate = server.delegates[table_id]
+        delegate: CustomTableDelegate = server.get_delegate_by_context(context)
     except Exception:
         raise MethodException(-32600, "Invalid Request - Invalid Context for clear")
 
@@ -160,8 +153,7 @@ def clear(server: Server, context: dict):
 
 def update_selection(server: Server, context: dict, selection: dict):
     try:
-        table_id = TableID(*context["table"])
-        delegate: CustomTableDelegate = server.delegates[table_id]
+        delegate: CustomTableDelegate = server.get_delegate_by_context(context)
     except Exception:
         raise MethodException(-32600, "Invalid Request - Invalid Context for selection")
 
@@ -173,12 +165,10 @@ def update_selection(server: Server, context: dict, selection: dict):
     delegate.table_selection_updated(selection)
 
 
-class CustomTableDelegate(ServerTableDelegate):
+class CustomTableDelegate(Table):
 
-    def __init__(self, server: Server, component: weakref.ReferenceType):
-        super().__init__(server, component)
-        self.dataframe = pd.DataFrame()
-        self.selections = {}
+    dataframe = pd.DataFrame()
+    selections = {}
 
     def handle_insert(self, rows: list[list[int]]):
         next_index = self.dataframe.index[-1] + 1
@@ -192,12 +182,10 @@ class CustomTableDelegate(ServerTableDelegate):
     def handle_update(self, keys: list[int], rows: list[list[int]]):
         for key, row in zip(keys, rows):
             self.dataframe.loc[key] = row
-
         return keys
 
     def handle_delete(self, keys: list[int]):
         self.dataframe.drop(index=keys, inplace=True)
-
         return keys
 
     def handle_clear(self):
@@ -213,26 +201,26 @@ class CustomTableDelegate(ServerTableDelegate):
 
         data = [tbl_init]
 
-        signal = self.server.get_component_id(Signal, "noo::tbl_reset")
-        self.server.invoke_signal(signal, self.component, data)
+        signal = self.server.get_delegate_id("noo::tbl_reset")
+        self.server.invoke_signal(signal, self, data)
 
     def table_updated(self, keys: list[int], rows: list[list[int]]):
         data = [keys, rows]
 
-        signal = self.server.get_component_id(Signal, "noo::tbl_updated")
-        self.server.invoke_signal(signal, self.component, data)
+        signal = self.server.get_delegate_id("noo::tbl_updated")
+        self.server.invoke_signal(signal, self, data)
 
     def table_rows_removed(self, keys: list[int]):
         data = [keys]
 
-        signal = self.server.get_component_id(Signal, "noo::tbl_rows_removed")
-        self.server.invoke_signal(signal, self.component, data)
+        signal = self.server.get_delegate_id("noo::tbl_rows_removed")
+        self.server.invoke_signal(signal, self, data)
 
     def table_selection_updated(self, selection: Selection):
         data = [selection]
 
-        signal = self.server.get_component_id(Signal, "noo::tbl_selection_updated")
-        self.server.invoke_signal(signal, self.component, data)
+        signal = self.server.get_delegate_id("noo::tbl_selection_updated")
+        self.server.invoke_signal(signal, self, data)
 
 
 server_delegates = {

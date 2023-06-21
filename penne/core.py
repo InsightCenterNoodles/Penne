@@ -56,7 +56,7 @@ class Client(object):
     """
 
     def __init__(self, url: str, custom_delegate_hash: dict[Type[delegates.Delegate], Type[delegates.Delegate]] = None,
-                 on_connected=None, strict=False, json=False):
+                 on_connected=None, strict=False, json=None):
         """Constructor for the Client Class
 
         Args:
@@ -68,8 +68,8 @@ class Client(object):
                 callback function to run once client is set up
             strict (bool):
                 flag for strict data validation and throwing hard exceptions
-            json (bool):
-                flag for outputting json log of messages
+            json (str):
+                path for outputting json log of messages
         """
 
         if not custom_delegate_hash:
@@ -81,7 +81,7 @@ class Client(object):
         self.delegates = delegates.default_delegates.copy()
         self.strict = strict
         self.json = json
-        self.thread = threading.Thread(target=self.start_communication_thread)
+        self.thread = threading.Thread(target=self._start_communication_thread)
         self.connection_established = threading.Event()
         self._socket = None
         self.name = "Python Client"
@@ -157,26 +157,26 @@ class Client(object):
         self.shutdown()
         self.is_active = False
 
-    def start_communication_thread(self):
+    def _start_communication_thread(self):
         """Starts the communication thread for the client"""
         try:
             asyncio.set_event_loop(self._loop)
-            self._loop.run_until_complete(self.run())
+            self._loop.run_until_complete(self._run())
         except Exception as e:
             self.is_active = False
             logging.warning(f"Connection terminated in communication thread: {e}")
 
     def get_delegate_id(self, name: str) -> Type[delegates.ID]:
-        """Get a delegate's id from its name
+        """Get a delegate's id from its name. Assumes names are unique, or returns the first match
 
         Args:
             name (str): name of method
 
         Returns:
-            ID group attached to the method, note this is just the first match if names are not unique
+            ID (ID): ID for the delegate
 
         Raises:
-            Couldn't find method exception
+            KeyError: if no match is found
         """
         if name == "document":
             return name
@@ -190,11 +190,18 @@ class Client(object):
     def get_delegate(self, identifier: Union[delegates.ID, str, Dict[str, delegates.ID]]) -> Type[delegates.Delegate]:
         """Getter to easily retrieve components from state
 
+        Accepts multiple types of identifiers for flexibility
+
         Args:
-            identifier (ID | Name | Context): id, name, or context for the component
+            identifier (ID | str | dict): id, name, or context for the component
 
         Returns:
-            Component delegate from state
+            Delegate (Delegate): delegate object from state
+
+        Raises:
+            TypeError: if identifier is not a valid type
+            KeyError: if id or name is not found in state
+            ValueError: if context is not found in state
         """
         if isinstance(identifier, delegates.ID):
             return self.state[identifier]
@@ -206,13 +213,19 @@ class Client(object):
             raise TypeError(f"Invalid type for identifier: {type(identifier)}")
 
     def get_delegate_by_context(self, context: dict = None) -> delegates.Delegate:
-        """Get delegate object from a context message object
+        """Get delegate object from a context object
+
+        Contexts are of the form {"table": TableID}, {"entity": EntityID}, or {"plot": PlotID}.
+        They are only applicable for tables, entities, and plots
 
         Args:
-            context (Message): object containing context
+            context (dict): dict containing context
+
+        Returns:
+            Delegate (Delegate): delegate object from state
 
         Raises:
-            Exception: Couldn't get delegate from context
+            ValueError: Couldn't get delegate from context
         """
 
         if not context:
@@ -230,11 +243,11 @@ class Client(object):
         elif plot:
             target_delegate = self.state[delegates.PlotID(*plot)]
         else:
-            raise Exception("Couldn't get delegate from context")
+            raise ValueError("Couldn't get delegate from context")
 
         return target_delegate
 
-    def invoke_method(self, method: delegates.MethodID | str, args: list = None,
+    def invoke_method(self, method: Union[delegates.MethodID, str], args: list = None,
                       context: dict[str, tuple] = None, on_done=None):
         """Invoke method on server
 
@@ -249,14 +262,17 @@ class Client(object):
         it from the map and call the method if there is one
 
         Args:
-            method (list or str):
+            method (ID | str):
                 id or name for method
             args (list): 
                 arguments for method
             context (dict): 
                 optional, target context for method call
-            on_done (function):
+            on_done (Callable):
                 function to be called upon response
+
+        Returns:
+            message (list): message to be sent to server in the form of [tag, {content}]
         """
 
         # Handle default args
@@ -302,7 +318,7 @@ class Client(object):
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
         return message
 
-    def process_message(self, message):
+    def _process_message(self, message):
         """Prep message for handling
 
         Messages here are of form: [tag, {content}, tag, {content}, ...]
@@ -318,7 +334,7 @@ class Client(object):
                 else:
                     logging.error(f"Exception: {e} for message {message}")
 
-    async def run(self):
+    async def _run(self):
         """Network thread for managing websocket connection"""  
 
         async with websockets.connect(self._url) as websocket:
@@ -335,16 +351,19 @@ class Client(object):
             # decode and handle all incoming messages
             async for message in self._socket:
                 message = loads(message)
-                self.process_message(message)
+                self._process_message(message)
 
     def show_methods(self):
-        """Displays Available Methods to the User"""
+        """Displays Available Methods to the User on the document
+
+        Uses the document delegate's show_methods function to display
+        """
         self.state["document"].show_methods()
 
     def shutdown(self):
         """Method for shutting down the client
         
-        Closes websocket connection then blocks to finish all callbacks
+        Closes websocket connection then blocks to finish all callbacks, joins thread as well
         """
         asyncio.run_coroutine_threadsafe(self._socket.close(), self._loop)
         self.is_active = False

@@ -13,8 +13,7 @@ from penne import Client
 from penne.delegates import TableID, Table
 from tests.clients import TableDelegate
 
-# Create callback functions
-# Not sure about 'response' - cleaner way?
+
 points = [[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5],
           [(0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1), (0, 1, 1)]]
 
