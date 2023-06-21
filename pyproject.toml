@@ -38,3 +38,4 @@ log_cli = true
 
 [project.urls]
 Source = "https://github.com/InsightCenterNoodles/Penne"
+Documentation = "https://insightcenternoodles.github.io/Penne/"

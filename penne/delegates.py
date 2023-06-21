@@ -18,7 +18,7 @@ from pydantic.color import Color
 class InjectedMethod(object):
     """Class for representing injected method in delegate
 
-    The context is automatically set when invoked. This object is callable, and is what is actually called when the
+    The context is automatically set when invoked. This object is callable and is what is actually called when the
     injected method is called.
 
     Attributes:
@@ -262,7 +262,7 @@ class Delegate(NoodleObject):
     
     Attributes:
         client (Client): Client delegate is attached to
-        id: (ID): Unique identifier for delegate
+        id (ID): Unique identifier for delegate
         name (str): Name of delegate
         signals (dict): Signals that can be called on delegate, method name to callable
     """
