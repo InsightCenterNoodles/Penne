@@ -11,7 +11,7 @@ Modules:
     messages.py
 """
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 
 # Imports for easier user access
