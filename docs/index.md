@@ -9,6 +9,10 @@ applications to interact collaboratively with data in real-time. The client uses
 encoded messages, and all components in the scene graph can be subclassed and customized to fit an application's 
 needs. 
 
+<video autoplay loop src="assets/demo.mov">  video </video> 
+<figcaption>Penne used as the foundation for Tagliatelle's 3d visualizations</figcaption>
+
+
 ## Why use Penne?
 
 Penne is a great choice for anyone who wants to use the NOODLES protocol while working in Python. With a client
