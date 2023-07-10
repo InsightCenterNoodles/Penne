@@ -128,7 +128,7 @@ def test_plot(base_client):
 
 
 def test_buffer():
-    nooobs.Buffer(id=nooobs.BufferID(0, 0), inline_bytes=b"test")
+    nooobs.Buffer(id=nooobs.BufferID(0, 0), inline_bytes=b"test", size=4)
     with pytest.raises(ValueError):
         nooobs.Buffer(id=nooobs.BufferID(0, 0))
     with pytest.raises(ValueError):

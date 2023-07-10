@@ -765,7 +765,7 @@ class Signal(Delegate):
     id: SignalID
     name: str
     doc: Optional[str] = None
-    arg_doc: List[MethodArg] = None
+    arg_doc: List[MethodArg] = []
 
 
 class Entity(Delegate):
@@ -879,10 +879,10 @@ class Buffer(Delegate):
     """
     id: BufferID
     name: Optional[str] = "Unnamed Buffer Delegate"
-    size: int = None
+    size: int
 
-    inline_bytes: bytes = None
-    uri_bytes: str = None
+    inline_bytes: Optional[bytes] = None
+    uri_bytes: Optional[str] = None
 
     @model_validator(mode="after")
     def one_of(cls, model):
@@ -973,8 +973,8 @@ class Image(Delegate):
     id: ImageID
     name: Optional[str] = "Unnamed Image Delegate"
 
-    buffer_source: BufferID = None
-    uri_source: str = None
+    buffer_source: Optional[BufferID] = None
+    uri_source: Optional[str] = None
 
     @model_validator(mode="after")
     def one_of(cls, model):
@@ -1038,9 +1038,9 @@ class Light(Delegate):
     color: Optional[Color] = Color('white')
     intensity: Optional[float] = 1.0
 
-    point: PointLight = None
-    spot: SpotLight = None
-    directional: DirectionalLight = None
+    point: Optional[PointLight] = None
+    spot: Optional[SpotLight] = None
+    directional: Optional[DirectionalLight] = None
 
     @field_validator("color", mode='before')
     def check_color_rgb(cls, value):
