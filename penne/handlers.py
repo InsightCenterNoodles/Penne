@@ -26,7 +26,7 @@ def update_state(client, message: dict, component_id: ID):
     """
 
     delegate = client.get_delegate(component_id)
-    current_state = delegate.dict()
+    current_state = delegate.model_dump()
     current_state.update(message)
 
     delegate_type = type(delegate)

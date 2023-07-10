@@ -11,8 +11,8 @@ from typing import Optional, Any, Callable, List, Tuple, NamedTuple
 from enum import Enum
 from math import pi
 
-from pydantic import BaseModel, root_validator, Extra, validator
-from pydantic.color import Color
+from pydantic import ConfigDict, BaseModel, model_validator, field_validator
+from pydantic_extra_types.color import Color
 
 
 class InjectedMethod(object):
@@ -74,6 +74,11 @@ def inject_methods(delegate: Delegate, methods: List[MethodID]):
     # Clear out old injected methods
     to_remove = []
     for field, value in delegate:
+        if hasattr(value, "injected"):
+            logging.debug(f"Deleting: {field} in inject methods")
+            to_remove.append(field)
+    # Hack for now: waiting on https://github.com/pydantic/pydantic/issues/6560
+    for field, value in delegate.__pydantic_extra__.items():
         if hasattr(value, "injected"):
             logging.debug(f"Deleting: {field} in inject methods")
             to_remove.append(field)
@@ -246,13 +251,7 @@ class TableID(ID):
 
 class NoodleObject(BaseModel):
     """Parent Class for all noodle objects"""
-
-    class Config:
-        """Configuration for Validation"""
-
-        arbitrary_types_allowed = True
-        use_enum_values = True
-        extra = Extra.allow  # Allow injected methods
+    model_config = ConfigDict(arbitrary_types_allowed=True, use_enum_values=True, extra="allow", frozen=False)
 
 
 class Delegate(NoodleObject):
@@ -290,15 +289,10 @@ class Delegate(NoodleObject):
 
 """ ====================== Common Definitions ====================== """
 
-Vec3 = Tuple[float, float, float]
-Vec4 = Tuple[float, float, float, float]
-Mat3 = Tuple[float, float, float,
-             float, float, float,
-             float, float, float]
-Mat4 = Tuple[float, float, float, float,
-             float, float, float, float,
-             float, float, float, float,
-             float, float, float, float]
+Vec3 = List[float]  # Length 3
+Vec4 = List[float]  # Length 4
+Mat3 = List[float]  # Length 9
+Mat4 = List[float]  # Length 16
 
 
 class AttributeSemantic(Enum):
@@ -536,7 +530,7 @@ class PBRInfo(NoodleObject):
     roughness: Optional[float] = 1.0
     metal_rough_texture: Optional[TextureRef] = None  # assume linear, ONLY RG used
 
-    @validator("base_color", pre=True, allow_reuse=True)
+    @field_validator("base_color", mode='before')
     def check_color_rgba(cls, value):
 
         # Raise warning if format is wrong from server
@@ -656,19 +650,12 @@ class InvokeIDType(NoodleObject):
     table: Optional[TableID] = None
     plot: Optional[PlotID] = None
 
-    @root_validator(allow_reuse=True)
-    def one_of_three(cls, values):
-        already_found = False
-        for field in values:
-            if values[field] and already_found:
-                raise ValueError("More than one field entered")
-            elif values[field]:
-                already_found = True
-
-        if not already_found:
-            raise ValueError("No field provided")
-        else:
-            return values
+    @model_validator(mode="after")
+    def one_of_three(cls, model):
+        num_set = bool(model.entity) + bool(model.table) + bool(model.plot)
+        if num_set != 1:
+            raise ValueError("Must set exactly one of entity, table, or plot")
+        return model
 
 
 class TableColumnInfo(NoodleObject):
@@ -697,16 +684,16 @@ class TableInitData(NoodleObject):
     selections: Optional[List[Selection]] = None
 
     # too much overhead? - strict mode
-    @root_validator(allow_reuse=True)
-    def types_match(cls, values):
-        for row in values['data']:
-            for col, i in zip(values['columns'], range(len(row))):
+    @model_validator(mode="after")
+    def types_match(cls, model):
+        for row in model.data:
+            for col, i in zip(model.columns, range(len(row))):
                 text_mismatch = isinstance(row[i], str) and col.type != "TEXT"
                 real_mismatch = isinstance(row[i], float) and col.type != "REAL"
                 int_mismatch = isinstance(row[i], int) and col.type != "INTEGER"
                 if text_mismatch or real_mismatch or int_mismatch:
                     raise ValueError(f"Column Info doesn't match type in data: {col, row[i]}")
-        return values
+        return model
 
 
 """ ====================== NOODLE COMPONENTS ====================== """
@@ -858,10 +845,10 @@ class Plot(Delegate):
     methods_list: Optional[List[MethodID]] = None
     signals_list: Optional[List[SignalID]] = None
 
-    @root_validator(allow_reuse=True)
-    def one_of(cls, values):
-        if bool(values['simple_plot']) != bool(values['url_plot']):
-            return values
+    @model_validator(mode="after")
+    def one_of(cls, model):
+        if bool(model.simple_plot) != bool(model.url_plot):
+            return model
         else:
             raise ValueError("One plot type must be specified")
 
@@ -897,10 +884,10 @@ class Buffer(Delegate):
     inline_bytes: bytes = None
     uri_bytes: str = None
 
-    @root_validator(allow_reuse=True)
-    def one_of(cls, values):
-        if bool(values['inline_bytes']) != bool(values['uri_bytes']):
-            return values
+    @model_validator(mode="after")
+    def one_of(cls, model):
+        if bool(model.inline_bytes) != bool(model.uri_bytes):
+            return model
         else:
             raise ValueError("One plot type must be specified")
 
@@ -924,17 +911,19 @@ class BufferView(Delegate):
     offset: int
     length: int
 
-    @validator("type", pre=True, allow_reuse=True)
+    @field_validator("type", mode='before')
     def coerce_type(cls, value):
         if value in ["UNK", "GEOMETRY", "IMAGE"]:
             return value
 
-        logging.warning(f"Buffer View Type does not meet the specification: {value} coerced to 'UNK'")
         if "GEOMETRY" in value.upper():
+            logging.warning(f"Buffer View Type does not meet the specification: {value} coerced to 'GEOMETRY'")
             return "GEOMETRY"
         elif "IMAGE" in value.upper():
+            logging.warning(f"Buffer View Type does not meet the specification: {value} coerced to 'IMAGE'")
             return "IMAGE"
         else:
+            logging.warning(f"Buffer View Type does not meet the specification: {value} coerced to 'UNK'")
             return "UNK"
 
 
@@ -987,10 +976,10 @@ class Image(Delegate):
     buffer_source: BufferID = None
     uri_source: str = None
 
-    @root_validator(allow_reuse=True)
-    def one_of(cls, values):
-        if bool(values['buffer_source']) != bool(values['uri_source']):
-            return values
+    @model_validator(mode="after")
+    def one_of(cls, model):
+        if bool(model.buffer_source) != bool(model.uri_source):
+            return model
         else:
             raise ValueError("One plot type must be specified")
 
@@ -1053,28 +1042,23 @@ class Light(Delegate):
     spot: SpotLight = None
     directional: DirectionalLight = None
 
-    @validator("color", pre=True, allow_reuse=True)
+    @field_validator("color", mode='before')
     def check_color_rgb(cls, value):
 
         # Raise warning if format is wrong
         if len(value) != 3:
             logging.warning(f"Color is not RGB in Light: {value}")
-
         return value
 
-    @root_validator(allow_reuse=True)
-    def one_of(cls, values):
-        already_found = False
-        for field in ['point', 'spot', 'directional']:
-            if values[field] and already_found:
-                raise ValueError("More than one field entered")
-            elif values[field]:
-                already_found = True
-
-        if not already_found:
-            raise ValueError("No field provided")
+    @model_validator(mode="after")
+    def one_of(cls, model):
+        num_selected = bool(model.point) + bool(model.spot) + bool(model.directional)
+        if num_selected > 1:
+            raise ValueError("Only one light type can be selected")
+        elif num_selected == 0:
+            raise ValueError("No light type selected")
         else:
-            return values
+            return model
 
 
 class Geometry(Delegate):
@@ -1113,12 +1097,12 @@ class Table(Delegate):
     methods_list: Optional[List[MethodID]] = None
     signals_list: Optional[List[SignalID]] = None
 
-    tbl_subscribe: InjectedMethod = None
-    tbl_insert: InjectedMethod = None
-    tbl_update: InjectedMethod = None
-    tbl_remove: InjectedMethod = None
-    tbl_clear: InjectedMethod = None
-    tbl_update_selection: InjectedMethod = None
+    tbl_subscribe: Optional[InjectedMethod] = None
+    tbl_insert: Optional[InjectedMethod] = None
+    tbl_update: Optional[InjectedMethod] = None
+    tbl_remove: Optional[InjectedMethod] = None
+    tbl_clear: Optional[InjectedMethod] = None
+    tbl_update_selection: Optional[InjectedMethod] = None
 
     def __init__(self, **kwargs):
         """Override init to link default values with methods"""
@@ -1334,7 +1318,7 @@ class Table(Delegate):
                 callback function called when complete
         """
         selection = Selection(name=name, rows=keys)
-        self.tbl_update_selection(on_done, selection.dict())
+        self.tbl_update_selection(on_done, selection.model_dump())
 
     def show_methods(self):
         """Show methods available on the table"""
