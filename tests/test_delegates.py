@@ -199,6 +199,7 @@ def test_basic_table_methods(base_client):
 
     assert table.methods_list == [nooobs.MethodID(slot=0, gen=0)]
     nooobs.inject_methods(table, [nooobs.MethodID(slot=1, gen=0)])
+    check = table.model_dump()
     assert not hasattr(table, "test_method")
     assert hasattr(table, "test_arg_method")
 

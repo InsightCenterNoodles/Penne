@@ -10,7 +10,7 @@ authors = [
 ]
 dynamic = ["version", "description"]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = ["noodles", "cbor", "Websockets", "client", "NOODLES"]
 license = {text = "MIT"}
 classifiers = [
@@ -21,7 +21,8 @@ classifiers = [
 dependencies = [
     "websockets",
     "cbor2",
-    "pydantic"
+    "pydantic",
+    "pydantic-extra-types"
 ]
 
 [project.optional-dependencies]

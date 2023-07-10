@@ -10,7 +10,7 @@ encoded messages, and all components in the scene graph can be subclassed and cu
 needs. 
 
 <video autoplay loop src="assets/demo.mov">  video </video> 
-<figcaption>Penne used as the foundation for Tagliatelle's 3d visualizations</figcaption>
+<figcaption>Penne used as the foundation for Orzo's 3d visualizations</figcaption>
 
 
 ## Why use Penne?
