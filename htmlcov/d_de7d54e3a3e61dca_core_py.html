@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="d_de7d54e3a3e61dca_delegates_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-07-12 15:53 +0000
+            created at 2023-07-12 17:44 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -334,7 +334,7 @@
     <p class="run"><span class="n"><a id="t252" href="#t252">252</a></span><span class="t">        <span class="key">return</span> <span class="nam">target_delegate</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t253" href="#t253">253</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t254" href="#t254">254</a></span><span class="t">    <span class="key">def</span> <span class="nam">invoke_method</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">method</span><span class="op">:</span> <span class="nam">Union</span><span class="op">[</span><span class="nam">delegates</span><span class="op">.</span><span class="nam">MethodID</span><span class="op">,</span> <span class="nam">str</span><span class="op">]</span><span class="op">,</span> <span class="nam">args</span><span class="op">:</span> <span class="nam">list</span> <span class="op">=</span> <span class="key">None</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t255" href="#t255">255</a></span><span class="t">                      <span class="nam">context</span><span class="op">:</span> <span class="nam">dict</span><span class="op">[</span><span class="nam">str</span><span class="op">,</span> <span class="nam">tuple</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span><span class="op">,</span> <span class="nam">on_done</span><span class="op">=</span><span class="key">None</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t255" href="#t255">255</a></span><span class="t">                      <span class="nam">context</span><span class="op">:</span> <span class="nam">dict</span><span class="op">[</span><span class="nam">str</span><span class="op">,</span> <span class="nam">tuple</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span><span class="op">,</span> <span class="nam">callback</span><span class="op">=</span><span class="key">None</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t256" href="#t256">256</a></span><span class="t">        <span class="str">"""Invoke method on server</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t257" href="#t257">257</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t258" href="#t258">258</a></span><span class="t"><span class="str">        Constructs a dictionary of arguments to use in send_message. The</span>&nbsp;</span><span class="r"></span></p>
@@ -376,7 +376,7 @@
     <p class="run"><span class="n"><a id="t294" href="#t294">294</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">_current_invoke</span> <span class="op">+=</span> <span class="num">1</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t295" href="#t295">295</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t296" href="#t296">296</a></span><span class="t">        <span class="com"># Keep track of callback</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t297" href="#t297">297</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">callback_map</span><span class="op">[</span><span class="nam">invoke_id</span><span class="op">]</span> <span class="op">=</span> <span class="nam">on_done</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t297" href="#t297">297</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">callback_map</span><span class="op">[</span><span class="nam">invoke_id</span><span class="op">]</span> <span class="op">=</span> <span class="nam">callback</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t298" href="#t298">298</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t299" href="#t299">299</a></span><span class="t">        <span class="com"># Construct message dict</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t300" href="#t300">300</a></span><span class="t">        <span class="nam">arg_dict</span> <span class="op">=</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
@@ -463,7 +463,7 @@
             <a id="nextFileLink" class="nav" href="d_de7d54e3a3e61dca_delegates_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-07-12 15:53 +0000
+            created at 2023-07-12 17:44 +0000
         </p>
     </div>
 </footer>
