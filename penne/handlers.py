@@ -28,9 +28,13 @@ def update_state(client, message: dict, component_id: ID):
     delegate = client.get_delegate(component_id)
     current_state = delegate.model_dump()
     current_state.update(message)
+    updated_model = type(delegate).model_validate(current_state)  # Validate and coerce input
 
-    delegate_type = type(delegate)
-    client.state[component_id] = delegate_type(**current_state)
+    # Merge into old model
+    for field, value in updated_model:
+        setattr(delegate, field, value)
+    for field, value in delegate.__pydantic_extra__.items():  # Hack for now waiting for new release
+        setattr(delegate, field, value)
 
 
 def handle(client, message_id, message: dict[str, Any]):

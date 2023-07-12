@@ -128,7 +128,7 @@ def test_plot(base_client):
 
 
 def test_buffer():
-    nooobs.Buffer(id=nooobs.BufferID(0, 0), inline_bytes=b"test")
+    nooobs.Buffer(id=nooobs.BufferID(0, 0), inline_bytes=b"test", size=4)
     with pytest.raises(ValueError):
         nooobs.Buffer(id=nooobs.BufferID(0, 0))
     with pytest.raises(ValueError):
@@ -199,7 +199,6 @@ def test_basic_table_methods(base_client):
 
     assert table.methods_list == [nooobs.MethodID(slot=0, gen=0)]
     nooobs.inject_methods(table, [nooobs.MethodID(slot=1, gen=0)])
-    check = table.model_dump()
     assert not hasattr(table, "test_method")
     assert hasattr(table, "test_arg_method")
 

@@ -53,6 +53,10 @@ class Client(object):
             id for next method invoke
         callback_map (dict):
             mapping invoke_id to callback function
+        callback_queue (queue):
+            queue for storing callback functions, useful for polling and running in the main thread
+        is_active (bool):
+            flag for whether client is active
     """
 
     def __init__(self, url: str, custom_delegate_hash: dict[Type[delegates.Delegate], Type[delegates.Delegate]] = None,
