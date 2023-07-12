@@ -252,7 +252,7 @@ class Client(object):
         return target_delegate
 
     def invoke_method(self, method: Union[delegates.MethodID, str], args: list = None,
-                      context: dict[str, tuple] = None, on_done=None):
+                      context: dict[str, tuple] = None, callback=None):
         """Invoke method on server
 
         Constructs a dictionary of arguments to use in send_message. The
@@ -294,7 +294,7 @@ class Client(object):
         self._current_invoke += 1
 
         # Keep track of callback
-        self.callback_map[invoke_id] = on_done
+        self.callback_map[invoke_id] = callback
 
         # Construct message dict
         arg_dict = {

@@ -86,7 +86,7 @@ class TableDelegate(Table):
     plotting: multiprocessing.Process = None
     sender: Any = None
 
-    def _on_table_init(self, init_info: dict, on_done=None):
+    def _on_table_init(self, init_info: dict, callback=None):
         """Creates table from server response info
 
         Args:
@@ -109,8 +109,8 @@ class TableDelegate(Table):
             self.selections[selection["name"]] = selection
 
         print(f"Initialized data table...\n{self.dataframe}")
-        if on_done:
-            on_done()
+        if callback:
+            callback()
 
     def _reset_table(self, init_info: dict = None):
         """Reset dataframe and selections to blank objects
@@ -199,7 +199,7 @@ class TableDelegate(Table):
         df = self.dataframe
         self.sender.send(get_plot_data(df))
 
-    def plot(self, on_done: Callable = None):
+    def plot(self, callback: Callable = None):
         """Creates plot in a new window
 
         Uses matplotlib to plot a representation of the table
@@ -209,8 +209,8 @@ class TableDelegate(Table):
 
         self.plotting = multiprocessing.Process(target=plot_process, args=(self.dataframe, receiver))
         self.plotting.start()
-        if on_done:
-            on_done()
+        if callback:
+            callback()
 
 
 @pytest.fixture
