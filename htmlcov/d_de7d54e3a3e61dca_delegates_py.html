@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">546 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">542<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">4<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">541<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">5<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="d_de7d54e3a3e61dca_handlers_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-07-10 17:14 +0000
+            created at 2023-07-12 15:53 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"/>
@@ -847,7 +847,7 @@
     <p class="run"><span class="n"><a id="t765" href="#t765">765</a></span><span class="t">    <span class="nam">id</span><span class="op">:</span> <span class="nam">SignalID</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t766" href="#t766">766</a></span><span class="t">    <span class="nam">name</span><span class="op">:</span> <span class="nam">str</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t767" href="#t767">767</a></span><span class="t">    <span class="nam">doc</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">str</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t768" href="#t768">768</a></span><span class="t">    <span class="nam">arg_doc</span><span class="op">:</span> <span class="nam">List</span><span class="op">[</span><span class="nam">MethodArg</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t768" href="#t768">768</a></span><span class="t">    <span class="nam">arg_doc</span><span class="op">:</span> <span class="nam">List</span><span class="op">[</span><span class="nam">MethodArg</span><span class="op">]</span> <span class="op">=</span> <span class="op">[</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t769" href="#t769">769</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t770" href="#t770">770</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t771" href="#t771">771</a></span><span class="t"><span class="key">class</span> <span class="nam">Entity</span><span class="op">(</span><span class="nam">Delegate</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -961,17 +961,17 @@
     <p class="pln"><span class="n"><a id="t879" href="#t879">879</a></span><span class="t"><span class="str">    """</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t880" href="#t880">880</a></span><span class="t">    <span class="nam">id</span><span class="op">:</span> <span class="nam">BufferID</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t881" href="#t881">881</a></span><span class="t">    <span class="nam">name</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">str</span><span class="op">]</span> <span class="op">=</span> <span class="str">"Unnamed Buffer Delegate"</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t882" href="#t882">882</a></span><span class="t">    <span class="nam">size</span><span class="op">:</span> <span class="nam">int</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t882" href="#t882">882</a></span><span class="t">    <span class="nam">size</span><span class="op">:</span> <span class="nam">int</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t883" href="#t883">883</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t884" href="#t884">884</a></span><span class="t">    <span class="nam">inline_bytes</span><span class="op">:</span> <span class="nam">bytes</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t885" href="#t885">885</a></span><span class="t">    <span class="nam">uri_bytes</span><span class="op">:</span> <span class="nam">str</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t884" href="#t884">884</a></span><span class="t">    <span class="nam">inline_bytes</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">bytes</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t885" href="#t885">885</a></span><span class="t">    <span class="nam">uri_bytes</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">str</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t886" href="#t886">886</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t887" href="#t887">887</a></span><span class="t">    <span class="op">@</span><span class="nam">model_validator</span><span class="op">(</span><span class="nam">mode</span><span class="op">=</span><span class="str">"after"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t888" href="#t888">888</a></span><span class="t">    <span class="key">def</span> <span class="nam">one_of</span><span class="op">(</span><span class="nam">cls</span><span class="op">,</span> <span class="nam">model</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t889" href="#t889">889</a></span><span class="t">        <span class="key">if</span> <span class="nam">bool</span><span class="op">(</span><span class="nam">model</span><span class="op">.</span><span class="nam">inline_bytes</span><span class="op">)</span> <span class="op">!=</span> <span class="nam">bool</span><span class="op">(</span><span class="nam">model</span><span class="op">.</span><span class="nam">uri_bytes</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t890" href="#t890">890</a></span><span class="t">            <span class="key">return</span> <span class="nam">model</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t891" href="#t891">891</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t892" href="#t892">892</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"One plot type must be specified"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t892" href="#t892">892</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="str">"One plot type must be specified"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t893" href="#t893">893</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t894" href="#t894">894</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t895" href="#t895">895</a></span><span class="t"><span class="key">class</span> <span class="nam">BufferView</span><span class="op">(</span><span class="nam">Delegate</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -1055,8 +1055,8 @@
     <p class="run"><span class="n"><a id="t973" href="#t973">973</a></span><span class="t">    <span class="nam">id</span><span class="op">:</span> <span class="nam">ImageID</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t974" href="#t974">974</a></span><span class="t">    <span class="nam">name</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">str</span><span class="op">]</span> <span class="op">=</span> <span class="str">"Unnamed Image Delegate"</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t975" href="#t975">975</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t976" href="#t976">976</a></span><span class="t">    <span class="nam">buffer_source</span><span class="op">:</span> <span class="nam">BufferID</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t977" href="#t977">977</a></span><span class="t">    <span class="nam">uri_source</span><span class="op">:</span> <span class="nam">str</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t976" href="#t976">976</a></span><span class="t">    <span class="nam">buffer_source</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">BufferID</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t977" href="#t977">977</a></span><span class="t">    <span class="nam">uri_source</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">str</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t978" href="#t978">978</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t979" href="#t979">979</a></span><span class="t">    <span class="op">@</span><span class="nam">model_validator</span><span class="op">(</span><span class="nam">mode</span><span class="op">=</span><span class="str">"after"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t980" href="#t980">980</a></span><span class="t">    <span class="key">def</span> <span class="nam">one_of</span><span class="op">(</span><span class="nam">cls</span><span class="op">,</span> <span class="nam">model</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -1120,9 +1120,9 @@
     <p class="run"><span class="n"><a id="t1038" href="#t1038">1038</a></span><span class="t">    <span class="nam">color</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">Color</span><span class="op">]</span> <span class="op">=</span> <span class="nam">Color</span><span class="op">(</span><span class="str">'white'</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1039" href="#t1039">1039</a></span><span class="t">    <span class="nam">intensity</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">float</span><span class="op">]</span> <span class="op">=</span> <span class="num">1.0</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1040" href="#t1040">1040</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t1041" href="#t1041">1041</a></span><span class="t">    <span class="nam">point</span><span class="op">:</span> <span class="nam">PointLight</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t1042" href="#t1042">1042</a></span><span class="t">    <span class="nam">spot</span><span class="op">:</span> <span class="nam">SpotLight</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t1043" href="#t1043">1043</a></span><span class="t">    <span class="nam">directional</span><span class="op">:</span> <span class="nam">DirectionalLight</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t1041" href="#t1041">1041</a></span><span class="t">    <span class="nam">point</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">PointLight</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t1042" href="#t1042">1042</a></span><span class="t">    <span class="nam">spot</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">SpotLight</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t1043" href="#t1043">1043</a></span><span class="t">    <span class="nam">directional</span><span class="op">:</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">DirectionalLight</span><span class="op">]</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1044" href="#t1044">1044</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1045" href="#t1045">1045</a></span><span class="t">    <span class="op">@</span><span class="nam">field_validator</span><span class="op">(</span><span class="str">"color"</span><span class="op">,</span> <span class="nam">mode</span><span class="op">=</span><span class="str">'before'</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1046" href="#t1046">1046</a></span><span class="t">    <span class="key">def</span> <span class="nam">check_color_rgb</span><span class="op">(</span><span class="nam">cls</span><span class="op">,</span> <span class="nam">value</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -1553,7 +1553,7 @@
             <a id="nextFileLink" class="nav" href="d_de7d54e3a3e61dca_handlers_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.2.7">coverage.py v7.2.7</a>,
-            created at 2023-07-10 17:14 +0000
+            created at 2023-07-12 15:53 +0000
         </p>
     </div>
 </footer>
