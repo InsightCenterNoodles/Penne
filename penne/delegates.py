@@ -51,8 +51,9 @@ class LinkedMethod(object):
         self._obj_delegate = object_delegate
         self._method_delegate = method_delegate
 
-    def __call__(self, on_done=None, *arguments):
-        self._method_delegate.invoke(self._obj_delegate, list(arguments), callback=on_done)
+    def __call__(self, *args, **kwargs):
+        callback = kwargs.pop("callback", None)
+        self._method_delegate.invoke(self._obj_delegate, list(args), callback=callback)
 
 
 def inject_methods(delegate: Delegate, methods: List[MethodID]):
@@ -742,7 +743,7 @@ class Method(Delegate):
             raise ValueError("Invalid delegate context")
 
         context = {kind: on_delegate.id}
-        self.client.invoke_method(self.id, args, context=context, on_done=callback)
+        self.client.invoke_method(self.id, args, context=context, callback=callback)
 
     def __str__(self) -> str:
         """Custom string representation for methods"""
@@ -1114,7 +1115,7 @@ class Table(Delegate):
             "noo::tbl_selection_updated": self._update_selection
         }
 
-    def _on_table_init(self, init_info: dict, on_done=None):
+    def _on_table_init(self, init_info: dict, callback=None):
         """Creates table from server response info
 
         Args:
@@ -1125,8 +1126,8 @@ class Table(Delegate):
 
         init = TableInitData(**init_info)
         logging.info(f"Table Initialized with cols: {init.columns} and row data: {init.data}")
-        if on_done:
-            on_done()
+        if callback:
+            callback()
 
     def _reset_table(self, init_info: dict = None):
         """Reset dataframe and selections to blank objects
@@ -1227,13 +1228,13 @@ class Table(Delegate):
             inject_signals(self, signals)
         self.relink_signals()
 
-    def subscribe(self, on_done: Callable = None):
+    def subscribe(self, callback: Callable = None):
         """Subscribe to this delegate's table
 
         Calls on_table_init as callback
 
         Args:
-              on_done (Callable): function to be called after table is subscribed to and initialized
+              callback (Callable): function to be called after table is subscribed to and initialized
 
         Raises:
             Exception: Could not subscribe to table
@@ -1241,11 +1242,11 @@ class Table(Delegate):
 
         try:
             # Allow for callback after table init
-            self.tbl_subscribe(on_done=lambda data: self._on_table_init(data, on_done))
+            self.tbl_subscribe(callback=lambda data: self._on_table_init(data, callback))
         except Exception as e:
             raise Exception(f"Could not subscribe to table {self.id}...{e}")
 
-    def request_insert(self, row_list: List[List[int]], on_done=None):
+    def request_insert(self, row_list: List[List[int]], callback=None):
         """Add rows to end of table
 
         User endpoint for interacting with table and invoking method
@@ -1259,12 +1260,12 @@ class Table(Delegate):
 
         Args:
             row_list (list, optional): add rows using list of rows
-            on_done (function, optional): callback function
+            callback (function, optional): callback function
         """
 
-        self.tbl_insert(on_done, row_list)
+        self.tbl_insert(row_list, callback=callback)
 
-    def request_update(self, keys: List[int], rows: List[List[int]], on_done=None):
+    def request_update(self, keys: List[int], rows: List[List[int]], callback=None):
         """Update the table using a DataFrame
 
         User endpoint for interacting with table and invoking method
@@ -1274,13 +1275,13 @@ class Table(Delegate):
                 list of keys to update
             rows (list[list[int]]):
                 list of new rows to update with
-            on_done (function, optional): 
+            callback (function, optional):
                 callback function called when complete
         """
 
-        self.tbl_update(on_done, keys, rows)
+        self.tbl_update(keys, rows, callback=callback)
 
-    def request_remove(self, keys: List[int], on_done=None):
+    def request_remove(self, keys: List[int], callback=None):
         """Remove rows from table by their keys
 
         User endpoint for interacting with table and invoking method
@@ -1288,23 +1289,23 @@ class Table(Delegate):
         Args:
             keys (list):
                 list of keys for rows to be removed
-            on_done (function, optional): 
+            callback (function, optional):
                 callback function called when complete
         """
 
-        self.tbl_remove(on_done, keys)
+        self.tbl_remove(keys, callback=callback)
 
-    def request_clear(self, on_done=None):
+    def request_clear(self, callback=None):
         """Clear the table
 
         User endpoint for interacting with table and invoking method
 
         Args:
-            on_done (function, optional): callback function called when complete
+            callback (function, optional): callback function called when complete
         """
-        self.tbl_clear(on_done)
+        self.tbl_clear(callback=callback)
 
-    def request_update_selection(self, name: str, keys: List[int], on_done=None):
+    def request_update_selection(self, name: str, keys: List[int], callback=None):
         """Update a selection object in the table
 
         User endpoint for interacting with table and invoking method
@@ -1314,11 +1315,11 @@ class Table(Delegate):
                 name of the selection object to be updated
             keys (list):
                 list of keys to be in new selection
-            on_done (function, optional): 
+            callback (function, optional):
                 callback function called when complete
         """
         selection = Selection(name=name, rows=keys)
-        self.tbl_update_selection(on_done, selection.model_dump())
+        self.tbl_update_selection(selection.model_dump(), callback=callback)
 
     def show_methods(self):
         """Show methods available on the table"""

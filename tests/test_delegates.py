@@ -182,7 +182,7 @@ def test_basic_table_methods(base_client):
     # Invoke Signals to hit Table methods
     id = base_client.get_delegate_id("noo::tbl_reset")
     handlers.handle(base_client, 33, {"id": id, "context": {"table": table.id}, "signal_data": [init_data]})
-    table._on_table_init(init_data, on_done=print)
+    table._on_table_init(init_data, callback=print)
     table._reset_table(init_data)
     table._remove_rows(keys=[0, 1, 2])
     table._update_rows(keys=[0, 1, 2], rows=[["test"], ["test"], ["test"]])

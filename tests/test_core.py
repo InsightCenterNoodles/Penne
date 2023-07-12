@@ -104,7 +104,7 @@ def test_invoke_method(base_client):
     # Try with callback and other input format
     def callback():
         return "Callback called!"
-    base_client.invoke_method("test_method", [], on_done=callback)
+    base_client.invoke_method("test_method", [], callback=callback)
     invoke = str(base_client._current_invoke - 1)
     assert base_client.callback_map[invoke] == callback
 
