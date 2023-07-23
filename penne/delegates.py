@@ -475,11 +475,11 @@ class InstanceSource(NoodleObject):
 
     Attributes:
         view (BufferViewID): View of mat4
-        stride (int): Stride for buffer
+        stride (int): Stride for buffer, defaults to tightly packed
         bb (BoundingBox): Bounding box of instances
     """
     view: BufferViewID
-    stride: int
+    stride: Optional[int] = 0
     bb: Optional[BoundingBox] = None
 
 
