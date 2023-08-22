@@ -1,4 +1,4 @@
-cbor2>=5.4.3
-pydantic>=2.0.3
+cbor2==5.4.6
+pydantic==2.2.0
 pydantic-extra-types
-websockets>=10.3
+websockets==11.0.3

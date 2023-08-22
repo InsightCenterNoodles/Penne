@@ -1,7 +1,8 @@
-
 import logging
+import os
 
 import penne.delegates as nooobs
+from penne.core import default_json_encoder
 
 from .clients import *
 from tests.servers import bad_server
@@ -51,6 +52,33 @@ def test_create_delegate_client(delegate_client):
     assert len(delegate_client.delegates) == 14
     assert len(delegate_client.server_messages) == 36
     assert delegate_client.delegates[Table] == TableDelegate
+
+
+def test_default_json_encoder():
+    value = 10
+    expected_result = "10"
+    assert default_json_encoder(value) == expected_result
+
+    value = "Hello, World!"
+    expected_result = "Hello, World!"
+    assert default_json_encoder(value) == expected_result
+
+    value = [1, 2, 3]
+    expected_result = "[1, 2, 3]"
+    assert default_json_encoder(value) == expected_result
+
+    value = {"key": "value"}
+    expected_result = "{'key': 'value'}"
+    assert default_json_encoder(value) == expected_result
+
+
+def test_json_logging(json_client):
+    with open(json_client.json, "r") as f:
+        assert f.read() == 'JSON Log\n' \
+                           '[0, {"client_name": "Python Client @ ws://localhost:50000"}]\n'
+
+    # Clean up and delete the file
+    os.remove(json_client.json)
 
 
 def test_id_from_name(base_client):

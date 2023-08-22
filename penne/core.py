@@ -7,6 +7,7 @@ import queue
 import asyncio
 import logging
 import threading
+import json
 
 import websockets
 from cbor2 import loads, dumps
@@ -25,6 +26,11 @@ class HandleInfo(object):
     def __init__(self, specifier, action):
         self.delegate = specifier
         self.action = action
+
+
+def default_json_encoder(value):
+    """Default way to encode, mostly used for URI types I believe"""
+    return str(value)
 
 
 class Client(object):
@@ -84,7 +90,6 @@ class Client(object):
         self.on_connected = on_connected
         self.delegates = delegates.default_delegates.copy()
         self.strict = strict
-        self.json = json
         self.thread = threading.Thread(target=self._start_communication_thread)
         self.connection_established = threading.Event()
         self._socket = None
@@ -136,6 +141,10 @@ class Client(object):
         self.callback_map = {}
         self.callback_queue = queue.Queue()
         self.is_active = False
+        self.json = json
+        if json:
+            with open(json, "w") as outfile:  # Clear out old contents
+                outfile.write("JSON Log\n")
 
         # Hook up delegate map to customs
         self.delegates.update(custom_delegate_hash)
@@ -160,6 +169,12 @@ class Client(object):
         """Exit method for context manager"""
         self.shutdown()
         self.is_active = False
+
+    def _log_json(self, message: list):
+        json_message = json.dumps(message, default=default_json_encoder)
+        formatted_message = f"{json_message}\n"
+        with open(self.json, "a") as outfile:
+            outfile.write(formatted_message)
 
     def _start_communication_thread(self):
         """Starts the communication thread for the client"""
@@ -317,8 +332,10 @@ class Client(object):
 
         # Construct message with ID from map and converted message object
         message = [self.client_message_map[kind], message_dict]
+        if self.json:
+            self._log_json(message)
+
         logging.debug(f"Sending Message: {message}")
-        
         asyncio.run_coroutine_threadsafe(self._socket.send(dumps(message)), self._loop)
         return message
 

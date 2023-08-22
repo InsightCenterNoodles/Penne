@@ -4,10 +4,11 @@
 ![PyPI](https://img.shields.io/pypi/v/Penne)
 [![Coverage badge](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/InsightCenterNoodles/Penne/python-coverage-comment-action-data/endpoint.json&color=brightgreen)](https://htmlpreview.github.io/?https://github.com/InsightCenterNoodles/Penne/blob/python-coverage-comment-action-data/htmlcov/index.html)
 
+
 Penne is the first client library to implement the NOODLES messaging protocol in Python. NOODLES allows multiple client
 applications to interact collaboratively with data in real-time. The client uses a websocket connection to send CBOR 
 encoded messages, and all components in the scene graph can be subclassed and customized to fit an application's 
-needs. 
+needs.
 
 <video autoplay loop src="assets/demo.mov">  video </video> 
 <figcaption>Penne used as the foundation for Orzo's 3d visualizations</figcaption>
