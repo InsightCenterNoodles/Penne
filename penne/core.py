@@ -287,7 +287,7 @@ class Client(object):
                 arguments for method
             context (dict): 
                 optional, target context for method call
-            on_done (Callable):
+            callback (Callable):
                 function to be called upon response
 
         Returns:
