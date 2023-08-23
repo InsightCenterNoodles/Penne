@@ -12,3 +12,8 @@ Penne has a few dependencies:
 * [`pydantic-extra-types`](https://github.com/pydantic/pydantic-extra-types): Easy to use color format
 
 If you've got Python 3.9+ and `pip` installed, you're good to go.
+
+!!! Note
+
+    For stability, Penne's dependencies are pinned to specific versions. While these are up to date as of August
+    2023, you may want to update them to the latest versions. To do so, simply update the package yourself.

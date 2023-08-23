@@ -20,6 +20,12 @@ involved example that extends the table delegate. In that example, the delegate 
 inherits from `Table` and uses pandas and matplotlib to add plotting functionality. Below is an even more basic example
 that prints a message whenever a new method is created.
 
+!!! Note
+
+    In this library, delegates are Pydantic models. This means that they come with some built in functionality, and it might be helpful
+    to read the [Pydantic docs](https://docs.pydantic.dev/latest/usage/models/) to learn more about how to use them.
+    
+
 ```python
 from penne import Method, Client
 

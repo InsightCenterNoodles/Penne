@@ -16,7 +16,7 @@ from . import handlers, delegates
 
 
 class HandleInfo(object):
-    """Class to organize useful info for processing each type of message
+    """Info for processing each type of message from the server
 
     Attributes:
         delegate (delegate) : keyword for delegate and state maps
@@ -155,7 +155,7 @@ class Client(object):
     def __enter__(self):
         """Enter method for context manager
 
-        Waits for 5 seconds for connection to be established, otherwise throws exception
+        Waits for 1 seconds for connection to be established, otherwise throws exception
         """
         self.thread.start()
         flag = self.connection_established.wait(timeout=1)
@@ -177,7 +177,12 @@ class Client(object):
             outfile.write(formatted_message)
 
     def _start_communication_thread(self):
-        """Starts the communication thread for the client"""
+        """Starts the communication thread for the client
+
+        All communication is done with the server in this separate thread. That way, the main thread can be used for
+        other code. For example, Orzo's window / gui has to run in the main thread, so this allows the client to be
+        used in conjunction with the gui.
+        """
         try:
             asyncio.set_event_loop(self._loop)
             self._loop.run_until_complete(self._run())
