@@ -78,11 +78,6 @@ def inject_methods(delegate: Delegate, methods: List[MethodID]):
         if hasattr(value, "injected"):
             logging.debug(f"Deleting: {field} in inject methods")
             to_remove.append(field)
-    # Hack for now: waiting on https://github.com/pydantic/pydantic/issues/6560
-    for field, value in delegate.__pydantic_extra__.items():
-        if hasattr(value, "injected"):
-            logging.debug(f"Deleting: {field} in inject methods")
-            to_remove.append(field)
     for field in to_remove:
         delattr(delegate, field)
 
@@ -480,11 +475,11 @@ class InstanceSource(NoodleObject):
 
     Attributes:
         view (BufferViewID): View of mat4
-        stride (int): Stride for buffer
+        stride (int): Stride for buffer, defaults to tightly packed
         bb (BoundingBox): Bounding box of instances
     """
     view: BufferViewID
-    stride: int
+    stride: Optional[int] = 0
     bb: Optional[BoundingBox] = None
 
 
@@ -807,6 +802,62 @@ class Entity(Delegate):
     signals_list: Optional[List[SignalID]] = None
 
     influence: Optional[BoundingBox] = None
+
+    # Injected methods
+    set_position: Optional[InjectedMethod] = None
+    set_rotation: Optional[InjectedMethod] = None
+    set_scale: Optional[InjectedMethod] = None
+    activate: Optional[InjectedMethod] = None
+    get_activation_choices: Optional[InjectedMethod] = None
+    get_var_keys: Optional[InjectedMethod] = None
+    get_var_options: Optional[InjectedMethod] = None
+    get_var_value: Optional[InjectedMethod] = None
+    set_var_value: Optional[InjectedMethod] = None
+    select_region: Optional[InjectedMethod] = None
+    select_sphere: Optional[InjectedMethod] = None
+    select_half_plane: Optional[InjectedMethod] = None
+    select_hull: Optional[InjectedMethod] = None
+    probe_at: Optional[InjectedMethod] = None
+
+    def on_new(self, message: dict):
+
+        # Inject methods and signals if applicable
+        if self.methods_list:
+            inject_methods(self, self.methods_list)
+        if self.signals_list:
+            inject_signals(self, self.signals_list)
+
+    def on_update(self, message: dict):
+
+        # Inject methods and signals if applicable
+        if self.methods_list:
+            inject_methods(self, self.methods_list)
+        if self.signals_list:
+            inject_signals(self, self.signals_list)
+
+    def request_set_position(self, position: Vec3):
+        """Request to set the position of the entity
+
+        Args:
+            position (Vec3): Position to set
+        """
+        self.set_position(position)
+
+    def request_set_rotation(self, rotation: Vec4):
+        """Request to set the rotation of the entity
+
+        Args:
+            rotation (Vec4): Rotation to set
+        """
+        self.set_rotation(rotation)
+
+    def request_set_scale(self, scale: Vec3):
+        """Request to set the scale of the entity
+
+        Args:
+            scale (Vec3): Scale to set
+        """
+        self.set_scale(scale)
 
     def show_methods(self):
         """Show methods available on the entity"""
@@ -1217,15 +1268,12 @@ class Table(Delegate):
         Args:
             message (Message): update message with the new table's info
         """
-        # Check contents
-        methods = message.get("methods_list")
-        signals = message.get("signals_list")
 
-        # Inject methods and signals
-        if methods:
-            inject_methods(self, methods)
-        if signals:
-            inject_signals(self, signals)
+        # Inject methods and signals if applicable
+        if self.methods_list:
+            inject_methods(self, self.methods_list)
+        if self.signals_list:
+            inject_signals(self, self.signals_list)
         self.relink_signals()
 
     def subscribe(self, callback: Callable = None):
@@ -1350,6 +1398,8 @@ class Document(Delegate):
     methods_list: List[MethodID] = []  # Server usually sends as an update
     signals_list: List[SignalID] = []
 
+    client_view: Optional[InjectedMethod] = None
+
     def on_update(self, message: dict):
         """Handler when update message is received
 
@@ -1360,6 +1410,7 @@ class Document(Delegate):
         """
         if "methods_list" in message:
             self.methods_list = [MethodID(*element) for element in message["methods_list"]]
+            inject_methods(self, self.methods_list)
         if "signals_list" in message:
             self.signals_list = [SignalID(*element) for element in message["signals_list"]]
 
@@ -1371,6 +1422,11 @@ class Document(Delegate):
         self.client.state = {"document": self}
         self.methods_list = []
         self.signals_list = []
+
+    def update_client_view(self, direction: Vec3, angle: float):
+        """Notify the server of an area of interest for the client"""
+
+        self.client_view(direction, angle)
 
     def show_methods(self):
         """Show methods available on the document"""

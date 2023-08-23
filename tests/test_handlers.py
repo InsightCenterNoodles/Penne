@@ -33,7 +33,7 @@ def test_handle(base_client):
 
     # Hit creation exception
     with pytest.raises(Exception):
-        handlers.handle(base_client, 0, {"name": "new_updated_name"})  # Create method without ID
+        handlers.handle(base_client, 0, {"name": "should raise warning and exception"})  # Create method without ID
 
     # Test deletion
     handlers.handle(base_client, 1, {"id": [1, 0]})  # Delete method

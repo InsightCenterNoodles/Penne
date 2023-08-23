@@ -3,4 +3,5 @@ nav:
     - install.md
     - basic_usage.md
     - api_reference
+    - contributing.md
     - noodles.md

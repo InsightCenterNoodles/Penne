@@ -1,0 +1,4 @@
+pytest
+rigatoni
+pandas
+matplotlib
