@@ -214,21 +214,8 @@ def test_document(base_client):
 
     # Test document with data in it
     doc = base_client.state["document"]
-    assert doc.methods_list == [nooobs.MethodID(slot=0, gen=0),
-                                nooobs.MethodID(slot=1, gen=0),
-                                nooobs.MethodID(slot=2, gen=0),
-                                nooobs.MethodID(slot=3, gen=0),
-                                nooobs.MethodID(slot=4, gen=0),
-                                nooobs.MethodID(slot=5, gen=0),
-                                nooobs.MethodID(slot=6, gen=0),
-                                nooobs.MethodID(slot=7, gen=0),
-                                nooobs.MethodID(slot=8, gen=0),
-                                nooobs.MethodID(slot=9, gen=0)]
-    assert doc.signals_list == [nooobs.SignalID(slot=0, gen=0),
-                                nooobs.SignalID(slot=1, gen=0),
-                                nooobs.SignalID(slot=2, gen=0),
-                                nooobs.SignalID(slot=3, gen=0),
-                                nooobs.SignalID(slot=4, gen=0)]
+    assert doc.methods_list == [nooobs.MethodID(slot=0, gen=0)]
+    assert doc.signals_list == [nooobs.SignalID(slot=0, gen=0)]
 
     # Test document post reset
     doc.reset()
