@@ -236,7 +236,7 @@ test_args = [
 
 
 starting_components = [
-    StartingComponent(Method, {"name": "test_method"}, simple_method),
+    StartingComponent(Method, {"name": "test_method"}, simple_method, document=True),
     StartingComponent(Method, {"name": "test_arg_method", "arg_doc": [*test_args]}, move_method),
     StartingComponent(Method, {"name": "new_point_plot", "arg_doc": []}, new_point_plot),
     StartingComponent(Method, {"name": "noo::tbl_subscribe", "arg_doc": []}, subscribe),
@@ -247,7 +247,7 @@ starting_components = [
     StartingComponent(Method, {"name": "noo::tbl_update_selection", "arg_doc": []}, update_selection),
     StartingComponent(Method, {"name": "Test Method 4", "arg_doc": []}, print),
 
-    StartingComponent(Signal, {"name": "noo::tbl_reset", "arg_doc": []}),
+    StartingComponent(Signal, {"name": "noo::tbl_reset", "arg_doc": []}, document=True),
     StartingComponent(Signal, {"name": "noo::tbl_updated", "arg_doc": []}),
     StartingComponent(Signal, {"name": "noo::tbl_rows_removed", "arg_doc": []}),
     StartingComponent(Signal, {"name": "noo::tbl_selection_updated", "arg_doc": []}),
