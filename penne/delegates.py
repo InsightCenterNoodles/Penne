@@ -253,7 +253,11 @@ class NoodleObject(BaseModel):
 class Delegate(NoodleObject):
     """Parent class for all delegates
     
-    Defines general methods that should be available for all delegates
+    Defines general methods that should be available for all delegates. In this context, a delegate refers to an
+    object in a NOODLES scene that can be subclassed and extended by the user. For example, a user can create an
+    implementation for a table that specifically suits their needs. The server's job is essentially to manage the
+    state of all delegates, and to call the appropriate methods on them when necessary. Most methods defined by
+    the user will also be to manipulate the state of the delegates.
     
     Attributes:
         client (Client): Client delegate is attached to
@@ -767,6 +771,10 @@ class Signal(Delegate):
 class Entity(Delegate):
     """Container for other entities, possibly renderable, has associated methods and signals
 
+    Can reference other entities, geometry, plots, and lights. It can be rendered, if it has a render rep.
+    It may have associated methods and signals. The transform is relative to the parent entity. In other contexts
+    it may be called a node.
+
     Attributes:
         id: ID for the entity
         name: Name of the entity
@@ -922,6 +930,13 @@ class Plot(Delegate):
 class Buffer(Delegate):
     """A buffer of bytes containing data for an image or a mesh.
 
+    Bytes can be stored directly in the buffer with inline_bytes, or they can be stored in a URI with uri_bytes.
+    The server should create a separate server to host the bytes, and there is support for this in the ByteServer
+    class. To obtain these bytes, clients would have to make an HTTP request to the URI.
+
+    A buffer could store a single attribute, or it could store multiple attributes interleaved together. This is
+    where buffer views specify how to interpret the buffer.
+
     Attributes:
         id: ID for the buffer
         name: Name of the buffer
@@ -982,6 +997,8 @@ class BufferView(Delegate):
 class Material(Delegate):
     """A material that can be applied to a mesh.
 
+    The material is a collection of textures and factors that are used to render the mesh.
+
     Attributes:
         id: ID for the material
         name: Name of the material
@@ -1016,6 +1033,9 @@ class Material(Delegate):
 class Image(Delegate):
     """An image, can be used for a texture
 
+    Like a buffer, an image can be stored in a URI to reduce the size of messages. To obtain the bytes, you would
+    have to make an HTTP request to the URI.
+
     Attributes:
         id: ID for the image
         name: Name of the image
@@ -1039,6 +1059,9 @@ class Image(Delegate):
 class Texture(Delegate):
     """A texture, can be used for a material
 
+    This is like a wrapping paper that is applied to a mesh. The image specifies the pattern, and
+    the sampler specifies which part of the image should be applied to each part of the mesh.
+
     Attributes:
         id: ID for the texture
         name: Name of the texture
@@ -1054,14 +1077,16 @@ class Texture(Delegate):
 class Sampler(Delegate):
     """A sampler to use for a texture
 
-   Attributes:
+    A sampler specifies how to take portions of an image and apply them to a mesh.
+
+    Attributes:
        id: ID for the sampler
        name: Name of the sampler
        mag_filter: Magnification filter
        min_filter: Minification filter
        wrap_s: Wrap mode for S
        wrap_t: Wrap mode for T
-   """
+    """
     id: SamplerID
     name: Optional[str] = "Unnamed Sampler Delegate"
 
@@ -1074,6 +1099,11 @@ class Sampler(Delegate):
 
 class Light(Delegate):
     """Represents a light in the scene
+
+    For these purposes, a light is just a couple of properties like color, intensity, and light type. The entity
+    that stores the light will dictate position and direction with its transform. The client application is then
+    responsible for using this information to render the light. The light is either a point light, a spotlight, or
+    a directional light.
 
     Attributes:
         id: ID for the light
@@ -1116,6 +1146,10 @@ class Light(Delegate):
 class Geometry(Delegate):
     """Represents geometry in the scene and can be used for meshes
 
+    This is more of a collection of patches, but each patch will contain the geometry information to render a mesh.
+    The patch references buffer views and buffers for each attribute, and a material to use for rendering. Instances
+    are stored in a separate buffer that is referenced at the entity level.
+
     Attributes:
         id: ID for the geometry
         name: Name of the geometry
@@ -1128,6 +1162,11 @@ class Geometry(Delegate):
 
 class Table(Delegate):
     """Object to store tabular data.
+
+    Note that this delegate doesn't store any actual data. Delegates are meant to subclass and add functionality to
+    this class. For the client to receive the actual data, they must subscribe to the table. The client will have
+    access to certain injected methods that allow them to insert, update, delete, and clear the table. This class
+    provides some abstract methods that can be overridden to handle these events.
 
     Attributes:
         id: ID for the table
